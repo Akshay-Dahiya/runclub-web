@@ -13,7 +13,7 @@ export default function Hero() {
             <line x1="0" y1="350" x2="1200" y2="350" stroke="white" strokeWidth=".5"/>
           </svg>
         </div>
-        <div className="hero-eyebrow">▶ Delhi RunClub · Race Day Aug 23, 2026</div>
+        <div className="hero-eyebrow">▶ Joyville Road Runners · Race Day Aug 23, 2026</div>
         <h1 className="hero-title">
           <span style={{ color: 'var(--text)' }}>RUN</span><br/>
           <span className="outline">FASTER</span><br/>

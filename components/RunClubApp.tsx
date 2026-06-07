@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
-import LogRunForm from './LogRunForm'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM } from '../lib/planData'
 
 export default function RunClubApp({ users }: { users: any[] }) {
@@ -197,7 +196,11 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
       <hr className="divider"/>
 
-      <LogRunForm users={mappedUsers} />
+      <div className="section" style={{ textAlign: 'center', padding: '80px 20px' }}>
+        <h2 className="section-title">Ready to Log Your Run?</h2>
+        <p className="section-sub" style={{ marginBottom: '24px' }}>Access your personalized dashboard to log your runs and track your specific progress against your training plan.</p>
+        <a href="/login" className="btn-primary" style={{ display: 'inline-block' }}>Go to My Dashboard →</a>
+      </div>
 
       <Footer />
     </>

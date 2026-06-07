@@ -27,7 +27,7 @@ const COMPLETION_FACTORS = [0.95, 0.70, 0.88, 0.50, 0.92, 0.62, 1.00, 0.42, 0.78
 async function main() {
   console.log('🌱 Seeding RunClub database...')
 
-  const passwordHash = await bcrypt.hash('runclub2025', 10)
+  const passwordHash = await bcrypt.hash('runclub2026', 10)
   const now = new Date()
 
   for (let idx = 0; idx < PARTICIPANTS.length; idx++) {
@@ -100,7 +100,7 @@ async function main() {
     }
 
     if (runs.length > 0) {
-      await prisma.run.createMany({ data: runs, skipDuplicates: true })
+      await prisma.run.createMany({ data: runs })
     }
 
     console.log(`  ✓ ${p.name} (${p.cat}) — ${runs.length} runs seeded`)
