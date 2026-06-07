@@ -203,7 +203,7 @@ export default function DashboardClient({
       {/* 02 — SNAPSHOT */}
       <section style={{ marginBottom: '80px' }}>
         <SectionHead label="02 / This Week" title="SNAPSHOT" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1px', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
           <StatBox label="KM Done (All Time)" value={actualKm.toFixed(1)} unit="km" sub={`of ${totalTarget} km total plan`} />
           <StatBox label="Plan Completion" value={`${pct}`} unit="%" sub={status === 'green' ? '✓ On track' : status === 'yellow' ? '~ Almost there' : '✕ Catch up!'} />
           <StatBox label="This Week" value={weekKm.toFixed(1)} unit="km" sub={`${weekRuns.length} sessions`} />
@@ -270,7 +270,7 @@ export default function DashboardClient({
       {dbUser.runs.length > 0 && (
         <section style={{ marginBottom: '80px' }}>
           <SectionHead label="04 / History" title="YOUR RUNS" />
-          <div style={{ border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid var(--border)', borderRadius: '4px', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -380,7 +380,7 @@ function StatBox({ label, value, unit, sub }: { label: string; value: string; un
   return (
     <div style={{ background: 'var(--surface)', padding: '24px' }}>
       <p style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, margin: '0 0 12px 0' }}>{label}</p>
-      <p style={{ fontFamily: 'monospace', fontSize: '2.5rem', fontWeight: 700, margin: '0 0 8px 0', lineHeight: 1 }}>
+      <p style={{ fontFamily: 'monospace', fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', fontWeight: 700, margin: '0 0 8px 0', lineHeight: 1 }}>
         {value}<span style={{ fontSize: '1rem', opacity: 0.5, marginLeft: '4px' }}>{unit}</span>
       </p>
       <p style={{ fontSize: '12px', color: 'var(--orange)', margin: 0 }}>{sub}</p>
