@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-
+import AICoachWidget from '../AICoach/AICoachWidget'
 type Provider = 'strava' | 'garmin' | 'apple'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
@@ -362,6 +362,9 @@ export default function DashboardClient({
           </div>
         </div>
       </section>
+
+      {/* AI COACH WIDGET */}
+      <AICoachWidget userId={dbUser.id} />
 
     </div>
   )
