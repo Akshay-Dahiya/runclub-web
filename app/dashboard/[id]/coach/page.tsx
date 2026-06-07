@@ -20,7 +20,7 @@ export default function CoachPage() {
     setHasCheckedKey(true)
   }, [])
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading, error } = useChat({
     api: '/api/chat',
     body: { userId, apiKey }
   })
@@ -111,6 +111,11 @@ export default function CoachPage() {
                     <div style={{ width: '8px', height: '8px', background: 'var(--text)', borderRadius: '50%', animation: 'pulse 1s infinite' }} />
                     <div style={{ width: '8px', height: '8px', background: 'var(--text)', borderRadius: '50%', animation: 'pulse 1s infinite 0.2s' }} />
                     <div style={{ width: '8px', height: '8px', background: 'var(--text)', borderRadius: '50%', animation: 'pulse 1s infinite 0.4s' }} />
+                  </div>
+                )}
+                {error && (
+                  <div style={{ padding: '16px', background: 'rgba(255, 0, 0, 0.1)', color: 'red', borderRadius: '8px', margin: '16px', textAlign: 'center', fontSize: '14px', fontWeight: 'bold' }}>
+                    Error: {error.message || 'Something went wrong.'}
                   </div>
                 )}
                 <div ref={messagesEndRef} />
