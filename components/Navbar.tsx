@@ -20,6 +20,14 @@ export default function Navbar() {
         <li><Link href="/#plans" onClick={() => setIsOpen(false)}>Training Plans</Link></li>
         <li><Link href="/#leaderboard" onClick={() => setIsOpen(false)}>Leaderboard</Link></li>
         <li><Link href="/#dashboard" onClick={() => setIsOpen(false)} style={{ color: 'var(--orange)', fontWeight: 'bold' }}>My Dashboard</Link></li>
+        <li>
+          <Link href="/login" onClick={() => setIsOpen(false)} style={{
+            background: 'var(--orange)', color: '#000', padding: '8px 18px',
+            borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem'
+          }}>
+            Login
+          </Link>
+        </li>
       </ul>
     </nav>
   )
