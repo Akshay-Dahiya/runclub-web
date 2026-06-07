@@ -21,8 +21,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
   
   let dbUser = null
   try {
-    const queryPromise = prisma.user.findUnique({
+    const queryPromise = prisma.user.upsert({
       where: { email: userEmail },
+      update: {},
+      create: {
+        email: userEmail,
+        name: participantDef.name,
+        runningGoal: participantDef.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run',
+      },
       include: {
         runs: {
           orderBy: { date: 'desc' }
