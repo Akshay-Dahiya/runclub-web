@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '../../../lib/prisma'
 import { createOpenAI } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 import { PARTICIPANTS } from '../../../lib/planData'
-
-const prisma = new PrismaClient()
 
 export async function POST(req: Request) {
   try {
@@ -44,19 +42,19 @@ export async function POST(req: Request) {
     const pct = Math.round((totalKm / totalTarget) * 100)
     
     // Recent runs text
-    const recentRuns = user.runs.slice(0, 10).map(r => {
+    const recentRuns = user.runs.slice(0, 10).map((r: any) => {
       const paceMin = Math.floor(r.paceSecPerKm / 60)
       const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
       return `- ${new Date(r.date).toLocaleDateString()}: ${r.distanceKm}km at ${paceMin}:${paceSec}/km`
     }).join('\n')
 
     // Leaderboard logic
-    const leaderboard = allUsers.map(u => ({
+    const leaderboard = allUsers.map((u: any) => ({
       name: u.name,
       dist: u.runs.reduce((s: number, r: any) => s + r.distanceKm, 0)
-    })).sort((a, b) => b.dist - a.dist)
+    })).sort((a: any, b: any) => b.dist - a.dist)
 
-    const userRank = leaderboard.findIndex(l => l.name === user.name) + 1
+    const userRank = leaderboard.findIndex((l: any) => l.name === user.name) + 1
     const leader = leaderboard[0]
     const diffToLeader = leader && leader.name !== user.name ? leader.dist - totalKm : 0
 
@@ -90,13 +88,13 @@ ${recentRuns || "No runs logged yet."}
 5. Do NOT invent data. If you don't know, say so.
 `
 
-    const result = streamText({
+    const result = await streamText({
       model: openai('gpt-4o-mini'),
       system: systemPrompt,
       messages,
     })
 
-    return result.toDataStreamResponse()
+    return result.toAIStreamResponse()
 
   } catch (error) {
     console.error('Chat API Error:', error)

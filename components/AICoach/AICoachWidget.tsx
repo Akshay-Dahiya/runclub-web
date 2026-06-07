@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react'
-import { useChat } from '@ai-sdk/react'
+import { useChat } from 'ai/react'
 import ChatMessage from './ChatMessage'
 import SuggestedPrompts from './SuggestedPrompts'
 
