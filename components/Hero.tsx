@@ -57,9 +57,8 @@ export default function Hero() {
           <span className="outline">FASTER</span><br/>
           <span style={{ color: 'var(--text)' }}>TOGETHER</span>
         </h1>
-        <p className="hero-sub">
-          12 runners. 5 on the Half Marathon. 7 on the 10K. 10 weeks. One finish line. 
-          Track every km, hold each other accountable, and cross it on August 23rd.
+        <p className="hero-sub" style={{ fontSize: '1.1rem', maxWidth: '700px' }}>
+          To empower a community of runners through shared grit, relentless support, and the pursuit of every personal milestone—one strong stride at a time.
         </p>
         <div className="hero-ctas">
           <a href="/login" className="btn-primary">Go to Dashboard →</a>

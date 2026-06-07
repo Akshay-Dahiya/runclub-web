@@ -8,7 +8,10 @@ export default function Navbar() {
 
   return (
     <nav>
-      <Link href="/" className="nav-logo">RUNCLUB</Link>
+      <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img src="/logo.png" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
+        JOYVILLE ROAD RUNNERS
+      </Link>
       <button 
         className="mobile-menu-btn" 
         onClick={() => setIsOpen(!isOpen)}

@@ -3,7 +3,7 @@ import React from 'react'
 import { Providers } from './providers'
 
 export const metadata = {
-  title: 'RunClub',
+  title: 'Joyville Road Runners',
   description: 'A social platform for runners to share their runs, compete on leaderboards, and connect with fellow athletes.',
 }
 

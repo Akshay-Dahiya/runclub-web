@@ -28,8 +28,9 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: '440px' }}>
 
         {/* Logo */}
-        <a href="/" style={{ display: 'block', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '48px', textDecoration: 'none' }}>
-          ← RUNCLUB
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '48px', textDecoration: 'none' }}>
+          <img src="/logo.png" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
+          ← JOYVILLE ROAD RUNNERS
         </a>
 
         {/* Heading */}
