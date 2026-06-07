@@ -82,8 +82,8 @@ export const PARTICIPANTS: Participant[] = [
   { id: 8,  name: 'Aditi Dahiya',    initials: 'ADi', email: 'aditidahiya2004@gmail.com',     cat: '10K' },
   { id: 9,  name: 'Geeta Dahiya',    initials: 'GD',  email: 'geetabura80@gmail.com',          cat: '10K' },
   { id: 10, name: 'Rishabh Mishra',  initials: 'RM',  email: 'rishab.mishra@gmail.com',       cat: 'HM'  },
-  { id: 11, name: 'Rajat Tiwari',    initials: 'RT',  email: '',                              cat: '10K' },
-  { id: 12, name: 'Rohit Anand',     initials: 'RA',  email: '',                              cat: '10K' },
+  { id: 11, name: 'Rajat Tiwari',    initials: 'RT',  email: 'rajat@runclub.local',           cat: '10K' },
+  { id: 12, name: 'Rohit Anand',     initials: 'RA',  email: 'rohit@runclub.local',           cat: '10K' },
   { id: 13, name: 'Aryan Chaudhary', initials: 'AC',  email: 'aryan@runclub.local',           cat: 'HM'  },
 ]
 
