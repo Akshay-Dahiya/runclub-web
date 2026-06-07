@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
+import PublicLogRunForm from './PublicLogRunForm'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM } from '../lib/planData'
 
 export default function RunClubApp({ users, serverSession }: { users: any[], serverSession?: any }) {
@@ -196,10 +197,14 @@ export default function RunClubApp({ users, serverSession }: { users: any[], ser
 
       <hr className="divider"/>
 
-      <div className="section" style={{ textAlign: 'center', padding: '80px 20px' }}>
+      <div className="section" style={{ textAlign: 'center', padding: '80px 20px', paddingBottom: '40px' }}>
         <h2 className="section-title">Ready to Log Your Run?</h2>
         <p className="section-sub" style={{ marginBottom: '24px' }}>Access your personalized dashboard to log your runs and track your specific progress against your training plan.</p>
-        <a href="/login" className="btn-primary" style={{ display: 'inline-block' }}>Go to My Dashboard →</a>
+        <a href="/login" className="btn-primary" style={{ display: 'inline-block', marginBottom: '40px' }}>Go to My Dashboard →</a>
+      </div>
+
+      <div style={{ padding: '0 20px 80px 20px' }}>
+        <PublicLogRunForm runners={PARTICIPANTS.filter(p => p.email).map(p => ({ name: p.name, email: p.email }))} />
       </div>
 
       <Footer />
