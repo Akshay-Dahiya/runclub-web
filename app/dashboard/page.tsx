@@ -31,7 +31,7 @@ export default async function DashboardPage() {
       }
     })
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Prisma connection timeout')), 2000)
+      setTimeout(() => reject(new Error('Prisma connection timeout')), 8000)
     )
     dbUser = await Promise.race([queryPromise, timeoutPromise])
   } catch (error) {

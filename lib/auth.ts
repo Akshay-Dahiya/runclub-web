@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { PARTICIPANTS } from './planData'
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -20,7 +21,7 @@ export const authOptions: AuthOptions = {
           })
           
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Prisma connection timeout')), 2000)
+            setTimeout(() => reject(new Error('Prisma connection timeout')), 8000)
           )
 
           const user: any = await Promise.race([queryPromise, timeoutPromise])
@@ -37,7 +38,8 @@ export const authOptions: AuthOptions = {
           console.error("DB Login failed, using emergency fallback", error);
           // Emergency Fallback: If DB times out, allow login with runclub2026
           if (credentials.password === 'runclub2026') {
-            return { id: '999', email: credentials.email, name: 'Runner' }
+            const p = PARTICIPANTS.find(p => p.email === credentials?.email)
+            return { id: '999', email: credentials.email, name: p?.name || 'Runner' }
           }
           throw new Error('Invalid credentials')
         }
