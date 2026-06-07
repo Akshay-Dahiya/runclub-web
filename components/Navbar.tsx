@@ -9,7 +9,7 @@ export default function Navbar() {
   return (
     <nav>
       <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <img src="/logo.png" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
+        <img src="/logo.png?v=2" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
         JOYVILLE ROAD RUNNERS
       </Link>
       <button 

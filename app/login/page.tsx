@@ -29,7 +29,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '48px', textDecoration: 'none' }}>
-          <img src="/logo.png" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
+          <img src="/logo.png?v=2" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
           ← JOYVILLE ROAD RUNNERS
         </a>
 
