@@ -4,9 +4,11 @@ import React, { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 
-export default function Navbar() {
+export default function Navbar({ serverSession }: { serverSession?: any }) {
   const [isOpen, setIsOpen] = useState(false)
-  const { data: session } = useSession()
+  const { data: clientSession } = useSession()
+  
+  const session = serverSession || clientSession
 
   return (
     <nav>

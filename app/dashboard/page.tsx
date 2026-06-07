@@ -58,7 +58,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar serverSession={session} />
       <div className="section" style={{ minHeight: '80vh', paddingTop: '100px' }}>
         <DashboardClient 
           dbUser={dbUser}

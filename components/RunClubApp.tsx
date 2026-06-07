@@ -6,7 +6,7 @@ import Hero from './Hero'
 import Footer from './Footer'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM } from '../lib/planData'
 
-export default function RunClubApp({ users }: { users: any[] }) {
+export default function RunClubApp({ users, serverSession }: { users: any[], serverSession?: any }) {
   const [activeFilter, setActiveFilter] = useState('all')
 
   // Map DB Users back to the logic in PARTICIPANTS
@@ -30,7 +30,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
   return (
     <>
-      <Navbar />
+      <Navbar serverSession={serverSession} />
       <Hero />
 
       {/* MEMBERS SECTION */}
