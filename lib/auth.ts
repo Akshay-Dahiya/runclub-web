@@ -2,6 +2,7 @@ import NextAuth, { type AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from './prisma'
+import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { PARTICIPANTS } from './planData'
 
@@ -10,14 +11,28 @@ export const authOptions: AuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        firstName: { label: "First Name", type: "text" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) return null
+        if (!credentials?.firstName || !credentials?.password) {
+          throw new Error('Invalid credentials')
+        }
+
+        const nameQuery = credentials.firstName.trim().toLowerCase()
+        const participant = PARTICIPANTS.find(p => p.name.toLowerCase().includes(nameQuery))
+        
+        if (!participant) {
+          throw new Error('Name not found in club roster')
+        }
+        
+        const userEmail = participant.email || `placeholder_${participant.id}@runclub.local`
+
         try {
-          const queryPromise = prisma.user.findUnique({
-            where: { email: credentials.email }
+          const client = new PrismaClient()
+          
+          const queryPromise = client.user.findUnique({
+            where: { email: userEmail }
           })
           
           const timeoutPromise = new Promise((_, reject) => 
@@ -26,20 +41,16 @@ export const authOptions: AuthOptions = {
 
           const user: any = await Promise.race([queryPromise, timeoutPromise])
           
-          if (!user || !user.passwordHash) {
-            throw new Error('No user found with this email')
+          if (!user || user.password !== credentials.password) {
+            throw new Error('Invalid credentials')
           }
-
-          const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
-          if (!isValid) throw new Error('Invalid password')
-
-          return { id: user.id.toString(), email: user.email, name: user.name }
+          
+          return { id: user.id, email: user.email, name: user.name }
         } catch (error) {
           console.error("DB Login failed, using emergency fallback", error);
           // Emergency Fallback: If DB times out, allow login with runclub2026
           if (credentials.password === 'runclub2026') {
-            const p = PARTICIPANTS.find(p => p.email === credentials?.email)
-            return { id: '999', email: credentials.email, name: p?.name || 'Runner' }
+            return { id: String(participant.id), email: userEmail, name: participant.name }
           }
           throw new Error('Invalid credentials')
         }

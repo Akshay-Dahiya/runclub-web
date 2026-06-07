@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,12 +18,12 @@ export default function LoginForm() {
     
     const res = await signIn('credentials', {
       redirect: false,
-      email,
+      firstName,
       password
     })
 
     if (res?.error) {
-      setError('Invalid credentials. Did you use runclub2026?')
+      setError(res.error === 'CredentialsSignin' ? 'Invalid credentials. Did you use runclub2026?' : res.error)
       setLoading(false)
     } else {
       router.push('/dashboard')
@@ -38,13 +38,13 @@ export default function LoginForm() {
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Email Address</label>
+          <label className="form-label">First Name</label>
           <input 
             className="form-input" 
-            type="email" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="runner@runclub.local" 
+            type="text" 
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="e.g. Akshay" 
             required 
           />
         </div>
