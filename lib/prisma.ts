@@ -21,10 +21,21 @@ const getPrismaClient = () => {
     return client
   } catch (error) {
     console.warn('[Prisma] Failed to initialize client - using mock for build time')
-    // Return a mock that won't throw
-    return new Proxy({} as any, {
-      get: () => async () => [],
-    })
+    console.warn('[Prisma] Failed to initialize client - missing DATABASE_URL or invalid config.')
+    
+    // Return a mock that throws a helpful error at runtime
+    const handler = {
+      get: function(target: any, prop: string) {
+        if (prop === 'then') return undefined;
+        return new Proxy(async () => {
+          throw new Error("DATABASE_URL is missing! Please configure a PostgreSQL database on Vercel and add the DATABASE_URL environment variable.");
+        }, handler);
+      },
+      apply: async function() {
+        throw new Error("DATABASE_URL is missing! Please configure a PostgreSQL database on Vercel and add the DATABASE_URL environment variable.");
+      }
+    };
+    return new Proxy({}, handler);
   }
 }
 
