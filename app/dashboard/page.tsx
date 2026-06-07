@@ -18,14 +18,19 @@ export default async function DashboardPage() {
 
   const userEmail = session.user.email
   
-  const dbUser = await prisma.user.findUnique({
-    where: { email: userEmail },
-    include: {
-      runs: {
-        orderBy: { date: 'desc' }
+  let dbUser = null
+  try {
+    dbUser = await prisma.user.findUnique({
+      where: { email: userEmail },
+      include: {
+        runs: {
+          orderBy: { date: 'desc' }
+        }
       }
-    }
-  })
+    })
+  } catch (error) {
+    console.error('Prisma connection failed on dashboard:', error)
+  }
 
   if (!dbUser) {
     redirect('/login')
