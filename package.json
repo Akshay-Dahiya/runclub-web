@@ -39,5 +39,10 @@
     "tailwindcss": "3.4.7",
     "ts-node": "10.9.1",
     "typescript": "5.4.5"
+  },
+  "overrides": {
+    "next-auth": {
+      "next": "$next"
+    }
   }
 }
