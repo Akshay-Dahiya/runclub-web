@@ -235,18 +235,51 @@
   /* Tooltip */
   [data-tip] { position:relative; }
   [data-tip]:hover::after { content:attr(data-tip); position:absolute; bottom:110%; left:50%; transform:translateX(-50%); background:#222; border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.6rem; padding:4px 8px; white-space:nowrap; z-index:50; pointer-events:none; }
+
+  /* MOBILE OPTIMIZATIONS */
+  .mobile-menu-btn { display:none; background:none; border:none; color:var(--text); font-size:1.5rem; cursor:pointer; }
+  .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  
+  @media (max-width: 768px) {
+    nav { padding: 12px 20px; }
+    .mobile-menu-btn { display: block; }
+    .nav-links { position: fixed; top: 58px; left: 0; right: 0; background: var(--card); flex-direction: column; padding: 20px; gap: 20px; border-bottom: 1px solid var(--border); transform: translateY(-150%); transition: transform 0.3s ease; z-index: 99; opacity: 0; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .nav-links.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    
+    .hero { padding: 0 20px 40px; }
+    .hero-title { font-size: clamp(3.5rem, 16vw, 5rem); }
+    .countdown-strip { padding: 16px 20px; justify-content: flex-start; }
+    .section { padding: 60px 20px; }
+    .divider { margin: 0 20px; }
+    footer { padding: 30px 20px; flex-direction: column; text-align: center; }
+    
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    
+    .plan-wrap { gap: 20px; }
+    .calendar-wrap { gap: 20px; }
+    .cal-container { padding: 16px; }
+    
+    .modal { padding: 24px 20px; margin: 10px; width: auto; }
+    .modal-kpis { grid-template-columns: repeat(2, 1fr); }
+    .modal-week-grid { overflow-x: auto; display: flex; gap: 5px; padding-bottom: 8px; }
+    .mwg-cell { min-width: 48px; }
+    
+    .log-form { padding: 20px; }
+    .form-group { min-width: 100%; max-width: 100% !important; }
+  }
 </style>
 </head>
 <body>
 
 <nav>
   <a class="nav-logo" href="#">RUNCLUB</a>
+  <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
   <ul class="nav-links">
-    <li><a href="#members">Members</a></li>
-    <li><a href="#plans">Training Plans</a></li>
-    <li><a href="#calendar">Calendar</a></li>
-    <li><a href="#leaderboard">Leaderboard</a></li>
-    <li><a href="#log">Log Run</a></li>
+    <li><a href="#members" onclick="document.querySelector('.nav-links').classList.remove('open')">Members</a></li>
+    <li><a href="#plans" onclick="document.querySelector('.nav-links').classList.remove('open')">Training Plans</a></li>
+    <li><a href="#calendar" onclick="document.querySelector('.nav-links').classList.remove('open')">Calendar</a></li>
+    <li><a href="#leaderboard" onclick="document.querySelector('.nav-links').classList.remove('open')">Leaderboard</a></li>
+    <li><a href="#log" onclick="document.querySelector('.nav-links').classList.remove('open')">Log Run</a></li>
   </ul>
 </nav>
 
@@ -356,14 +389,16 @@
     <h2 class="section-title">Leaderboard</h2>
     <p class="section-sub">Ranked by KM logged vs plan target. Who's putting in the work?</p>
   </div>
-  <table class="lb-table reveal">
-    <thead>
-      <tr>
-        <th>#</th><th>Runner</th><th>Category</th><th>Runs</th><th>KM Done</th><th>Target KM</th><th>Completion</th><th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="lb-body"></tbody>
-  </table>
+  <div class="table-responsive reveal">
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Runner</th><th>Category</th><th>Runs</th><th>KM Done</th><th>Target KM</th><th>Completion</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <hr class="divider"/>
