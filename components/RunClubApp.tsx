@@ -1,13 +1,14 @@
 "use client"
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
 import PublicLogRunForm from './PublicLogRunForm'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM } from '../lib/planData'
 
-export default function RunClubApp({ users, serverSession }: { users: any[], serverSession?: any }) {
+export default function RunClubApp({ users }: { users: any[] }) {
   const [activeFilter, setActiveFilter] = useState('all')
 
   // Map DB Users back to the logic in PARTICIPANTS
@@ -31,7 +32,7 @@ export default function RunClubApp({ users, serverSession }: { users: any[], ser
 
   return (
     <>
-      <Navbar serverSession={serverSession} />
+      <Navbar />
       <Hero />
 
       {/* MEMBERS SECTION */}
@@ -173,7 +174,16 @@ export default function RunClubApp({ users, serverSession }: { users: any[], ser
                 return (
                   <tr key={u.id}>
                     <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
-                    <td><span className="lb-name">{u.name}</span></td>
+                    <td>
+                      <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
+                            {u.initials}
+                          </div>
+                          <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>{u.name}</span>
+                        </div>
+                      </Link>
+                    </td>
                     <td><span className={`p-category ${u.cat === 'HM' ? 'cat-hm' : 'cat-10k'}`} style={{ display: 'inline-block' }}>{u.cat === 'HM' ? '21.1K' : '10.5K'}</span></td>
                     <td><span className="lb-mono">{u.runs.length} runs</span></td>
                     <td><span className="lb-km">{u.actualKm.toFixed(1)} km</span></td>
@@ -195,12 +205,9 @@ export default function RunClubApp({ users, serverSession }: { users: any[], ser
         </div>
       </div>
 
-      <hr className="divider"/>
-
-      <div className="section" style={{ textAlign: 'center', padding: '80px 20px', paddingBottom: '40px' }}>
-        <h2 className="section-title">Ready to Log Your Run?</h2>
-        <p className="section-sub" style={{ marginBottom: '24px' }}>Access your personalized dashboard to log your runs and track your specific progress against your training plan.</p>
-        <a href="/login" className="btn-primary" style={{ display: 'inline-block', marginBottom: '40px' }}>Go to My Dashboard →</a>
+      <div className="section" style={{ textAlign: 'center', padding: '80px 20px', paddingBottom: '20px' }}>
+        <span className="section-tag">// 05 · Quick Log</span>
+        <h2 className="section-title">Log Your Progress</h2>
       </div>
 
       <div style={{ padding: '0 20px 80px 20px' }}>

@@ -1,14 +1,11 @@
 import React from 'react'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../lib/auth'
 import { prisma } from '../lib/prisma'
 import RunClubApp from '../components/RunClubApp'
 import Navbar from '../components/Navbar'
 
 export const dynamic = 'force-dynamic'
 
-export default async function Page() {
-  const session = await getServerSession(authOptions)
+export default async function Home() {
   let users = []
   try {
     users = await prisma.user.findMany({
@@ -23,5 +20,5 @@ export default async function Page() {
     // Fallback to empty users list if DB is not connected
   }
 
-  return <RunClubApp users={users} serverSession={session} />
+  return <RunClubApp users={users} />
 }

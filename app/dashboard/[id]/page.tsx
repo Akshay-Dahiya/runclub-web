@@ -1,24 +1,23 @@
 import React from 'react'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../../lib/auth'
+import { prisma } from '../../../lib/prisma'
+import { PARTICIPANTS, plannedKmSoFar, getStatus, grandTotal } from '../../../lib/planData'
+import DashboardClient from '../../../components/Dashboard/DashboardClient'
 import { redirect } from 'next/navigation'
-import { prisma } from '../../lib/prisma'
-import Navbar from '../../components/Navbar'
-import Footer from '../../components/Footer'
-import PersonalLogRunForm from '../../components/PersonalLogRunForm'
-import { PARTICIPANTS, plannedKmSoFar, getStatus, grandTotal } from '../../lib/planData'
-
-import DashboardClient from '../../components/Dashboard/DashboardClient'
+import Navbar from '../../../components/Navbar'
+import Footer from '../../../components/Footer'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.email) {
-    redirect('/login')
+export default async function DashboardPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params
+  const participantId = parseInt(resolvedParams.id)
+  const participantDef = PARTICIPANTS.find(p => p.id === participantId)
+
+  if (!participantDef) {
+    redirect('/')
   }
 
-  const userEmail = session.user.email
+  const userEmail = participantDef.email || `placeholder_${participantId}@runclub.local`
   
   let dbUser = null
   try {
@@ -41,13 +40,9 @@ export default async function DashboardPage() {
   if (!dbUser) {
     // Emergency Fallback: If DB times out, create a fake user so they don't get kicked out!
     dbUser = {
-      name: session.user.name || 'Runner',
+      name: participantDef.name,
       runs: []
     }
-  }
-
-  const participantDef = PARTICIPANTS.find(p => p.email === userEmail) || {
-    id: 999, name: dbUser.name || 'Runner', initials: (dbUser.name || 'R').substring(0,2).toUpperCase(), email: userEmail, cat: (dbUser.runningGoal?.includes('Half') ? 'HM' : '10K') as 'HM' | '10K'
   }
 
   const actualKm = dbUser.runs.reduce((sum: number, r: any) => sum + (r.distanceKm || 0), 0)
@@ -58,7 +53,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Navbar serverSession={session} />
+      <Navbar />
       <div className="section" style={{ minHeight: '80vh', paddingTop: '100px' }}>
         <DashboardClient 
           dbUser={dbUser}
