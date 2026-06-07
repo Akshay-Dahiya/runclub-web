@@ -27,7 +27,7 @@ export const authOptions: AuthOptions = {
     })
   ],
   session: { strategy: 'jwt' as const },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "super-secret-fallback-runclub-2026",
   callbacks: {
     async jwt({ token, user }) {
       if (user && (user as any).id) {
