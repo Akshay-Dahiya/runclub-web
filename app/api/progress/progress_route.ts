@@ -41,14 +41,19 @@ export async function GET() {
     },
   })
 
-  const runsByEmail = new Map(allUsers.map((u) => [u.email, u.runs]))
+  const runsByEmail = new Map(
+  allUsers.map((u: any) => [u.email, u.runs])
+)
 
   const result = PARTICIPANTS.map((p) => {
     const email = p.email || `placeholder_${p.id}@runclub.local`
     const runs = runsByEmail.get(email) ?? []
 
     const plan = getPlan(p)
-    const totalKm = runs.reduce((s, r) => s + r.distanceKm, 0)
+    const totalKm = runs.reduce(
+  (s: number, r: any) => s + r.distanceKm,
+  0
+)
     const plannedKm = plannedKmSoFar(p)
     const pct = plannedKm > 0 ? Math.min(100, Math.round((totalKm / plannedKm) * 100)) : 0
     const status = getStatus(totalKm, p)
