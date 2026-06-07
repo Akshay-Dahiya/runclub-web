@@ -1,6 +1,44 @@
-import React from 'react'
+"use client"
+
+import React, { useState, useEffect } from 'react'
 
 export default function Hero() {
+  const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
+
+  useEffect(() => {
+    // August 23, 2026 at 05:00:00 (race morning)
+    const targetDate = new Date('2026-08-23T05:00:00').getTime()
+
+    const updateCountdown = () => {
+      const now = new Date().getTime()
+      const diff = targetDate - now
+
+      if (diff <= 0) {
+        setTimeLeft({ d: '00', h: '00', m: '00', s: '00' })
+        return
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setTimeLeft({
+        d: String(days).padStart(2, '0'),
+        h: String(hours).padStart(2, '0'),
+        m: String(minutes).padStart(2, '0'),
+        s: String(seconds).padStart(2, '0')
+      })
+    }
+
+    // Run once immediately
+    updateCountdown()
+    
+    // Update every second
+    const timerId = setInterval(updateCountdown, 1000)
+    return () => clearInterval(timerId)
+  }, [])
+
   return (
     <>
       <div className="hero">
@@ -24,7 +62,7 @@ export default function Hero() {
           Track every km, hold each other accountable, and cross it on August 23rd.
         </p>
         <div className="hero-ctas">
-          <a href="#log" className="btn-primary">Log Today's Run →</a>
+          <a href="/login" className="btn-primary">Go to Dashboard →</a>
           <a href="#members" className="btn-ghost">View The Crew</a>
         </div>
       </div>
@@ -33,13 +71,13 @@ export default function Hero() {
       <div className="countdown-strip">
         <span className="countdown-label">⏱ Race Day Countdown</span>
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <div className="cd-unit"><span className="cd-num" id="cd-d">00</span><span className="cd-lbl">Days</span></div>
+          <div className="cd-unit"><span className="cd-num" id="cd-d">{timeLeft.d}</span><span className="cd-lbl">Days</span></div>
           <div className="cd-sep">:</div>
-          <div className="cd-unit"><span className="cd-num" id="cd-h">00</span><span className="cd-lbl">Hours</span></div>
+          <div className="cd-unit"><span className="cd-num" id="cd-h">{timeLeft.h}</span><span className="cd-lbl">Hours</span></div>
           <div className="cd-sep">:</div>
-          <div className="cd-unit"><span className="cd-num" id="cd-m">00</span><span className="cd-lbl">Mins</span></div>
+          <div className="cd-unit"><span className="cd-num" id="cd-m">{timeLeft.m}</span><span className="cd-lbl">Mins</span></div>
           <div className="cd-sep">:</div>
-          <div className="cd-unit"><span className="cd-num" id="cd-s">00</span><span className="cd-lbl">Secs</span></div>
+          <div className="cd-unit"><span className="cd-num" id="cd-s">{timeLeft.s}</span><span className="cd-lbl">Secs</span></div>
         </div>
       </div>
     </>
