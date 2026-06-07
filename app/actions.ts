@@ -23,7 +23,11 @@ export async function logRun(formData: FormData) {
   const durationSec = Math.round(distanceKm * paceSecPerKm)
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } })
+    const queryPromise = prisma.user.findUnique({ where: { email } })
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Prisma connection timeout')), 2000)
+    )
+    const user: any = await Promise.race([queryPromise, timeoutPromise])
     if (!user) {
       throw new Error('User not found')
     }

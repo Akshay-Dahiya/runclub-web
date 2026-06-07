@@ -15,9 +15,15 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) return null
         try {
-          const user = await prisma.user.findUnique({
+          const queryPromise = prisma.user.findUnique({
             where: { email: credentials.email }
           })
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Prisma connection timeout')), 2000)
+          )
+
+          const user: any = await Promise.race([queryPromise, timeoutPromise])
           
           if (!user || !user.passwordHash) {
             throw new Error('No user found with this email')
