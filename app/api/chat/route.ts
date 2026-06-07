@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { createOpenAI } from '@ai-sdk/openai'
 import { streamText } from 'ai'
-import { PARTICIPANTS } from '../../lib/planData'
+import { PARTICIPANTS } from '../../../lib/planData'
 
 const prisma = new PrismaClient()
 
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     const totalTarget = participantDef.cat === 'HM' ? 250 : 150 // example targets
 
     // Calculate context data
-    const totalKm = user.runs.reduce((sum, run) => sum + run.distanceKm, 0)
+    const totalKm = user.runs.reduce((sum: number, run: any) => sum + run.distanceKm, 0)
     const pct = Math.round((totalKm / totalTarget) * 100)
     
     // Recent runs text
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     // Leaderboard logic
     const leaderboard = allUsers.map(u => ({
       name: u.name,
-      dist: u.runs.reduce((s, r) => s + r.distanceKm, 0)
+      dist: u.runs.reduce((s: number, r: any) => s + r.distanceKm, 0)
     })).sort((a, b) => b.dist - a.dist)
 
     const userRank = leaderboard.findIndex(l => l.name === user.name) + 1
