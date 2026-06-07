@@ -2,11 +2,50 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
 import PublicLogRunForm from './PublicLogRunForm'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM } from '../lib/planData'
+
+function DashboardPicker() {
+  const router = useRouter()
+  const [selected, setSelected] = useState('')
+  return (
+    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <select
+        value={selected}
+        onChange={e => setSelected(e.target.value)}
+        style={{
+          flex: 1, minWidth: '200px', maxWidth: '320px',
+          background: 'var(--bg)', color: 'var(--text)',
+          border: '1px solid var(--border)', borderRadius: '6px',
+          padding: '14px 16px', fontSize: '1rem', cursor: 'pointer', outline: 'none'
+        }}
+      >
+        <option value="">Select your name...</option>
+        {PARTICIPANTS.map(p => (
+          <option key={p.id} value={p.id}>{p.name} — {p.cat === 'HM' ? 'Half Marathon' : '10K'}</option>
+        ))}
+      </select>
+      <button
+        onClick={() => { if (selected) router.push(`/dashboard/${selected}`) }}
+        disabled={!selected}
+        style={{
+          background: selected ? 'var(--orange)' : 'var(--border)',
+          color: selected ? '#000' : 'var(--text)',
+          border: 'none', borderRadius: '6px',
+          padding: '14px 28px', fontSize: '1rem', fontWeight: 700,
+          cursor: selected ? 'pointer' : 'not-allowed',
+          transition: 'all 0.2s', whiteSpace: 'nowrap'
+        }}
+      >
+        Open Dashboard →
+      </button>
+    </div>
+  )
+}
 
 export default function RunClubApp({ users }: { users: any[] }) {
   const [activeFilter, setActiveFilter] = useState('all')
@@ -205,8 +244,20 @@ export default function RunClubApp({ users }: { users: any[] }) {
         </div>
       </div>
 
+      {/* DASHBOARD PICKER */}
+      <div id="dashboard" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '80px 20px' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+          <span className="section-tag">// 05 · Your Dashboard</span>
+          <h2 className="section-title" style={{ marginBottom: '8px' }}>Open My Dashboard</h2>
+          <p className="section-sub" style={{ marginBottom: '32px' }}>
+            Select your name to view your personal stats, log runs, and see your training plan progress.
+          </p>
+          <DashboardPicker />
+        </div>
+      </div>
+
       <div className="section" style={{ textAlign: 'center', padding: '80px 20px', paddingBottom: '20px' }}>
-        <span className="section-tag">// 05 · Quick Log</span>
+        <span className="section-tag">// 06 · Quick Log</span>
         <h2 className="section-title">Log Your Progress</h2>
       </div>
 

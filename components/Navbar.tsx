@@ -19,6 +19,7 @@ export default function Navbar() {
         <li><Link href="/#members" onClick={() => setIsOpen(false)}>Members</Link></li>
         <li><Link href="/#plans" onClick={() => setIsOpen(false)}>Training Plans</Link></li>
         <li><Link href="/#leaderboard" onClick={() => setIsOpen(false)}>Leaderboard</Link></li>
+        <li><Link href="/#dashboard" onClick={() => setIsOpen(false)} style={{ color: 'var(--orange)', fontWeight: 'bold' }}>My Dashboard</Link></li>
       </ul>
     </nav>
   )
