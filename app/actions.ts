@@ -1,0 +1,42 @@
+"use server"
+
+import { prisma } from '../lib/prisma'
+import { revalidatePath } from 'next/cache'
+
+export async function logRun(formData: FormData) {
+  const email = formData.get('email') as string
+  const distanceKm = parseFloat(formData.get('distance') as string)
+  const dateStr = formData.get('date') as string
+  const pace = formData.get('pace') as string // "5:30" format
+
+  if (!email || !distanceKm || !dateStr) {
+    throw new Error('Missing required fields')
+  }
+
+  // Parse pace to seconds per km
+  let paceSecPerKm = 330 // default 5:30
+  if (pace && pace.includes(':')) {
+    const [min, sec] = pace.split(':')
+    paceSecPerKm = parseInt(min) * 60 + parseInt(sec)
+  }
+
+  const durationSec = Math.round(distanceKm * paceSecPerKm)
+
+  const user = await prisma.user.findUnique({ where: { email } })
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  await prisma.run.create({
+    data: {
+      userId: user.id,
+      date: new Date(dateStr),
+      distanceKm,
+      durationSec,
+      paceSecPerKm,
+    }
+  })
+
+  revalidatePath('/')
+  return { success: true }
+}
