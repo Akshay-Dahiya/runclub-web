@@ -1,12 +1,12 @@
 import React from 'react'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '../../lib/auth'
 import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import PersonalLogRunForm from '@/components/PersonalLogRunForm'
-import { PARTICIPANTS, plannedKmSoFar, getStatus, grandTotal } from '@/lib/planData'
+import { prisma } from '../../lib/prisma'
+import Navbar from '../../components/Navbar'
+import Footer from '../../components/Footer'
+import PersonalLogRunForm from '../../components/PersonalLogRunForm'
+import { PARTICIPANTS, plannedKmSoFar, getStatus, grandTotal } from '../../lib/planData'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +40,7 @@ export default async function DashboardPage() {
     id: 999, name: dbUser.name || 'Runner', initials: (dbUser.name || 'R').substring(0,2).toUpperCase(), email: userEmail, cat: (dbUser.runningGoal?.includes('Half') ? 'HM' : '10K') as 'HM' | '10K'
   }
 
-  const actualKm = dbUser.runs.reduce((sum, r) => sum + r.distanceKm, 0)
+  const actualKm = dbUser.runs.reduce((sum: number, r: any) => sum + r.distanceKm, 0)
   const plannedKm = plannedKmSoFar(participantDef as any)
   const status = getStatus(actualKm, participantDef as any)
   const pct = plannedKm > 0 ? Math.min(100, Math.round((actualKm / plannedKm) * 100)) : 0
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
                 {dbUser.runs.length === 0 ? (
                   <tr><td colSpan={4} style={{ textAlign: 'center', opacity: 0.5 }}>No runs logged yet.</td></tr>
                 ) : (
-                  dbUser.runs.map(r => {
+                  dbUser.runs.map((r: any) => {
                     const d = new Date(r.date)
                     const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
                     const paceMin = Math.floor(r.paceSecPerKm / 60)
