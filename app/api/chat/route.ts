@@ -18,14 +18,25 @@ export async function POST(req: Request) {
 
     const openai = createOpenAI({ apiKey })
 
-    // Find participant definition by integer id
-    const participantDef = PARTICIPANTS.find(p => p.id === parseInt(userId)) || PARTICIPANTS.find(p => String(p.id) === String(userId))
-    if (!participantDef) {
-      return new Response('Participant not found', { status: 404 })
+    let participantDef = PARTICIPANTS.find(p => p.id === parseInt(userId)) || PARTICIPANTS.find(p => String(p.id) === String(userId))
+    let userEmail = ""
+
+    if (participantDef) {
+      userEmail = participantDef.email || `placeholder_${participantDef.id}@runclub.local`
+    } else {
+      // Look up by database CUID first
+      const dbUserByCuid = await prisma.user.findUnique({
+        where: { id: userId }
+      })
+      if (dbUserByCuid) {
+        userEmail = dbUserByCuid.email
+        participantDef = PARTICIPANTS.find(p => p.email === userEmail || `placeholder_${p.id}@runclub.local` === userEmail)
+      }
     }
 
-    // Look up user by email (same as dashboard page)
-    const userEmail = participantDef.email || `placeholder_${participantDef.id}@runclub.local`
+    if (!participantDef || !userEmail) {
+      return new Response('Participant not found', { status: 404 })
+    }
 
     // Fetch user data
     const user = await prisma.user.findUnique({
