@@ -142,8 +142,8 @@ export function getStatus(actualKm: number, p: Participant): TrafficLight {
   const planned = plannedKmSoFar(p)
   if (planned === 0) return 'green'
   const ratio = actualKm / planned
-  if (ratio >= 0.80) return 'green'
-  if (ratio >= 0.50) return 'yellow'
+  if (ratio >= 0.60) return 'green'
+  if (ratio >= 0.30) return 'yellow'
   return 'red'
 }
 

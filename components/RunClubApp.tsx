@@ -55,9 +55,19 @@ export default function RunClubApp({ users }: { users: any[] }) {
     const dbUser = users.find(u => u.email === p.email)
     const runs = dbUser?.runs || []
     const actualKm = runs.reduce((sum: number, r: any) => sum + r.distanceKm, 0)
+    const weekRuns = runs.filter((r: any) => {
+      const d = new Date(r.date)
+      const now = new Date()
+      const start = new Date(now); start.setDate(now.getDate() - now.getDay())
+      return d >= start
+    })
+    const weekKm = weekRuns.reduce((sum: number, r: any) => sum + r.distanceKm, 0)
     const status = getStatus(actualKm, p)
-    return { ...p, dbUser, runs, actualKm, status }
+    const totalTarget = grandTotal(p)
+    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget }
   }).sort((a, b) => b.actualKm - a.actualKm)
+  
+  const weeklyTopUsers = [...mappedUsers].sort((a, b) => b.weekKm - a.weekKm)
 
   let filteredUsers = mappedUsers
   if (activeFilter === 'HM') filteredUsers = mappedUsers.filter(u => u.cat === 'HM')
@@ -118,7 +128,8 @@ export default function RunClubApp({ users }: { users: any[] }) {
         <div className="participants-grid reveal visible">
           {filteredUsers.map(u => {
             const planned = plannedKmSoFar(u)
-            const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+            const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
+            const pct = Math.min(100, Math.round((u.actualKm / u.totalTarget) * 100))
             
             return (
               <div key={u.id} className={`participant-card status-${u.status}`}>
@@ -129,16 +140,16 @@ export default function RunClubApp({ users }: { users: any[] }) {
                   </span>
                 </div>
                 <div className="p-name">{u.name}</div>
-                <div className="p-meta">{u.runs.length} runs · {u.actualKm.toFixed(1)} km done</div>
+                <div className="p-meta">{u.runs.length} runs · {u.actualKm.toFixed(2)} km done</div>
                 <span className={`p-category ${u.cat === 'HM' ? 'cat-hm' : 'cat-10k'}`}>
                   {u.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run'}
                 </span>
                 
                 <div className="p-totals">
-                  <div className="p-total-item"><div className="p-total-num">{u.actualKm.toFixed(0)}</div><div className="p-total-lbl">KM Done</div></div>
-                  <div className="p-total-item"><div className="p-total-num">{planned.toFixed(0)}</div><div className="p-total-lbl">KM Due</div></div>
-                  <div className="p-total-item"><div className="p-total-num">{pct}%</div><div className="p-total-lbl">On Plan</div></div>
-                  <div className="p-total-item"><div className="p-total-num">{grandTotal(u)}</div><div className="p-total-lbl">Total Km</div></div>
+                  <div className="p-total-item"><div className="p-total-num">{u.actualKm.toFixed(2)}</div><div className="p-total-lbl">KM Done</div></div>
+                  <div className="p-total-item"><div className="p-total-num">{weekTarget}</div><div className="p-total-lbl">Week Target</div></div>
+                  <div className="p-total-item"><div className="p-total-num">{pct}%</div><div className="p-total-lbl">Completion</div></div>
+                  <div className="p-total-item"><div className="p-total-num">{u.totalTarget}</div><div className="p-total-lbl">Total Km</div></div>
                 </div>
               </div>
             )
@@ -228,51 +239,95 @@ export default function RunClubApp({ users }: { users: any[] }) {
       <div className="section" id="leaderboard" style={{ paddingTop: '80px' }}>
         <div className="reveal visible">
           <span className="section-tag">// 04 · Rankings</span>
-          <h2 className="section-title">Leaderboard</h2>
-          <p className="section-sub">Ranked by KM logged vs plan target. Automatically synced with the database.</p>
+          <h2 className="section-title">Leaderboards</h2>
+          <p className="section-sub">Ranked by KM logged. Automatically synced with the database.</p>
         </div>
-        <div className="table-responsive reveal visible">
-          <table className="lb-table">
-            <thead>
-              <tr>
-                <th>#</th><th>Runner</th><th>Category</th><th>Runs</th><th>KM Done</th><th>Target KM</th><th>Completion</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mappedUsers.map((u, i) => {
-                const planned = plannedKmSoFar(u)
-                const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
-                return (
-                  <tr key={u.id}>
-                    <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
-                    <td>
-                      <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
-                            {u.initials}
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }} className="lb-grid">
+          
+          {/* OVERALL LEADERBOARD */}
+          <div className="table-responsive reveal visible">
+            <h3 style={{ fontFamily: 'Bebas Neue', fontSize: '2rem', marginBottom: '16px' }}>Overall</h3>
+            <table className="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Runner</th><th>KM Done</th><th>Completion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mappedUsers.map((u, i) => {
+                  const pct = Math.min(100, Math.round((u.actualKm / u.totalTarget) * 100))
+                  return (
+                    <tr key={u.id}>
+                      <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
+                      <td>
+                        <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
+                              {u.initials}
+                            </div>
+                            <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}>{u.name}</span>
                           </div>
-                          <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>{u.name}</span>
+                        </Link>
+                      </td>
+                      <td><span className="lb-km">{u.actualKm.toFixed(2)} km</span></td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: u.status === 'green' ? 'var(--green)' : u.status === 'yellow' ? 'var(--yellow)' : 'var(--red)', borderRadius: '2px' }}></div>
+                          </div>
+                          <span className="lb-mono">{pct}%</span>
                         </div>
-                      </Link>
-                    </td>
-                    <td><span className={`p-category ${u.cat === 'HM' ? 'cat-hm' : 'cat-10k'}`} style={{ display: 'inline-block' }}>{u.cat === 'HM' ? '21.1K' : '10.5K'}</span></td>
-                    <td><span className="lb-mono">{u.runs.length} runs</span></td>
-                    <td><span className="lb-km">{u.actualKm.toFixed(1)} km</span></td>
-                    <td><span className="lb-mono">{planned.toFixed(0)} km</span></td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: u.status === 'green' ? 'var(--green)' : u.status === 'yellow' ? 'var(--yellow)' : 'var(--red)', borderRadius: '2px' }}></div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* WEEKLY LEADERBOARD */}
+          <div className="table-responsive reveal visible">
+            <h3 style={{ fontFamily: 'Bebas Neue', fontSize: '2rem', marginBottom: '16px' }}>This Week</h3>
+            <table className="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Runner</th><th>KM This Week</th><th>Week Target</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weeklyTopUsers.map((u, i) => {
+                  const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
+                  const pct = weekTarget > 0 ? Math.min(100, Math.round((u.weekKm / weekTarget) * 100)) : 0
+                  return (
+                    <tr key={u.id}>
+                      <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
+                      <td>
+                        <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
+                              {u.initials}
+                            </div>
+                            <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}>{u.name}</span>
+                          </div>
+                        </Link>
+                      </td>
+                      <td><span className="lb-km" style={{ color: 'var(--blue)' }}>{u.weekKm.toFixed(2)} km</span></td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: 'var(--blue)', borderRadius: '2px' }}></div>
+                          </div>
+                          <span className="lb-mono">{pct}%</span>
                         </div>
-                        <span className="lb-mono">{pct}%</span>
-                      </div>
-                    </td>
-                    <td><span className={`p-badge badge-${u.status}`}>{u.status === 'green' ? '✓ On Track' : u.status === 'yellow' ? '~ Close' : '✕ Behind'}</span></td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
         </div>
       </div>
 

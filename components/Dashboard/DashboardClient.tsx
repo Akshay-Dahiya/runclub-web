@@ -2,24 +2,14 @@
 
 import React, { useState } from 'react'
 import AICoachWidget from '../AICoach/AICoachWidget'
-type Provider = 'strava' | 'garmin' | 'apple'
+type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
   strava: {
     name: 'Strava',
     color: '#FC4C02',
-    blurb: 'Pulls activities, segments & social feed. Best for community + segment chasing.',
-  },
-  garmin: {
-    name: 'Garmin Connect',
-    color: '#007CC3',
-    blurb: 'Deep biometrics — HRV, body battery, training load, VO2 max, sleep & recovery.',
-  },
-  apple: {
-    name: 'Apple Watch',
-    color: '#888',
-    blurb: 'HealthKit sync — heart rate, workouts, rings, cardio fitness, walking steadiness.',
-  },
+    blurb: 'Work in progress to link with Strava. Will automatically sync your runs soon.',
+  }
 }
 
 const metrics = [
@@ -103,13 +93,14 @@ export default function DashboardClient({
   totalTarget
 }: any) {
   const [connected, setConnected] = useState<Record<Provider, boolean>>({
-    strava: false, garmin: false, apple: false,
+    strava: false
   })
   const toggle = (p: Provider) => setConnected(c => ({ ...c, [p]: !c[p] }))
 
   const [distance, setDistance] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [pace, setPace] = useState('')
+  const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -118,27 +109,55 @@ export default function DashboardClient({
     e.preventDefault()
     setLoading(true)
     try {
-      // Parse pace to seconds per km (support MM:SS, decimal minutes, and raw minutes)
-      let paceSecPerKm = 360 // default 6:00/km
-      if (pace) {
-        const cleanPace = pace.trim()
-        if (cleanPace.includes(':')) {
-          const [mm, ss] = cleanPace.split(':').map(Number)
-          paceSecPerKm = (mm || 0) * 60 + (ss || 0)
-        } else if (cleanPace.includes('.')) {
-          const decimalPace = parseFloat(cleanPace)
-          if (!isNaN(decimalPace)) {
-            paceSecPerKm = Math.round(decimalPace * 60)
-          }
-        } else {
-          const minutes = parseInt(cleanPace, 10)
-          if (!isNaN(minutes)) {
-            paceSecPerKm = minutes * 60
-          }
-        }
-      }
       const distKm = parseFloat(distance)
-      const durationSec = Math.round(distKm * paceSecPerKm)
+      if (isNaN(distKm) || distKm <= 0) {
+        alert("Distance is mandatory and must be greater than 0.")
+        setLoading(false)
+        return
+      }
+
+      if (!pace && !duration) {
+        alert("Please provide either Pace or Duration.")
+        setLoading(false)
+        return
+      }
+
+      let durationSec = 0
+      let paceSecPerKm = 0
+
+      const parsePaceToSec = (timeStr: string) => {
+        const clean = timeStr.trim()
+        if (clean.includes(':')) {
+          const parts = clean.split(':').map(Number)
+          if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+          if (parts.length === 2) return parts[0] * 60 + parts[1] // MM:SS
+        }
+        if (clean.includes('.')) return Math.round(parseFloat(clean) * 60) // decimal minutes
+        return parseInt(clean, 10) * 60
+      }
+
+      const parseDurationToSec = (timeStr: string) => {
+        const clean = timeStr.trim()
+        if (clean.includes(':')) {
+          const parts = clean.split(':').map(Number)
+          if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2] // HH:MM:SS
+          if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60 // HH:MM
+        }
+        if (clean.includes('.')) return Math.round(parseFloat(clean) * 3600) // decimal hours
+        return parseInt(clean, 10) * 60 // plain number assumed minutes
+      }
+
+      if (pace && !duration) {
+        paceSecPerKm = parsePaceToSec(pace)
+        durationSec = Math.round(distKm * paceSecPerKm)
+      } else if (duration && !pace) {
+        durationSec = parseDurationToSec(duration)
+        paceSecPerKm = Math.round(durationSec / distKm)
+      } else {
+        // Both provided
+        durationSec = parseDurationToSec(duration)
+        paceSecPerKm = parsePaceToSec(pace)
+      }
 
       // Find userId from dbUser
       const userId = dbUser?.id
@@ -151,7 +170,7 @@ export default function DashboardClient({
       })
       if (!res.ok) throw new Error('Failed to log run')
       setSuccess(true)
-      setDistance(''); setPace(''); setNotes('')
+      setDistance(''); setPace(''); setDuration(''); setNotes('')
       setTimeout(() => { window.location.reload() }, 1200)
     } catch (err) {
       alert('Failed to log run. Please try again.')
@@ -186,15 +205,13 @@ export default function DashboardClient({
       {/* HERO */}
       <section style={{ marginBottom: '64px' }}>
         <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--orange)', marginBottom: '12px' }}>
-          ▶ Personal dashboard · {dbUser.name}
+          ▶ Personal dashboard
         </p>
-        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 20px 0' }}>
-          EVERY MILE,<br />
-          <span style={{ color: 'var(--orange)' }}>MEASURED.</span>
+        <h1 style={{ fontSize: 'clamp(3rem, 10vw, 6rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
+          {dbUser.name}
         </h1>
         <p style={{ maxWidth: '500px', fontSize: '0.9rem', opacity: 0.7, lineHeight: 1.6 }}>
           {participantDef.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run'} · Training to race Aug 23, 2026.
-          Connect your watch or log manually. Every km counts.
         </p>
       </section>
 
@@ -217,9 +234,9 @@ export default function DashboardClient({
       <section style={{ marginBottom: '80px' }}>
         <SectionHead label="02 / This Week" title="SNAPSHOT" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1px', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
-          <StatBox label="KM Done (All Time)" value={actualKm.toFixed(1)} unit="km" sub={`of ${totalTarget} km total plan`} />
+          <StatBox label="KM Done (All Time)" value={actualKm.toFixed(2)} unit="km" sub={`of ${totalTarget} km total plan`} />
           <StatBox label="Plan Completion" value={`${pct}`} unit="%" sub={status === 'green' ? '✓ On track' : status === 'yellow' ? '~ Almost there' : '✕ Catch up!'} />
-          <StatBox label="This Week" value={weekKm.toFixed(1)} unit="km" sub={`${weekRuns.length} sessions`} />
+          <StatBox label="This Week" value={weekKm.toFixed(2)} unit="km" sub={`${weekRuns.length} sessions`} />
           <StatBox label="Avg Pace" value={avgPace > 0 ? `${avgPaceMin}:${avgPaceSec}` : '—'} unit="/km" sub={`across ${dbUser.runs.length} runs`} />
         </div>
       </section>
@@ -248,6 +265,14 @@ export default function DashboardClient({
               <input
                 type="date" required
                 value={date} onChange={e => setDate(e.target.value)}
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Duration (HH:MM)</label>
+              <input
+                type="text" placeholder="1:30"
+                value={duration} onChange={e => setDuration(e.target.value)}
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
               />
             </div>
@@ -316,7 +341,7 @@ export default function DashboardClient({
                   return (
                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
                       <td style={{ padding: '12px 16px', opacity: 0.7 }}>{dateStr}</td>
-                      <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(1)} km</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(2)} km</td>
                       <td style={{ padding: '12px 16px', opacity: 0.8 }}>{paceMin}:{paceSec} /km</td>
                       <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durationStr}</td>
                       <td style={{ padding: '12px 16px' }}>
