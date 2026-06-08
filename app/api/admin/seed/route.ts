@@ -14,6 +14,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    if (searchParams.get('reset') === 'true') {
+      await prisma.comment.deleteMany({})
+      await prisma.like.deleteMany({})
+      await prisma.aIReport.deleteMany({})
+      await prisma.activity.deleteMany({})
+      await prisma.run.deleteMany({})
+      return NextResponse.json({ success: true, message: 'Reset all runs to none.' })
+    }
+
     const passwordHash = await bcrypt.hash('runclub2026', 10)
     const now = new Date()
     let totalSeeded = 0
