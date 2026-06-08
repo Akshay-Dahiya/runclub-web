@@ -90,6 +90,16 @@ export default function CoachPage() {
                    <button type="submit" style={{ background: 'var(--orange)', color: '#000', border: 'none', padding: '14px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                      Save Key to Browser
                    </button>
+                   <button
+                     type="button"
+                     onClick={() => {
+                       localStorage.setItem('runclub_openai_key', 'demo')
+                       setApiKey('demo')
+                     }}
+                     style={{ background: 'none', border: '1px solid var(--border)', padding: '12px', borderRadius: '6px', color: 'var(--text)', cursor: 'pointer', fontSize: '14px', marginTop: '4px' }}
+                   >
+                     Use Demo Mode (Free, No Key Required)
+                   </button>
                  </form>
                </div>
             ) : (
