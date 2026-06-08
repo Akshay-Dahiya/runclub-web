@@ -287,7 +287,7 @@ export default function DashboardClient({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Date', 'Distance', 'Pace', 'Duration', ''].map(h => (
+                  {['Date', 'Distance', 'Pace', 'Duration', 'Effort', ''].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
@@ -302,12 +302,28 @@ export default function DashboardClient({
                   const mins = Math.floor((r.durationSec % 3600) / 60)
                   const secs = String(r.durationSec % 60).padStart(2, '0')
                   const durationStr = `${hrs}:${String(mins).padStart(2, '0')}:${secs}`
+                  
+                  const isHard = r.paceSecPerKm < 330 // faster than 5:30/km
+                  const isModerate = r.paceSecPerKm >= 330 && r.paceSecPerKm <= 390 // 5:30 - 6:30/km
+                  const effortTag = isHard ? { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' } 
+                    : isModerate ? { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' } 
+                    : { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+
                   return (
                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
                       <td style={{ padding: '12px 16px', opacity: 0.7 }}>{dateStr}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(1)} km</td>
                       <td style={{ padding: '12px 16px', opacity: 0.8 }}>{paceMin}:{paceSec} /km</td>
                       <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durationStr}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ 
+                          background: effortTag.bg, color: effortTag.color, 
+                          padding: '4px 8px', borderRadius: '4px', 
+                          fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' 
+                        }}>
+                          {effortTag.label}
+                        </span>
+                      </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
                       </td>

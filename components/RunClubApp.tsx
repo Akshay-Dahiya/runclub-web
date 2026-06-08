@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from './Navbar'
@@ -68,6 +68,20 @@ export default function RunClubApp({ users }: { users: any[] }) {
   const totalRuns = mappedUsers.reduce((sum, u) => sum + u.runs.length, 0)
   const totalKm = mappedUsers.reduce((sum, u) => sum + u.actualKm, 0)
   const weeksLeft = Math.max(0, Math.ceil((new Date('2026-08-23').getTime() - new Date().getTime()) / (7 * 86400000)))
+
+  // Scroll to current week in the blueprint tables on mount
+  useEffect(() => {
+    const currentWeekRows = document.querySelectorAll('.current-week')
+    currentWeekRows.forEach(row => {
+      const container = row.closest('.plan-table-container')
+      if (container) {
+        // Scroll the container so the row is roughly in the middle
+        const containerElem = container as HTMLElement
+        const rowElem = row as HTMLElement
+        containerElem.scrollTop = rowElem.offsetTop - (containerElem.clientHeight / 2) + (rowElem.clientHeight / 2)
+      }
+    })
+  }, [])
 
   return (
     <>
@@ -142,48 +156,66 @@ export default function RunClubApp({ users }: { users: any[] }) {
           <p className="section-sub">10 weeks of structured training. Tue · Thu · Sat · Sun. Every run counts.</p>
         </div>
         <div className="plan-wrap reveal visible">
-          <div className="plan-table-container">
-            <div className="plan-table-header">
-              <div className="plan-title">10K Plan</div>
+          <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
+            <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+              <div className="plan-title" style={{ fontSize: '1.4rem' }}>10K Plan</div>
               <span className="p-category cat-10k">10.5K</span>
             </div>
-            <table className="plan-table">
-              <thead><tr><th>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr></thead>
+            <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
+              <thead style={{ position: 'sticky', top: '56px', background: 'var(--surface)', zIndex: 9 }}>
+                <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
+              </thead>
               <tbody>
-                {PLAN_10K.map((w, i) => (
-                  <tr key={i} className={i === currentWeekIdx() ? 'current-week' : ''}>
-                    <td>{w.label}</td>
+                {PLAN_10K.map((w, i) => {
+                  const isCurrent = i === currentWeekIdx()
+                  return (
+                  <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
+                    height: '64px', fontSize: '1.05rem',
+                    background: isCurrent ? 'rgba(252,76,2,0.1)' : 'transparent',
+                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--orange)' : 'none',
+                    transition: 'background 0.2s'
+                  }}>
+                    <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
                     <td className="km-cell">{w.tue}</td>
                     <td className="km-cell">{w.thu}</td>
                     <td className="km-cell">{w.sat}</td>
                     <td className="km-cell">{w.sun}</td>
-                    <td className="km-cell" style={{ color: 'var(--orange)', fontWeight: 700 }}>{w.total}</td>
+                    <td className="km-cell" style={{ color: 'var(--orange)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
                   </tr>
-                ))}
-                <tr className="total-row"><td>TOTAL</td><td colSpan={4}></td><td>239 km</td></tr>
+                )})}
+                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>239 km</td></tr>
               </tbody>
             </table>
           </div>
 
-          <div className="plan-table-container">
-            <div className="plan-table-header">
-              <div className="plan-title">Half Marathon Plan</div>
+          <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
+            <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+              <div className="plan-title" style={{ fontSize: '1.4rem' }}>Half Marathon Plan</div>
               <span className="p-category cat-hm">21.1K</span>
             </div>
-            <table className="plan-table">
-              <thead><tr><th>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr></thead>
+            <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
+              <thead style={{ position: 'sticky', top: '56px', background: 'var(--surface)', zIndex: 9 }}>
+                <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
+              </thead>
               <tbody>
-                {PLAN_HM.map((w, i) => (
-                  <tr key={i} className={i === currentWeekIdx() ? 'current-week' : ''}>
-                    <td>{w.label}</td>
+                {PLAN_HM.map((w, i) => {
+                  const isCurrent = i === currentWeekIdx()
+                  return (
+                  <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
+                    height: '64px', fontSize: '1.05rem',
+                    background: isCurrent ? 'rgba(34,211,238,0.1)' : 'transparent',
+                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--blue)' : 'none',
+                    transition: 'background 0.2s'
+                  }}>
+                    <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
                     <td className="km-cell">{w.tue}</td>
                     <td className="km-cell">{w.thu}</td>
                     <td className="km-cell">{w.sat}</td>
                     <td className="km-cell">{w.sun}</td>
-                    <td className="km-cell" style={{ color: 'var(--blue)', fontWeight: 700 }}>{w.total}</td>
+                    <td className="km-cell" style={{ color: 'var(--blue)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
                   </tr>
-                ))}
-                <tr className="total-row"><td>TOTAL</td><td colSpan={4}></td><td>364 km</td></tr>
+                )})}
+                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>364 km</td></tr>
               </tbody>
             </table>
           </div>
