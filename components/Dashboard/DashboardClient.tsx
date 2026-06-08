@@ -298,14 +298,16 @@ export default function DashboardClient({
                   const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
                   const paceMin = Math.floor(r.paceSecPerKm / 60)
                   const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
-                  const durMin = Math.floor(r.durationSec / 60)
-                  const durSec = String(r.durationSec % 60).padStart(2, '0')
+                  const hrs = Math.floor(r.durationSec / 3600)
+                  const mins = Math.floor((r.durationSec % 3600) / 60)
+                  const secs = String(r.durationSec % 60).padStart(2, '0')
+                  const durationStr = `${hrs}:${String(mins).padStart(2, '0')}:${secs}`
                   return (
                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
                       <td style={{ padding: '12px 16px', opacity: 0.7 }}>{dateStr}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(1)} km</td>
                       <td style={{ padding: '12px 16px', opacity: 0.8 }}>{paceMin}:{paceSec} /km</td>
-                      <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durMin}:{durSec}</td>
+                      <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durationStr}</td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
                       </td>
