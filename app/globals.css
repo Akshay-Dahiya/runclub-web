@@ -194,6 +194,15 @@ nav { position:fixed; top:0; left:0; right:0; z-index:100; display:flex; align-i
 .form-input:focus,.form-select:focus { border-color:var(--orange); }
 .form-select option { background:var(--card); }
 
+/* INTEGRATION BUTTONS */
+.integration-btn { display:flex; align-items:center; justify-content:center; gap:10px; padding:14px; border-radius:8px; border:1px solid transparent; font-family:'DM Sans',sans-serif; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .2s; }
+.integration-btn.strava { background:rgba(252, 76, 2, 0.1); color:#fc4c02; border-color:rgba(252, 76, 2, 0.2); }
+.integration-btn.strava:hover { background:rgba(252, 76, 2, 0.15); border-color:#fc4c02; transform:translateY(-2px); }
+.integration-btn.apple { background:rgba(255, 255, 255, 0.05); color:#fff; border-color:rgba(255, 255, 255, 0.1); }
+.integration-btn.apple:hover { background:rgba(255, 255, 255, 0.1); border-color:rgba(255, 255, 255, 0.3); transform:translateY(-2px); }
+.integration-btn.garmin { background:rgba(0, 124, 195, 0.1); color:#007cc3; border-color:rgba(0, 124, 195, 0.2); }
+.integration-btn.garmin:hover { background:rgba(0, 124, 195, 0.15); border-color:#007cc3; transform:translateY(-2px); }
+
 /* MODAL */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.88); backdrop-filter:blur(4px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.open { display:flex; }
