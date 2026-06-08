@@ -7,16 +7,20 @@ export const RACE_DATE = new Date('2026-08-23T07:00:00+05:30')
 
 // Week start dates (Monday). Plan runs Tue / Thu / Sat / Sun each week.
 export const WEEK_STARTS: Date[] = [
-  new Date('2026-06-08'), // Week 1
-  new Date('2026-06-15'), // Week 2
-  new Date('2026-06-22'), // Week 3
-  new Date('2026-06-29'), // Week 4
-  new Date('2026-07-06'), // Week 5
-  new Date('2026-07-13'), // Week 6
-  new Date('2026-07-20'), // Week 7
-  new Date('2026-07-27'), // Week 8
-  new Date('2026-08-03'), // Week 9
-  new Date('2026-08-10'), // Week 10
+  new Date('2026-05-11'), // Week 1
+  new Date('2026-05-18'), // Week 2
+  new Date('2026-05-25'), // Week 3
+  new Date('2026-06-01'), // Week 4
+  new Date('2026-06-08'), // Week 5
+  new Date('2026-06-15'), // Week 6
+  new Date('2026-06-22'), // Week 7
+  new Date('2026-06-29'), // Week 8
+  new Date('2026-07-06'), // Week 9
+  new Date('2026-07-13'), // Week 10
+  new Date('2026-07-20'), // Week 11
+  new Date('2026-07-27'), // Week 12
+  new Date('2026-08-03'), // Week 13
+  new Date('2026-08-10'), // Week 14
 ]
 
 export interface WeekPlan {

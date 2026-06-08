@@ -38,6 +38,7 @@ export async function GET(request: Request) {
       for (let wi = 0; wi < WEEK_STARTS.length; wi++) {
         const ws = WEEK_STARTS[wi]
         const w = plan[wi]
+        if (!w) continue  // no plan defined for this week, skip
         const days = [
           { offset: 1, km: w.tue },
           { offset: 3, km: w.thu },

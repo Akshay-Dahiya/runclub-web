@@ -18,14 +18,23 @@ export async function POST(req: Request) {
 
     const openai = createOpenAI({ apiKey })
 
+    // Find participant definition by integer id
+    const participantDef = PARTICIPANTS.find(p => p.id === parseInt(userId)) || PARTICIPANTS.find(p => String(p.id) === String(userId))
+    if (!participantDef) {
+      return new Response('Participant not found', { status: 404 })
+    }
+
+    // Look up user by email (same as dashboard page)
+    const userEmail = participantDef.email || `placeholder_${participantDef.id}@runclub.local`
+
     // Fetch user data
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { email: userEmail },
       include: { runs: { orderBy: { date: 'desc' } } }
     })
 
     if (!user) {
-      return new Response('User not found', { status: 404 })
+      return new Response('User not found in database. Please seed the database first.', { status: 404 })
     }
 
     // Fetch all users for leaderboard context
@@ -33,8 +42,7 @@ export async function POST(req: Request) {
       include: { runs: true }
     })
 
-    // Find the participant def
-    const participantDef = PARTICIPANTS.find(p => p.id === userId) || { cat: 'HM', target: 21.1 }
+    // Find the participant def (already found above)
     const totalTarget = participantDef.cat === 'HM' ? 250 : 150 // example targets
 
     // Calculate context data
@@ -94,7 +102,7 @@ ${recentRuns || "No runs logged yet."}
       messages,
     })
 
-    return result.toDataStreamResponse()
+    return result.toAIStreamResponse()
 
   } catch (error: any) {
     console.error('Chat API Error:', error)
