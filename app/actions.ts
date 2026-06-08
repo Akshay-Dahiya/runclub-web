@@ -13,11 +13,24 @@ export async function logRun(formData: FormData) {
     throw new Error('Missing required fields')
   }
 
-  // Parse pace to seconds per km
+  // Parse pace to seconds per km (support MM:SS, decimal minutes, and raw minutes)
   let paceSecPerKm = 330 // default 5:30
-  if (pace && pace.includes(':')) {
-    const [min, sec] = pace.split(':')
-    paceSecPerKm = parseInt(min) * 60 + parseInt(sec)
+  if (pace) {
+    const cleanPace = pace.trim()
+    if (cleanPace.includes(':')) {
+      const [min, sec] = cleanPace.split(':')
+      paceSecPerKm = (parseInt(min, 10) || 0) * 60 + (parseInt(sec, 10) || 0)
+    } else if (cleanPace.includes('.')) {
+      const decimalPace = parseFloat(cleanPace)
+      if (!isNaN(decimalPace)) {
+        paceSecPerKm = Math.round(decimalPace * 60)
+      }
+    } else {
+      const minutes = parseInt(cleanPace, 10)
+      if (!isNaN(minutes)) {
+        paceSecPerKm = minutes * 60
+      }
+    }
   }
 
   const durationSec = Math.round(distanceKm * paceSecPerKm)
@@ -25,7 +38,7 @@ export async function logRun(formData: FormData) {
   try {
     const queryPromise = prisma.user.findUnique({ where: { email } })
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Prisma connection timeout')), 2000)
+      setTimeout(() => reject(new Error('Prisma connection timeout')), 15000)
     )
     const user: any = await Promise.race([queryPromise, timeoutPromise])
     if (!user) {
@@ -41,9 +54,9 @@ export async function logRun(formData: FormData) {
         paceSecPerKm,
       }
     })
-  } catch (error) {
-    console.error("DB LogRun failed, using emergency fallback", error)
-    // Emergency Fallback: If DB times out, just pretend it succeeded so the UI doesn't crash
+  } catch (error: any) {
+    console.error("DB LogRun failed:", error)
+    throw new Error(error?.message || 'Database write failed')
   }
 
   revalidatePath('/')

@@ -118,11 +118,24 @@ export default function DashboardClient({
     e.preventDefault()
     setLoading(true)
     try {
-      // Parse pace MM:SS -> seconds/km
-      let paceSecPerKm = 360
+      // Parse pace to seconds per km (support MM:SS, decimal minutes, and raw minutes)
+      let paceSecPerKm = 360 // default 6:00/km
       if (pace) {
-        const [mm, ss] = pace.split(':').map(Number)
-        paceSecPerKm = (mm || 0) * 60 + (ss || 0)
+        const cleanPace = pace.trim()
+        if (cleanPace.includes(':')) {
+          const [mm, ss] = cleanPace.split(':').map(Number)
+          paceSecPerKm = (mm || 0) * 60 + (ss || 0)
+        } else if (cleanPace.includes('.')) {
+          const decimalPace = parseFloat(cleanPace)
+          if (!isNaN(decimalPace)) {
+            paceSecPerKm = Math.round(decimalPace * 60)
+          }
+        } else {
+          const minutes = parseInt(cleanPace, 10)
+          if (!isNaN(minutes)) {
+            paceSecPerKm = minutes * 60
+          }
+        }
       }
       const distKm = parseFloat(distance)
       const durationSec = Math.round(distKm * paceSecPerKm)
