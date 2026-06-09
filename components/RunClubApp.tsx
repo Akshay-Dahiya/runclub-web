@@ -50,6 +50,8 @@ function DashboardPicker() {
 export default function RunClubApp({ users }: { users: any[] }) {
   const [activeFilter, setActiveFilter] = useState('all')
   const [leaderboardTab, setLeaderboardTab] = useState('overall')
+  const [leaderboardSort, setLeaderboardSort] = useState('distance')
+  const [activeModalPlan, setActiveModalPlan] = useState<string | null>(null)
 
   // Map DB Users back to the logic in PARTICIPANTS
   const mappedUsers = PARTICIPANTS.map(p => {
@@ -92,10 +94,18 @@ export default function RunClubApp({ users }: { users: any[] }) {
       }
     }
 
-    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget, currentStreak }
-  }).sort((a, b) => b.actualKm - a.actualKm)
+    const longestRun = runs.length > 0 ? Math.max(...runs.map((r: any) => r.distanceKm)) : 0
+    const weekLongestRun = weekRuns.length > 0 ? Math.max(...weekRuns.map((r: any) => r.distanceKm)) : 0
+
+    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget, currentStreak, longestRun, weekLongestRun }
+  })
   
-  const weeklyTopUsers = [...mappedUsers].sort((a, b) => b.weekKm - a.weekKm)
+  const sortedOverallUsers = [...mappedUsers].sort((a, b) => {
+    return leaderboardSort === 'longest' ? b.longestRun - a.longestRun : b.actualKm - a.actualKm;
+  })
+  const sortedWeeklyUsers = [...mappedUsers].sort((a, b) => {
+    return leaderboardSort === 'longest' ? b.weekLongestRun - a.weekLongestRun : b.weekKm - a.weekKm;
+  })
 
   let filteredUsers = mappedUsers
   if (activeFilter === 'HM_INT') filteredUsers = mappedUsers.filter(u => u.cat === 'HM_INT')
@@ -276,56 +286,15 @@ export default function RunClubApp({ users }: { users: any[] }) {
                   </div>
                 </div>
 
-                {/* Table Body */}
-                <div style={{ flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
-                  <table className="plan-table" style={{ width: '100%' }}>
-                    <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 9 }}>
-                      <tr><th style={{ padding: '16px 8px' }}>Wk</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
-                    </thead>
-                    <tbody>
-                      {plan.data.map((w, i) => {
-                        const isCurrent = i === currentWk;
-                        const wkTotal = Number(w.total) || 0;
-                        const volPct = (wkTotal / peakWeekKm) * 100;
-                        
-                        return (
-                        <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
-                          height: '54px',
-                          background: isCurrent ? plan.bg : 'transparent',
-                          boxShadow: isCurrent ? `inset 4px 0 0 ${plan.color}` : 'none',
-                          transition: 'background 0.2s'
-                        }}>
-                          <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label.replace('Week ', '')}</td>
-                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.tue}</td>
-                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.thu}</td>
-                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.sat}</td>
-                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.sun}</td>
-                          <td className="km-cell" style={{ position: 'relative', color: isCurrent ? plan.color : 'var(--text)', fontWeight: 700 }}>
-                            <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '3px', background: 'var(--border)', borderRadius: '1px', opacity: 0.5 }}>
-                              <div style={{ height: '100%', width: `${volPct}%`, background: plan.color, borderRadius: '1px' }} />
-                            </div>
-                            {w.total}
-                          </td>
-                        </tr>
-                      )})}
-                      <tr className="total-row" style={{ height: '54px', background: 'var(--card)' }}>
-                        <td colSpan={5} style={{ fontWeight: 800, textAlign: 'right', paddingRight: '16px' }}>TOTAL</td>
-                        <td style={{ fontWeight: 800, color: plan.color }}>{plan.totalStr}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Footer Area */}
-                <div style={{ padding: '16px 24px', background: 'var(--card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>PEAK WEEK</span>
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{peakWeekKm} km</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>RUNNERS</span>
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{runnersCount}</span>
-                  </div>
+                {/* Action Area */}
+                <div style={{ padding: '20px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
+                  <button
+                    onClick={() => setActiveModalPlan(plan.id)}
+                    className="btn-ghost"
+                    style={{ width: '100%', padding: '12px', fontSize: '0.85rem' }}
+                  >
+                    View Full Plan
+                  </button>
                 </div>
               </div>
             );
@@ -343,9 +312,15 @@ export default function RunClubApp({ users }: { users: any[] }) {
           <p className="section-sub">Ranked by KM logged. Automatically synced with the database.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-          <button className={`tab-btn ${leaderboardTab === 'overall' ? 'active' : ''}`} onClick={() => setLeaderboardTab('overall')}>Overall</button>
-          <button className={`tab-btn ${leaderboardTab === 'weekly' ? 'active' : ''}`} onClick={() => setLeaderboardTab('weekly')}>This Week</button>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className={`tab-btn ${leaderboardTab === 'overall' ? 'active' : ''}`} onClick={() => setLeaderboardTab('overall')}>Overall</button>
+            <button className={`tab-btn ${leaderboardTab === 'weekly' ? 'active' : ''}`} onClick={() => setLeaderboardTab('weekly')}>This Week</button>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className={`tab-btn ${leaderboardSort === 'distance' ? 'active' : ''}`} onClick={() => setLeaderboardSort('distance')}>Total Dist.</button>
+            <button className={`tab-btn ${leaderboardSort === 'longest' ? 'active' : ''}`} onClick={() => setLeaderboardSort('longest')}>Longest</button>
+          </div>
         </div>
 
         <div className="lb-grid">
@@ -357,16 +332,18 @@ export default function RunClubApp({ users }: { users: any[] }) {
               <table className="lb-table">
                 <thead>
                   <tr>
-                    <th>#</th><th>Runner</th><th>KM Done</th><th>Completion</th>
+                    <th>#</th><th>Runner</th><th>{leaderboardSort === 'distance' ? 'KM Done' : 'Longest'}</th><th>Completion</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {mappedUsers.map((u, i) => {
+                  {sortedOverallUsers.map((u, i) => {
                     const planned = plannedKmSoFar(u)
                     const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+                    const val = leaderboardSort === 'distance' ? u.actualKm : u.longestRun;
+                    if (val === 0) return null; // empty state logic (skip 0s)
                     return (
                       <tr key={u.id}>
-                        <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
+                        <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i < 3 ? <span className="fire-icon">🔥</span> : ''} {i + 1}</span></td>
                         <td>
                           <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -377,7 +354,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                             </div>
                           </Link>
                         </td>
-                        <td><span className="lb-km">{u.actualKm.toFixed(2)} km</span></td>
+                        <td><span className="lb-km">{val.toFixed(2)} km</span></td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
@@ -389,22 +366,27 @@ export default function RunClubApp({ users }: { users: any[] }) {
                       </tr>
                     )
                   })}
+                  {sortedOverallUsers.filter(u => (leaderboardSort === 'distance' ? u.actualKm : u.longestRun) === 0).length === sortedOverallUsers.length && (
+                    <tr><td colSpan={4} style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>No runs logged yet.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="visible-mobile reveal visible">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {mappedUsers.map((u, i) => {
+                {sortedOverallUsers.map((u, i) => {
                   const planned = plannedKmSoFar(u)
                   const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+                  const val = leaderboardSort === 'distance' ? u.actualKm : u.longestRun;
+                  if (val === 0) return null;
                   return (
                     <Link key={u.id} href={`/dashboard/${u.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ 
                         background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', 
                         padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' 
                       }}>
-                        <div style={{ width: '40px', textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: i < 3 ? 'var(--text)' : 'var(--muted)' }}>
-                          #{i + 1}
+                        <div style={{ width: '50px', textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: i < 3 ? 'var(--orange)' : 'var(--muted)' }}>
+                          {i < 3 ? <span className="fire-icon">🔥</span> : ''} #{i + 1}
                         </div>
                         <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#000', flexShrink: 0 }}>
                           {u.initials}
@@ -419,13 +401,16 @@ export default function RunClubApp({ users }: { users: any[] }) {
                           </div>
                         </div>
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{u.actualKm.toFixed(1)}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{val.toFixed(1)}</span>
                           <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px' }}>KM</span>
                         </div>
                       </div>
                     </Link>
                   )
                 })}
+                {sortedOverallUsers.filter(u => (leaderboardSort === 'distance' ? u.actualKm : u.longestRun) === 0).length === sortedOverallUsers.length && (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>No runs logged yet.</div>
+                )}
               </div>
             </div>
           </>
@@ -438,16 +423,18 @@ export default function RunClubApp({ users }: { users: any[] }) {
               <table className="lb-table">
                 <thead>
                   <tr>
-                    <th>#</th><th>Runner</th><th>KM This Week</th><th>Week Target</th>
+                    <th>#</th><th>Runner</th><th>{leaderboardSort === 'distance' ? 'KM This Week' : 'Longest Run'}</th><th>Week Target</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {weeklyTopUsers.map((u, i) => {
+                  {sortedWeeklyUsers.map((u, i) => {
                     const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
                     const pct = weekTarget > 0 ? Math.min(100, Math.round((u.weekKm / weekTarget) * 100)) : 0
+                    const val = leaderboardSort === 'distance' ? u.weekKm : u.weekLongestRun;
+                    if (val === 0) return null; // Empty state handling
                     return (
                       <tr key={u.id}>
-                        <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
+                        <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i < 3 ? <span className="fire-icon">🔥</span> : ''} {i + 1}</span></td>
                         <td>
                           <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -458,7 +445,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                             </div>
                           </Link>
                         </td>
-                        <td><span className="lb-km" style={{ color: 'var(--blue)' }}>{u.weekKm.toFixed(2)} km</span></td>
+                        <td><span className="lb-km" style={{ color: 'var(--blue)' }}>{val.toFixed(2)} km</span></td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
@@ -470,22 +457,27 @@ export default function RunClubApp({ users }: { users: any[] }) {
                       </tr>
                     )
                   })}
+                  {sortedWeeklyUsers.filter(u => (leaderboardSort === 'distance' ? u.weekKm : u.weekLongestRun) === 0).length === sortedWeeklyUsers.length && (
+                    <tr><td colSpan={4} style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>No runs logged this week.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="visible-mobile reveal visible">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {weeklyTopUsers.map((u, i) => {
+                {sortedWeeklyUsers.map((u, i) => {
                   const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
                   const pct = weekTarget > 0 ? Math.min(100, Math.round((u.weekKm / weekTarget) * 100)) : 0
+                  const val = leaderboardSort === 'distance' ? u.weekKm : u.weekLongestRun;
+                  if (val === 0) return null;
                   return (
                     <Link key={u.id} href={`/dashboard/${u.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ 
                         background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', 
                         padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' 
                       }}>
-                        <div style={{ width: '40px', textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: i < 3 ? 'var(--text)' : 'var(--muted)' }}>
-                          #{i + 1}
+                        <div style={{ width: '50px', textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: i < 3 ? 'var(--orange)' : 'var(--muted)' }}>
+                          {i < 3 ? <span className="fire-icon">🔥</span> : ''} #{i + 1}
                         </div>
                         <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#000', flexShrink: 0 }}>
                           {u.initials}
@@ -500,13 +492,16 @@ export default function RunClubApp({ users }: { users: any[] }) {
                           </div>
                         </div>
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{u.weekKm.toFixed(1)}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{val.toFixed(1)}</span>
                           <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px' }}>KM WK</span>
                         </div>
                       </div>
                     </Link>
                   )
                 })}
+                {sortedWeeklyUsers.filter(u => (leaderboardSort === 'distance' ? u.weekKm : u.weekLongestRun) === 0).length === sortedWeeklyUsers.length && (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>No runs logged this week.</div>
+                )}
               </div>
             </div>
           </>
@@ -536,6 +531,62 @@ export default function RunClubApp({ users }: { users: any[] }) {
       </div>
 
       <Footer />
+      {/* PLAN MODAL */}
+      {activeModalPlan && (() => {
+        const plans = [
+          { id: '10K', title: '10K Plan', data: PLAN_10K, color: 'var(--orange)' },
+          { id: 'HM_INT', title: 'Half Marathon (Int)', data: PLAN_HM_INT, color: 'var(--blue)' },
+          { id: 'HM_BEG', title: 'Half Marathon (Beg)', data: PLAN_HM_BEG, color: 'var(--green)' }
+        ]
+        const plan = plans.find(p => p.id === activeModalPlan)
+        if (!plan) return null
+        
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)',
+            zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+          }} onClick={() => setActiveModalPlan(null)}>
+            <div style={{
+              background: 'var(--surface)', border: `1px solid ${plan.color}`, borderRadius: '12px',
+              width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+              boxShadow: `0 0 40px rgba(0,0,0,0.5)`
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', margin: 0 }}>{plan.title}</h3>
+                <button onClick={() => setActiveModalPlan(null)} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div style={{ overflowY: 'auto', padding: '0' }}>
+                <table className="plan-table" style={{ width: '100%' }}>
+                  <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 9 }}>
+                    <tr><th style={{ padding: '16px 8px' }}>Wk</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
+                  </thead>
+                  <tbody>
+                    {plan.data.map((w, i) => {
+                      const isCurrent = i === currentWeekIdx();
+                      const isPast = i < currentWeekIdx();
+                      return (
+                        <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
+                          background: isCurrent ? 'rgba(255,255,255,0.05)' : 'transparent',
+                          opacity: isPast ? 0.4 : 1,
+                          borderBottom: '1px solid var(--border)',
+                          transition: 'background 0.2s'
+                        }}>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: isCurrent ? plan.color : 'var(--muted)', padding: '14px 8px' }}>{w.wk}</td>
+                          <td style={{ textAlign: 'center' }}>{w.tue}</td>
+                          <td style={{ textAlign: 'center' }}>{w.thu}</td>
+                          <td style={{ textAlign: 'center' }}>{w.sat}</td>
+                          <td style={{ textAlign: 'center' }}>{w.sun}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: isCurrent ? plan.color : 'var(--text)' }}>{w.total}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </>
   )
 }

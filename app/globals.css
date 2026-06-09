@@ -336,3 +336,4 @@ footer { border-top:1px solid var(--border); padding:44px 40px; display:flex; al
   /* Footer */
   footer { padding: 30px 24px; flex-direction: column; text-align: center; }
 }
+@keyframes firePulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } } .fire-icon { display: inline-block; animation: firePulse 1.5s infinite; }
