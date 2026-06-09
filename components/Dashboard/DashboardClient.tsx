@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import AICoachWidget from '../AICoach/AICoachWidget'
 type Provider = 'strava'
 
@@ -291,6 +291,18 @@ export default function DashboardClient({
           )}
 
       </section>
+
+      {/* ── MISSED RUN ALERT ─────────────────────────────── */}
+      <MissedRunAlert runs={dbUser.runs} participantDef={participantDef} userId={dbUser?.id} />
+
+      {/* ── ACHIEVEMENTS / BADGES ───────────────────────── */}
+      <section style={{ marginBottom: '80px' }}>
+        <SectionHead label="🏆 Achievements" title="YOUR BADGES" />
+        <AchievementsBadges runs={dbUser.runs} />
+      </section>
+
+      {/* ── RACE DAY CHECKLIST ──────────────────────────── */}
+      <RaceDayChecklist userId={dbUser?.id} />
 
       {/* 01 — LOG A RUN */}
       <section style={{ marginBottom: '80px' }}>
@@ -624,7 +636,351 @@ export default function DashboardClient({
   )
 }
 
+
+// ─── MISSED RUN ALERT ─────────────────────────────────────────────────────────
+function MissedRunAlert({ runs, participantDef, userId }: { runs: any[]; participantDef: any; userId: string }) {
+  const DISMISS_KEY = `missed_dismiss_${userId}`
+  const [dismissed, setDismissed] = useState(false)
+  const [prefillDate, setPrefillDate] = useState<string | null>(null)
+
+  useEffect(() => {
+    const val = localStorage.getItem(DISMISS_KEY)
+    if (val && Date.now() < parseInt(val)) setDismissed(true)
+  }, [DISMISS_KEY])
+
+  // Compute this week's Mon–Sun
+  const now = new Date()
+  const dayOfWeek = (now.getDay() + 6) % 7 // Mon=0
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - dayOfWeek); weekStart.setHours(0, 0, 0, 0)
+
+  // Training days: Tue=1, Thu=3, Sat=5, Sun=6 (0-indexed from Mon)
+  const trainingDays = [1, 3, 5, 6]
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+  // Runs logged this week
+  const weekRunDates = new Set(
+    runs
+      .filter(r => new Date(r.date) >= weekStart)
+      .map(r => new Date(r.date).toISOString().split('T')[0])
+  )
+  const weekKm = runs.filter(r => new Date(r.date) >= weekStart).reduce((s, r) => s + r.distanceKm, 0)
+
+  // Get current week plan
+  const { getPlan, getWeekIdx, WEEK_STARTS } = require('../../lib/planData') as any
+  const cwi = getWeekIdx(now)
+  if (cwi < 0) return null
+  const weekPlan = getPlan(participantDef)[cwi]
+  const weekTarget = weekPlan?.total || 0
+
+  // If weekly total >= target, no alert needed
+  if (weekKm >= weekTarget) return null
+
+  // Find missed days
+  const missedDays: { label: string; date: string; km: number }[] = []
+  for (const dayIdx of trainingDays) {
+    if (dayIdx >= dayOfWeek) continue // hasn't happened yet
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + dayIdx)
+    const dateStr = d.toISOString().split('T')[0]
+    const dayKmKey = DAYS[dayIdx] === 'Tue' ? 'tue' : DAYS[dayIdx] === 'Thu' ? 'thu' : DAYS[dayIdx] === 'Sat' ? 'sat' : 'sun'
+    const plannedKm = weekPlan?.[dayKmKey] || 0
+    if (!weekRunDates.has(dateStr)) {
+      missedDays.push({ label: `${DAYS[dayIdx]}, ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, date: dateStr, km: plannedKm })
+    }
+  }
+
+  if (missedDays.length === 0 || dismissed) return null
+
+  const missed = missedDays[0]
+  const remaining = weekTarget - weekKm
+  let suggestion = ''
+  if (missedDays.length === 1) suggestion = `Add an extra easy ${missed.km} km to your next run, or split it across your remaining days this week.`
+  else if (missedDays.length === 2) suggestion = `You're ${remaining.toFixed(1)} km behind this week. Spread the catch-up across your remaining days — don't try to do it all at once.`
+  else suggestion = `This week was tough — that's okay. Focus on showing up next week and don't try to make it all up at once. Consistency beats heroics.`
+
+  const dismiss = () => {
+    localStorage.setItem(DISMISS_KEY, String(Date.now() + 24 * 60 * 60 * 1000))
+    setDismissed(true)
+  }
+
+  const scrollToLogForm = (date: string) => {
+    document.getElementById('log-run-date-input')?.setAttribute('value', date)
+    const el = document.getElementById('log-run-form')
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const dateInput = document.getElementById('log-run-date-input') as HTMLInputElement
+    if (dateInput) { dateInput.value = date; dateInput.dispatchEvent(new Event('input', { bubbles: true })) }
+  }
+
+  return (
+    <div style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.4)', borderLeft: '4px solid #eab308', borderRadius: '8px', padding: '20px 24px', marginBottom: '40px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#eab308', marginBottom: '6px' }}>
+            ⚠️ Missed run detected
+          </div>
+          <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#e8e8e8' }}>
+            Looks like you missed{' '}
+            {missedDays.map((d, i) => <span key={d.date}>{i > 0 ? ', ' : ''}<strong>{d.label}</strong>{d.km > 0 ? `'s ${d.km} km` : ''} session</span>)}.
+          </p>
+          <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#999', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Here's how to recover this week:</div>
+          <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#e8e8e8' }}>{suggestion}</p>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', color: '#aaa' }}>Or just log it if you ran but forgot to record it →</span>
+            <button
+              onClick={() => scrollToLogForm(missed.date)}
+              style={{ background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.4)', color: '#eab308', padding: '5px 12px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Quick Log {missed.label} →
+            </button>
+          </div>
+        </div>
+        <button onClick={dismiss} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontFamily: 'monospace', fontSize: '12px', padding: '0 0 0 16px', whiteSpace: 'nowrap' }}>Got it ✕</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── ACHIEVEMENTS / BADGES ────────────────────────────────────────────────────
+function AchievementsBadges({ runs }: { runs: any[] }) {
+  const validRuns = runs || []
+  
+  // Longest Run badge
+  const longestRun = validRuns.length > 0
+    ? validRuns.reduce((best, r) => r.distanceKm > best.distanceKm ? r : best, validRuns[0])
+    : null
+
+  // Fastest Pace badge (ignore 0/null pace)
+  const paceRuns = validRuns.filter(r => r.paceSecPerKm > 0)
+  const fastestPaceRun = paceRuns.length > 0
+    ? paceRuns.reduce((best, r) => r.paceSecPerKm < best.paceSecPerKm ? r : best, paceRuns[0])
+    : null
+
+  const now = new Date()
+  const dayOfWeek = (now.getDay() + 6) % 7
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - dayOfWeek); weekStart.setHours(0,0,0,0)
+  const thisWeek = (dateStr: string) => new Date(dateStr) >= weekStart
+
+  const daysAgo = (dateStr: string) => {
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
+    return diff === 0 ? 'today' : diff === 1 ? '1 day ago' : `${diff} days ago`
+  }
+
+  const badges = [
+    {
+      key: 'longest',
+      icon: '🏅',
+      name: 'Longest Run',
+      earned: !!longestRun,
+      value: longestRun ? `${longestRun.distanceKm.toFixed(2)} km` : null,
+      date: longestRun ? new Date(longestRun.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
+      ago: longestRun ? daysAgo(longestRun.date) : null,
+      newThisWeek: longestRun ? thisWeek(longestRun.date) : false,
+      color: '#FC4C02',
+    },
+    {
+      key: 'fastest',
+      icon: '⚡',
+      name: 'Fastest Pace',
+      earned: !!fastestPaceRun,
+      value: fastestPaceRun ? `${Math.floor(fastestPaceRun.paceSecPerKm / 60)}:${String(fastestPaceRun.paceSecPerKm % 60).padStart(2, '0')} /km` : null,
+      date: fastestPaceRun ? new Date(fastestPaceRun.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
+      ago: fastestPaceRun ? daysAgo(fastestPaceRun.date) : null,
+      newThisWeek: fastestPaceRun ? thisWeek(fastestPaceRun.date) : false,
+      color: '#facc15',
+    },
+  ]
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+      {badges.map(b => (
+        <div key={b.key} style={{
+          background: b.earned ? 'var(--surface)' : 'rgba(255,255,255,0.02)',
+          border: `1px solid ${b.earned ? (b.newThisWeek ? b.color : 'var(--border)') : 'var(--border)'}`,
+          borderRadius: '12px', padding: '24px',
+          boxShadow: b.newThisWeek ? `0 0 24px ${b.color}30` : 'none',
+          transition: 'all 0.3s',
+          opacity: b.earned ? 1 : 0.4,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <span style={{ fontSize: '2rem', filter: b.earned ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
+            <div>
+              <div style={{ fontFamily: 'monospace', fontSize: '11px', color: b.earned ? b.color : '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{b.name}</div>
+              {b.newThisWeek && <div style={{ fontFamily: 'monospace', fontSize: '9px', background: `${b.color}20`, color: b.color, padding: '2px 6px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>NEW THIS WEEK</div>}
+            </div>
+          </div>
+          {b.earned ? (
+            <>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.2rem', color: b.color, lineHeight: 1, marginBottom: '8px' }}>{b.value}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#555' }}>Set on {b.date} · {b.ago}</div>
+            </>
+          ) : (
+            <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#444' }}>Not yet earned — keep running!</div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── RACE DAY CHECKLIST ───────────────────────────────────────────────────────
+const CHECKLIST_SECTIONS = [
+  {
+    id: 'week_before',
+    title: 'Week Before Race',
+    opens: new Date('2026-08-16T00:00:00+05:30'),
+    items: [
+      'Confirm race registration and bib collection details',
+      'Lay out race kit — shoes, socks, shorts, shirt, watch',
+      'Do a short 20–30 min shakeout run to stay loose',
+      'Cut back on new foods — stick to what you know',
+      'Sleep 8+ hours every night this week',
+      'Hydrate well — urine should be pale yellow',
+      'Avoid alcohol the week before',
+      'Charge your GPS watch fully',
+    ],
+  },
+  {
+    id: 'night_before',
+    title: 'Night Before',
+    opens: new Date('2026-08-22T00:00:00+05:30'),
+    items: [
+      'Prepare race kit and pin bib to shirt',
+      'Set two alarms — one backup',
+      'Prep your race morning breakfast (carbs you\'ve tested before)',
+      'Fill water bottle / hydration pack',
+      'Check the race venue location and parking',
+      'Sleep by 10pm — nerves are normal, don\'t fight them',
+      'No new shoes, no new gear tomorrow',
+    ],
+  },
+  {
+    id: 'race_morning',
+    title: 'Race Morning',
+    opens: new Date('2026-08-23T00:00:00+05:30'),
+    items: [
+      'Wake up 2.5–3 hours before race start',
+      'Eat your practiced breakfast (rice/banana/toast + electrolytes)',
+      'Dynamic warmup — leg swings, high knees, easy jog 5 min',
+      'Arrive at venue 45 min before gun time',
+      'Find your pace group / corral',
+      'Start SLOWER than you think — the first 5km decides your race',
+      'Enjoy it — you trained for this 🏁',
+    ],
+  },
+]
+
+const RACE_DAY_OPENS = new Date('2026-08-02T00:00:00+05:30')
+
+function RaceDayChecklist({ userId }: { userId: string }) {
+  const [checked, setChecked] = useState<Record<string, boolean>>({})
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [loading, setLoading] = useState<string | null>(null)
+  const now = new Date()
+  const daysUntilOpen = Math.ceil((RACE_DAY_OPENS.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  const isOpen = now >= RACE_DAY_OPENS
+
+  useEffect(() => {
+    if (!userId) return
+    fetch(`/api/checklist?userId=${userId}`)
+      .then(r => r.json())
+      .then((items: any[]) => {
+        const map: Record<string, boolean> = {}
+        items.forEach(item => { map[item.itemKey] = item.checked })
+        setChecked(map)
+      })
+  }, [userId])
+
+  const toggle = async (sectionId: string, itemIdx: number, current: boolean) => {
+    if (!userId) return
+    const key = `${sectionId}_${itemIdx}`
+    const newVal = !current
+    setChecked(c => ({ ...c, [key]: newVal }))
+    setLoading(key)
+    await fetch('/api/checklist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, itemKey: key, checked: newVal })
+    })
+    setLoading(null)
+  }
+
+  const toggleSection = (id: string) => setExpanded(e => ({ ...e, [id]: !e[id] }))
+
+  return (
+    <section style={{ marginBottom: '80px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--orange)', margin: '0 0 8px 0' }}>Race Day Prep</p>
+        <h2 style={{ fontSize: 'clamp(1.4rem, 4vw, 2rem)', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>🏁 RACE DAY CHECKLIST</h2>
+      </div>
+
+      {!isOpen ? (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ fontSize: '2rem' }}>🔒</span>
+          <div>
+            <div style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>Opens in {daysUntilOpen} days</div>
+            <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#555' }}>Race day prep checklist unlocks Aug 2, 2026</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {CHECKLIST_SECTIONS.map(section => {
+            const isAvailable = now >= section.opens
+            const doneCount = section.items.filter((_, i) => checked[`${section.id}_${i}`]).length
+            const allDone = doneCount === section.items.length
+            const isExpanded = expanded[section.id] !== false // default open
+
+            return (
+              <div key={section.id} style={{ background: 'var(--surface)', border: `1px solid ${allDone ? '#4ade8066' : 'var(--border)'}`, borderRadius: '10px', overflow: 'hidden' }}>
+                <button
+                  onClick={() => toggleSection(section.id)}
+                  style={{ width: '100%', background: 'none', border: 'none', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', color: 'inherit' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700 }}>{section.title}</span>
+                    {!isAvailable && <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '4px' }}>opens {section.opens.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {allDone ? (
+                      <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#4ade80' }}>✅ All done!</span>
+                    ) : (
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#555' }}>{doneCount} / {section.items.length}</span>
+                    )}
+                    <span style={{ color: '#555', fontSize: '12px' }}>{isExpanded === false ? '▶' : '▼'}</span>
+                  </div>
+                </button>
+
+                {isExpanded !== false && (
+                  <div style={{ padding: '0 20px 16px 20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {section.items.map((item, i) => {
+                      const key = `${section.id}_${i}`
+                      const isChecked = !!checked[key]
+                      return (
+                        <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < section.items.length - 1 ? '1px solid var(--border)' : 'none', cursor: isAvailable ? 'pointer' : 'default', minHeight: '44px' }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={!isAvailable || loading === key}
+                            onChange={() => toggle(section.id, i, isChecked)}
+                            style={{ width: '18px', height: '18px', accentColor: '#4ade80', cursor: isAvailable ? 'pointer' : 'not-allowed', flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: '14px', color: isChecked ? '#4ade80' : isAvailable ? '#e8e8e8' : '#444', textDecoration: isChecked ? 'line-through' : 'none', lineHeight: 1.5 }}>
+                            {isChecked && '✓ '}{item}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function SectionHead({ label, title }: { label: string; title: string }) {
+
   return (
     <div style={{ marginBottom: '24px' }}>
       <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--orange)', margin: '0 0 8px 0' }}>{label}</p>

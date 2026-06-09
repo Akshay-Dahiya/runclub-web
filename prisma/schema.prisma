@@ -11,6 +11,7 @@ model User {
   id              String            @id @default(cuid())
   email           String            @unique
   name            String?
+  initials        String?
   passwordHash    String?
   image           String?
   age             Int?
@@ -24,6 +25,7 @@ model User {
   connected       ConnectedAccount[]
   aiReports       AIReport[]
   leaderboardLikes LeaderboardLike[]
+  checklistItems  ChecklistItem[]
 }
 
 model Run {
@@ -121,4 +123,31 @@ model LeaderboardLike {
   createdAt       DateTime @default(now())
 
   @@unique([userId, leaderboardType, targetUserId])
+}
+
+model ChecklistItem {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  itemKey   String
+  checked   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, itemKey])
+}
+
+model AdminNote {
+  id        String   @id @default(cuid())
+  content   String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+model PlanOverride {
+  id    String @id @default(cuid())
+  plan  String
+  week  Int
+  day   String
+  km    Float
+
+  @@unique([plan, week, day])
 }

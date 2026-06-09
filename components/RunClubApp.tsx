@@ -94,10 +94,19 @@ export default function RunClubApp({ users }: { users: any[] }) {
       }
     }
 
-    const longestRun = runs.length > 0 ? Math.max(...runs.map((r: any) => r.distanceKm)) : 0
+    const longestRunEver = runs.length > 0 ? Math.max(...runs.map((r: any) => r.distanceKm)) : 0
     const weekLongestRun = weekRuns.length > 0 ? Math.max(...weekRuns.map((r: any) => r.distanceKm)) : 0
+    
+    // Badge PBs this week
+    const allSortedByDist = [...runs].sort((a: any, b: any) => b.distanceKm - a.distanceKm)
+    const longestRunRun = allSortedByDist[0] || null
+    const longestRunPBThisWeek = longestRunRun && weekRuns.some((r: any) => r.distanceKm === longestRunEver && longestRunEver > 0)
+    
+    const paceRuns = runs.filter((r: any) => r.paceSecPerKm > 0)
+    const fastestPaceRun = paceRuns.length > 0 ? paceRuns.reduce((best: any, r: any) => r.paceSecPerKm < best.paceSecPerKm ? r : best, paceRuns[0]) : null
+    const fastestPacePBThisWeek = fastestPaceRun && weekRuns.some((r: any) => r.paceSecPerKm === fastestPaceRun.paceSecPerKm && r.paceSecPerKm > 0)
 
-    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget, currentStreak, longestRun, weekLongestRun }
+    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget, currentStreak, longestRun: longestRunEver, weekLongestRun, longestRunPBThisWeek, fastestPacePBThisWeek }
   })
   
   const sortedOverallUsers = [...mappedUsers].sort((a, b) => {
@@ -156,6 +165,9 @@ export default function RunClubApp({ users }: { users: any[] }) {
         <div><span style={{ color: 'var(--muted)' }}>Active Crew:</span> <strong style={{ color: 'var(--text)', fontSize: '1rem' }}>{thisWeekActiveRunners}</strong></div>
       </div>
 
+      {/* WHO RAN TODAY STRIP */}
+      <WhoRanToday />
+
       {/* MEMBERS SECTION */}
       <div className="section" id="members">
         <div className="reveal visible">
@@ -199,6 +211,12 @@ export default function RunClubApp({ users }: { users: any[] }) {
                       <span className="p-badge" style={{ background: 'var(--orange-dim)', color: 'var(--orange)', border: '1px solid var(--orange)' }}>
                         🔥 {u.currentStreak} Day Streak
                       </span>
+                    )}
+                    {u.longestRunPBThisWeek && (
+                      <span title="Longest Run PB this week!" style={{ fontSize: '1rem', cursor: 'default' }}>🏅</span>
+                    )}
+                    {u.fastestPacePBThisWeek && (
+                      <span title="Fastest Pace PB this week!" style={{ fontSize: '1rem', cursor: 'default' }}>⚡</span>
                     )}
                     <span className={`p-badge badge-${u.status}`}>
                       {u.status === 'green' ? '✓ On Track' : u.status === 'yellow' ? '~ Close' : '✕ Behind'}
@@ -588,5 +606,56 @@ export default function RunClubApp({ users }: { users: any[] }) {
         )
       })()}
     </>
+  )
+}
+
+// ─── WHO RAN TODAY STRIP ──────────────────────────────────────────────────────
+const AVATAR_COLORS = ['#FC4C02', '#22d3ee', '#4ade80', '#facc15', '#a78bfa', '#f472b6', '#fb923c', '#34d399', '#60a5fa', '#c084fc']
+
+function WhoRanToday() {
+  const [data, setData] = useState<{ runners: any[]; totalKm: number } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/who-ran-today').then(r => r.json()).then(setData).catch(() => {})
+  }, [])
+
+  if (!data) return null
+
+  const { runners, totalKm } = data
+
+  return (
+    <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', borderTop: '1px solid var(--border)', padding: '16px 32px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#FC4C02', letterSpacing: '0.15em', textTransform: 'uppercase', flexShrink: 0 }}>
+          🏃 Ran today →
+        </span>
+        {runners.length === 0 ? (
+          <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#555' }}>
+            No runs logged today yet — be the first.
+          </span>
+        ) : (
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
+            {runners.map((r, i) => (
+              <a
+                key={r.userId}
+                href={`/dashboard/${r.userId}`}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '6px 12px', textDecoration: 'none', color: 'inherit', whiteSpace: 'nowrap', transition: 'border-color 0.2s' }}
+              >
+                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: AVATAR_COLORS[i % AVATAR_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', fontSize: '9px', fontWeight: 700, color: '#000', flexShrink: 0 }}>
+                  {r.initials}
+                </div>
+                <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600 }}>{r.name}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#FC4C02' }}>· {r.km} km</span>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+      {runners.length > 0 && (
+        <div style={{ fontFamily: 'monospace', fontSize: '10px', color: '#555', marginTop: '8px', letterSpacing: '0.05em' }}>
+          {runners.length} runner{runners.length !== 1 ? 's' : ''} active today · {totalKm.toFixed(1)} km covered by the club today
+        </div>
+      )}
+    </div>
   )
 }

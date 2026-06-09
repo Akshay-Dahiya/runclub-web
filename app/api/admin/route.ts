@@ -1,10 +1,188 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
+import { PARTICIPANTS, getPlan, plannedKmSoFar, grandTotal, currentWeekIdx, WEEK_STARTS } from '../../../lib/planData'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'runclub2026'
+
+// ─── GET: Dashboard stats ────────────────────────────────────────────────────
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const action = searchParams.get('action')
+
+  if (action === 'stats') {
+    const allUsers = await prisma.user.findMany({ include: { runs: true } })
+    const allRuns = await prisma.run.findMany({ orderBy: { date: 'desc' }, include: { user: true } })
+
+    // This week bounds (Mon–Sun)
+    const now = new Date()
+    const dayOfWeek = (now.getDay() + 6) % 7 // Mon=0 Sun=6
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - dayOfWeek)
+    weekStart.setHours(0, 0, 0, 0)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 7)
+
+    const runsThisWeek = allRuns.filter((r: any) => new Date(r.date) >= weekStart && new Date(r.date) < weekEnd)
+    const kmThisWeek = runsThisWeek.reduce((s: number, r: any) => s + r.distanceKm, 0)
+
+    // Runners who haven't logged anything this week
+    const runnersWithRunsThisWeek = new Set(runsThisWeek.map((r: any) => r.userId))
+    const allRunnerIds = allUsers.map((u: any) => u.id)
+    const notRunThisWeek = allUsers
+      .filter((u: any) => !runnersWithRunsThisWeek.has(u.id))
+      .map((u: any) => u.name || u.email)
+
+    // Runners behind by 20%+
+    const behindRunners = PARTICIPANTS.map((p: any) => {
+      const dbUser = allUsers.find((u: any) => u.email === p.email || u.email === `placeholder_${p.id}@runclub.local`)
+      if (!dbUser) return null
+      const actualKm = dbUser.runs.reduce((s: number, r: any) => s + r.distanceKm, 0)
+      const planned = plannedKmSoFar(p)
+      if (planned === 0) return null
+      const pct = (actualKm / planned) * 100
+      if (pct < 80) return { name: p.name, pct: Math.round(pct), gap: (planned - actualKm).toFixed(1) }
+      return null
+    }).filter(Boolean)
+
+    return NextResponse.json({
+      totalRunners: allUsers.length,
+      totalRuns: allRuns.length,
+      totalKm: allRuns.reduce((s: number, r: any) => s + r.distanceKm, 0).toFixed(1),
+      runsThisWeek: runsThisWeek.length,
+      kmThisWeek: kmThisWeek.toFixed(1),
+      notRunThisWeek,
+      behindRunners,
+    })
+  }
+
+  if (action === 'allRuns') {
+    const runs = await prisma.run.findMany({
+      orderBy: { date: 'desc' },
+      include: { user: { select: { name: true, email: true } } },
+      take: 500,
+    })
+    return NextResponse.json(runs)
+  }
+
+  if (action === 'allRunners') {
+    const users = await prisma.user.findMany({
+      include: { runs: true },
+      orderBy: { name: 'asc' }
+    })
+    return NextResponse.json(users)
+  }
+
+  if (action === 'note') {
+    const note = await prisma.adminNote.findFirst({ orderBy: { updatedAt: 'desc' } })
+    return NextResponse.json({ content: note?.content || '' })
+  }
+
+  if (action === 'planOverrides') {
+    const overrides = await prisma.planOverride.findMany()
+    return NextResponse.json(overrides)
+  }
+
+  // Default stats
   const totalDistance = await prisma.run.aggregate({ _sum: { distanceKm: true } })
   const activeUsers = await prisma.user.count()
   return NextResponse.json({ totalDistance: totalDistance._sum.distanceKm || 0, activeUsers })
+}
+
+// ─── POST: All mutations ──────────────────────────────────────────────────────
+export async function POST(req: Request) {
+  const body = await req.json()
+  const { action } = body
+
+  // Auth check (except for 'auth' itself)
+  if (action !== 'auth') {
+    const token = body.token || ''
+    if (token !== `admin:${ADMIN_PASSWORD}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
+
+  // ── Authenticate ──
+  if (action === 'auth') {
+    if (body.password === ADMIN_PASSWORD) {
+      return NextResponse.json({ ok: true, token: `admin:${ADMIN_PASSWORD}` })
+    }
+    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 })
+  }
+
+  // ── Add Runner ──
+  if (action === 'addRunner') {
+    const { name, plan, initials } = body
+    if (!name || !plan) return NextResponse.json({ error: 'Missing name or plan' }, { status: 400 })
+    const email = `admin_${Date.now()}@runclub.local`
+    const user = await prisma.user.create({
+      data: { name, email, initials: initials || name.split(' ').map((w: string) => w[0]).join('').toUpperCase(), runningGoal: plan }
+    })
+    return NextResponse.json(user)
+  }
+
+  // ── Edit Runner ──
+  if (action === 'editRunner') {
+    const { userId, name, plan, initials } = body
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { name, runningGoal: plan, initials }
+    })
+    return NextResponse.json(user)
+  }
+
+  // ── Delete Runner ──
+  if (action === 'deleteRunner') {
+    const { userId } = body
+    await prisma.run.deleteMany({ where: { userId } })
+    await prisma.checklistItem.deleteMany({ where: { userId } })
+    await prisma.user.delete({ where: { id: userId } })
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── Delete Run ──
+  if (action === 'deleteRun') {
+    const { runId } = body
+    await prisma.run.delete({ where: { id: runId } })
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── Add Run for any runner ──
+  if (action === 'addRun') {
+    const { userId, date, distanceKm, paceSecPerKm, durationSec, notes, avgHeartRate } = body
+    const run = await prisma.run.create({
+      data: {
+        userId, date: new Date(date),
+        distanceKm: parseFloat(distanceKm),
+        durationSec: durationSec || Math.round(distanceKm * (paceSecPerKm || 360)),
+        paceSecPerKm: paceSecPerKm || Math.round((durationSec || 0) / distanceKm),
+        notes: notes || null,
+        avgHeartRate: avgHeartRate ? parseInt(avgHeartRate) : null,
+      }
+    })
+    return NextResponse.json(run)
+  }
+
+  // ── Save Admin Note ──
+  if (action === 'saveNote') {
+    const existing = await prisma.adminNote.findFirst()
+    const note = existing
+      ? await prisma.adminNote.update({ where: { id: existing.id }, data: { content: body.content } })
+      : await prisma.adminNote.create({ data: { content: body.content } })
+    return NextResponse.json(note)
+  }
+
+  // ── Set Plan Override ──
+  if (action === 'setPlanOverride') {
+    const { plan, week, day, km } = body
+    const override = await prisma.planOverride.upsert({
+      where: { plan_week_day: { plan, week, day } },
+      update: { km },
+      create: { plan, week, day, km }
+    })
+    return NextResponse.json(override)
+  }
+
+  return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
