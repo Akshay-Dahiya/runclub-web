@@ -292,35 +292,9 @@ export default function DashboardClient({
 
       </section>
 
-      {/* 01 — INTEGRATIONS */}
+      {/* 01 — LOG A RUN */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="01 / Integrations" title="CONNECT YOUR DEVICES" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-          {(Object.keys(providerMeta) as Provider[]).map(p => (
-            <ProviderCard
-              key={p}
-              provider={p}
-              connected={connected[p]}
-              onToggle={() => toggle(p)}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* 02 — SNAPSHOT */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="02 / This Week" title="SNAPSHOT" />
-        <div className="stats-row" style={{ border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
-          <StatBox label="KM Done (All Time)" value={actualKm.toFixed(2)} unit="km" sub={`of ${totalTarget} km total plan`} />
-          <StatBox label="Plan Completion" value={`${pct}`} unit="%" sub={status === 'green' ? '✓ On track' : status === 'yellow' ? '~ Almost there' : '✕ Catch up!'} />
-          <StatBox label="This Week" value={weekKm.toFixed(2)} unit="km" sub={`${weekRuns.length} sessions`} />
-          <StatBox label="Avg Pace" value={avgPace > 0 ? `${avgPaceMin}:${avgPaceSec}` : '—'} unit="/km" sub={`across ${dbUser.runs.length} runs`} />
-        </div>
-      </section>
-
-      {/* 03 — LOG A RUN */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="03 / Log Run" title="ADD YOUR SESSION" />
+        <SectionHead label="01 / Log Run" title="ADD YOUR SESSION" />
         <div className="log-form">
           {success && (
             <div style={{ background: '#4ade8020', border: '1px solid #4ade80', borderRadius: '4px', padding: '12px 16px', marginBottom: '20px', color: '#4ade80', fontFamily: 'monospace', fontSize: '13px' }}>
@@ -389,10 +363,21 @@ export default function DashboardClient({
         </div>
       </section>
 
-      {/* 04 — RECENT RUNS */}
+      {/* 02 — SNAPSHOT */}
+      <section style={{ marginBottom: '80px' }}>
+        <SectionHead label="02 / This Week" title="SNAPSHOT" />
+        <div className="stats-row" style={{ border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
+          <StatBox label="KM Done (All Time)" value={actualKm.toFixed(2)} unit="km" sub={`of ${totalTarget} km total plan`} />
+          <StatBox label="Plan Completion" value={`${pct}`} unit="%" sub={status === 'green' ? '✓ On track' : status === 'yellow' ? '~ Almost there' : '✕ Catch up!'} />
+          <StatBox label="This Week" value={weekKm.toFixed(2)} unit="km" sub={`${weekRuns.length} sessions`} />
+          <StatBox label="Avg Pace" value={avgPace > 0 ? `${avgPaceMin}:${avgPaceSec}` : '—'} unit="/km" sub={`across ${dbUser.runs.length} runs`} />
+        </div>
+      </section>
+
+      {/* 03 — RECENT RUNS */}
       {dbUser.runs.length > 0 && (
         <section style={{ marginBottom: '80px' }}>
-          <SectionHead label="04 / History" title="YOUR RUNS" />
+          <SectionHead label="03 / History" title="YOUR RUNS" />
           
           {(() => {
             const totalRuns = dbUser.runs.length;
@@ -480,6 +465,21 @@ export default function DashboardClient({
           </div>
         </section>
       )}
+
+      {/* 04 — INTEGRATIONS */}
+      <section style={{ marginBottom: '80px' }}>
+        <SectionHead label="04 / Integrations" title="CONNECT YOUR DEVICES" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          {(Object.keys(providerMeta) as Provider[]).map(p => (
+            <ProviderCard
+              key={p}
+              provider={p}
+              connected={connected[p]}
+              onToggle={() => toggle(p)}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* 05 — METRICS DECODED */}
       <section style={{ marginBottom: '80px' }}>
