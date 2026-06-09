@@ -62,8 +62,9 @@ export default function Navbar() {
       <button 
         className="mobile-menu-btn" 
         onClick={() => setIsOpen(!isOpen)}
+        style={{ zIndex: 101, position: 'relative' }}
       >
-        ☰
+        {isOpen ? '✕' : '☰'}
       </button>
       <ul className={`nav-links ${isOpen ? 'open' : ''}`}>
         <li><Link href="/#members" onClick={() => setIsOpen(false)}>Members</Link></li>

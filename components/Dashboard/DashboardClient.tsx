@@ -296,7 +296,7 @@ export default function DashboardClient({
       {/* 02 — SNAPSHOT */}
       <section style={{ marginBottom: '80px' }}>
         <SectionHead label="02 / This Week" title="SNAPSHOT" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1px', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
+        <div className="stats-row" style={{ border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', background: 'var(--border)' }}>
           <StatBox label="KM Done (All Time)" value={actualKm.toFixed(2)} unit="km" sub={`of ${totalTarget} km total plan`} />
           <StatBox label="Plan Completion" value={`${pct}`} unit="%" sub={status === 'green' ? '✓ On track' : status === 'yellow' ? '~ Almost there' : '✕ Catch up!'} />
           <StatBox label="This Week" value={weekKm.toFixed(2)} unit="km" sub={`${weekRuns.length} sessions`} />
@@ -307,59 +307,58 @@ export default function DashboardClient({
       {/* 03 — LOG A RUN */}
       <section style={{ marginBottom: '80px' }}>
         <SectionHead label="03 / Log Run" title="ADD YOUR SESSION" />
-        <div style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '28px', background: 'var(--surface)' }}>
+        <div className="log-form">
           {success && (
             <div style={{ background: '#4ade8020', border: '1px solid #4ade80', borderRadius: '4px', padding: '12px 16px', marginBottom: '20px', color: '#4ade80', fontFamily: 'monospace', fontSize: '13px' }}>
               ✓ Run logged! Refreshing...
             </div>
           )}
-          <form onSubmit={handleLogRun} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Distance (km)</label>
+          <form onSubmit={handleLogRun} className="form-row">
+            <div className="form-group">
+              <label className="form-label">Distance (km)</label>
               <input
                 type="number" step="0.01" min="0.01" required
                 value={distance} onChange={e => setDistance(e.target.value)}
-                placeholder="5.00"
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+                placeholder="5.00" className="form-input"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Date</label>
+            <div className="form-group">
+              <label className="form-label">Date</label>
               <input
                 type="date" required
                 value={date} onChange={e => setDate(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+                className="form-input"
               />
             </div>
-            <div style={{ gridColumn: '1 / -1', fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.8, color: 'var(--accent)', marginTop: '4px', marginBottom: '-4px' }}>Enter Pace OR Duration (optional)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Pace (MM:SS)</label>
+            <div style={{ width: '100%', fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.8, color: 'var(--accent)', marginTop: '4px', marginBottom: '-4px' }}>Enter Pace OR Duration (optional)</div>
+            <div className="form-group">
+              <label className="form-label">Pace (MM:SS)</label>
               <input
                 type="text" placeholder="5:30"
                 value={pace} onChange={e => setPace(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+                className="form-input"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Duration (HH:MM:SS)</label>
+            <div className="form-group">
+              <label className="form-label">Duration (HH:MM:SS)</label>
               <input
                 type="text" placeholder="45:00"
                 value={duration} onChange={e => setDuration(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+                className="form-input"
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Notes</label>
+            <div className="form-group">
+              <label className="form-label">Notes</label>
               <input
                 type="text" placeholder="Felt great!"
                 value={notes} onChange={e => setNotes(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+                className="form-input"
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <div className="form-group" style={{ justifyContent: 'flex-end' }}>
               <button
                 type="submit" disabled={loading}
-                style={{ width: '100%', background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '4px', padding: '11px 20px', fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+                style={{ width: '100%', background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '4px', minHeight: '44px', fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
               >
                 {loading ? 'Saving...' : '+ Save Run'}
               </button>
@@ -372,62 +371,115 @@ export default function DashboardClient({
       {dbUser.runs.length > 0 && (
         <section style={{ marginBottom: '80px' }}>
           <SectionHead label="04 / History" title="YOUR RUNS" />
-          <div style={{ border: '1px solid var(--border)', borderRadius: '4px', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Date', 'Distance', 'Pace', 'Duration', 'Effort', ''].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, fontWeight: 600 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {dbUser.runs.slice(0, 15).map((r: any, i: number) => {
-                  const d = new Date(r.date)
-                  const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                  const paceMin = Math.floor(r.paceSecPerKm / 60)
-                  const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
-                  const hrs = Math.floor(r.durationSec / 3600)
-                  const mins = Math.floor((r.durationSec % 3600) / 60)
-                  const secs = String(r.durationSec % 60).padStart(2, '0')
-                  const durationStr = `${hrs}:${String(mins).padStart(2, '0')}:${secs}`
-                  
-                  const notesLower = (r.notes || '').toLowerCase()
-                  const isHard = notesLower.includes('hard')
-                  const isModerate = notesLower.includes('moderate') || notesLower.includes('mod')
-                  const isEasy = notesLower.includes('easy')
-                  
-                  let effortTag = null
-                  if (isHard) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
-                  else if (isModerate) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
-                  else if (isEasy) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+          <>
+            <div className="table-responsive hidden-mobile">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    {['Date', 'Distance', 'Pace', 'Duration', 'Effort', ''].map(h => (
+                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dbUser.runs.slice(0, 15).map((r: any, i: number) => {
+                    const d = new Date(r.date)
+                    const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                    const paceMin = Math.floor(r.paceSecPerKm / 60)
+                    const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
+                    const hrs = Math.floor(r.durationSec / 3600)
+                    const mins = Math.floor((r.durationSec % 3600) / 60)
+                    const secs = String(r.durationSec % 60).padStart(2, '0')
+                    const durationStr = `${hrs > 0 ? hrs + ':' : ''}${String(mins).padStart(2, '0')}:${secs}`
+                    
+                    const notesLower = (r.notes || '').toLowerCase()
+                    const isHard = notesLower.includes('hard')
+                    const isModerate = notesLower.includes('moderate') || notesLower.includes('mod')
+                    const isEasy = notesLower.includes('easy')
+                    
+                    let effortTag = null
+                    if (isHard) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
+                    else if (isModerate) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
+                    else if (isEasy) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
 
-                  return (
-                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
-                      <td style={{ padding: '12px 16px', opacity: 0.7 }}>{dateStr}</td>
-                      <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(2)} km</td>
-                      <td style={{ padding: '12px 16px', opacity: 0.8 }}>{paceMin}:{paceSec} /km</td>
-                      <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durationStr}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        {effortTag && (
-                          <span style={{ 
-                            background: effortTag.bg, color: effortTag.color, 
-                            padding: '4px 8px', borderRadius: '4px', 
-                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' 
-                          }}>
-                            {effortTag.label}
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
+                        <td style={{ padding: '12px 16px', opacity: 0.7 }}>{dateStr}</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(2)} km</td>
+                        <td style={{ padding: '12px 16px', opacity: 0.8 }}>{paceMin}:{paceSec} /km</td>
+                        <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durationStr}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {effortTag && (
+                            <span style={{ 
+                              background: effortTag.bg, color: effortTag.color, 
+                              padding: '4px 8px', borderRadius: '4px', 
+                              fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' 
+                            }}>
+                              {effortTag.label}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', minHeight: '44px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="visible-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {dbUser.runs.slice(0, 15).map((r: any) => {
+                const d = new Date(r.date)
+                const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                const paceMin = Math.floor(r.paceSecPerKm / 60)
+                const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
+                const hrs = Math.floor(r.durationSec / 3600)
+                const mins = Math.floor((r.durationSec % 3600) / 60)
+                const secs = String(r.durationSec % 60).padStart(2, '0')
+                const durationStr = `${hrs > 0 ? hrs + ':' : ''}${String(mins).padStart(2, '0')}:${secs}`
+                
+                const notesLower = (r.notes || '').toLowerCase()
+                let effortTag = null
+                if (notesLower.includes('hard')) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
+                else if (notesLower.includes('moderate') || notesLower.includes('mod')) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
+                else if (notesLower.includes('easy')) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+
+                return (
+                  <div key={r.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)' }}>{dateStr}</span>
+                      <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
+                      <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', color: 'var(--orange)', lineHeight: 1 }}>{r.distanceKm.toFixed(2)}</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--muted)' }}>KM</span>
+                      {effortTag && (
+                        <span style={{ 
+                          marginLeft: 'auto', background: effortTag.bg, color: effortTag.color, 
+                          padding: '4px 8px', borderRadius: '4px', 
+                          fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' 
+                        }}>
+                          {effortTag.label}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>PACE</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>{paceMin}:{paceSec}/km</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>TIME</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>{durationStr}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         </section>
       )}
 

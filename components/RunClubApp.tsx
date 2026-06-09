@@ -167,104 +167,116 @@ export default function RunClubApp({ users }: { users: any[] }) {
         <div className="reveal visible">
           <span className="section-tag">// 02 · Training Plans</span>
           <h2 className="section-title">The Blueprint</h2>
-          <p className="section-sub">10 weeks of structured training. Tue · Thu · Sat · Sun. Every run counts.</p>
+          <p className="section-sub">10 Weeks · 4 Days/Week · 3 Plans</p>
         </div>
-        <div className="plan-wrap reveal visible">
-          <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
-            <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-              <div className="plan-title" style={{ fontSize: '1.4rem' }}>10K Plan</div>
-              <span className="p-category cat-10k">10.5K</span>
-            </div>
-            <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
-              <thead style={{ position: 'sticky', top: '56px', background: 'var(--surface)', zIndex: 9 }}>
-                <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
-              </thead>
-              <tbody>
-                {PLAN_10K.map((w, i) => {
-                  const isCurrent = i === currentWeekIdx()
-                  return (
-                  <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
-                    height: '64px', fontSize: '1.05rem',
-                    background: isCurrent ? 'rgba(252,76,2,0.1)' : 'transparent',
-                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--accent)' : 'none',
-                    transition: 'background 0.2s'
-                  }}>
-                    <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
-                    <td className="km-cell">{w.tue}</td>
-                    <td className="km-cell">{w.thu}</td>
-                    <td className="km-cell">{w.sat}</td>
-                    <td className="km-cell">{w.sun}</td>
-                    <td className="km-cell" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
-                  </tr>
-                )})}
-                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>239 km</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div className="plan-wrap-3 reveal visible">
+          {[
+            {
+              id: '10K', title: '10K Plan', badge: '10.5 KM', vol: '239 km total', days: 'Tue · Thu · Sat · Sun',
+              tagline: 'Build your base and peak at race pace.', color: 'var(--orange)', bg: 'rgba(252,76,2,0.1)',
+              data: PLAN_10K, totalStr: '239 km'
+            },
+            {
+              id: 'HM_INT', title: 'Half Marathon (Int)', badge: '21.1 KM', vol: '364 km total', days: 'Tue · Thu · Sat · Sun',
+              tagline: 'Go the distance. 21.1km awaits.', color: 'var(--blue)', bg: 'rgba(34,211,238,0.1)',
+              data: PLAN_HM_INT, totalStr: '364 km'
+            },
+            {
+              id: 'HM_BEG', title: 'Half Marathon (Beg)', badge: '21.1 KM', vol: '340 km total', days: 'Tue · Thu · Sat · Sun',
+              tagline: 'Your first half marathon starts here.', color: 'var(--green)', bg: 'rgba(34,197,94,0.1)',
+              data: PLAN_HM_BEG, totalStr: '340 km'
+            }
+          ].map(plan => {
+            const currentWk = currentWeekIdx();
+            const pctDone = Math.min(100, Math.round(((currentWk + 1) / 10) * 100));
+            const runnersCount = mappedUsers.filter(u => u.cat === plan.id).length;
+            const peakWeekKm = Math.max(...plan.data.map(w => Number(w.total) || 0));
 
-          <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
-            <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-              <div className="plan-title" style={{ fontSize: '1.4rem' }}>Half Marathon Plan (Int)</div>
-              <span className="p-category cat-hm">21.1K</span>
-            </div>
-            <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
-              <thead style={{ position: 'sticky', top: '56px', background: 'var(--surface)', zIndex: 9 }}>
-                <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
-              </thead>
-              <tbody>
-                {PLAN_HM_INT.map((w, i) => {
-                  const isCurrent = i === currentWeekIdx()
-                  return (
-                  <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
-                    height: '64px', fontSize: '1.05rem',
-                    background: isCurrent ? 'rgba(34,211,238,0.1)' : 'transparent',
-                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--blue)' : 'none',
-                    transition: 'background 0.2s'
-                  }}>
-                    <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
-                    <td className="km-cell">{w.tue}</td>
-                    <td className="km-cell">{w.thu}</td>
-                    <td className="km-cell">{w.sat}</td>
-                    <td className="km-cell">{w.sun}</td>
-                    <td className="km-cell" style={{ color: 'var(--blue)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
-                  </tr>
-                )})}
-                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>368 km</td></tr>
-              </tbody>
-            </table>
-          </div>
+            return (
+              <div key={plan.id} style={{
+                background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
+                overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                boxShadow: `0 8px 30px rgba(0,0,0,0.2)`
+              }}>
+                {/* Header Area */}
+                <div style={{ padding: '28px 24px 20px', borderBottom: '1px solid var(--border)', background: 'var(--card)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', margin: 0, letterSpacing: '1px' }}>{plan.title}</h3>
+                    <span style={{ 
+                      background: plan.bg, color: plan.color, border: `1px solid ${plan.color}`, 
+                      padding: '4px 8px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700 
+                    }}>{plan.badge}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text)', background: 'var(--bg)', padding: '4px 8px', borderRadius: '4px' }}>{plan.vol}</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', background: 'var(--bg)', padding: '4px 8px', borderRadius: '4px' }}>{plan.days}</span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '20px', minHeight: '40px' }}>{plan.tagline}</p>
+                  
+                  {/* Progress Bar */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--subtle)' }}>PROGRESS</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '10px', color: plan.color }}>Wk {currentWk + 1}/10</span>
+                  </div>
+                  <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pctDone}%`, background: plan.color, borderRadius: '2px' }} />
+                  </div>
+                </div>
 
-          <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
-            <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-              <div className="plan-title" style={{ fontSize: '1.4rem' }}>Half Marathon Plan (Beg)</div>
-              <span className="p-category cat-hm">21.1K</span>
-            </div>
-            <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
-              <thead style={{ position: 'sticky', top: '56px', background: 'var(--surface)', zIndex: 9 }}>
-                <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
-              </thead>
-              <tbody>
-                {PLAN_HM_BEG.map((w, i) => {
-                  const isCurrent = i === currentWeekIdx()
-                  return (
-                  <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
-                    height: '64px', fontSize: '1.05rem',
-                    background: isCurrent ? 'rgba(34,211,238,0.1)' : 'transparent',
-                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--blue)' : 'none',
-                    transition: 'background 0.2s'
-                  }}>
-                    <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
-                    <td className="km-cell">{w.tue}</td>
-                    <td className="km-cell">{w.thu}</td>
-                    <td className="km-cell">{w.sat}</td>
-                    <td className="km-cell">{w.sun}</td>
-                    <td className="km-cell" style={{ color: 'var(--blue)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
-                  </tr>
-                )})}
-                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>340 km</td></tr>
-              </tbody>
-            </table>
-          </div>
+                {/* Table Body */}
+                <div style={{ flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
+                  <table className="plan-table" style={{ width: '100%' }}>
+                    <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 9 }}>
+                      <tr><th style={{ padding: '16px 8px' }}>Wk</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                      {plan.data.map((w, i) => {
+                        const isCurrent = i === currentWk;
+                        const wkTotal = Number(w.total) || 0;
+                        const volPct = (wkTotal / peakWeekKm) * 100;
+                        
+                        return (
+                        <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
+                          height: '54px',
+                          background: isCurrent ? plan.bg : 'transparent',
+                          boxShadow: isCurrent ? `inset 4px 0 0 ${plan.color}` : 'none',
+                          transition: 'background 0.2s'
+                        }}>
+                          <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label.replace('Week ', '')}</td>
+                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.tue}</td>
+                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.thu}</td>
+                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.sat}</td>
+                          <td className="km-cell" style={{ color: isCurrent ? 'var(--text)' : '' }}>{w.sun}</td>
+                          <td className="km-cell" style={{ position: 'relative', color: isCurrent ? plan.color : 'var(--text)', fontWeight: 700 }}>
+                            <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '3px', background: 'var(--border)', borderRadius: '1px', opacity: 0.5 }}>
+                              <div style={{ height: '100%', width: `${volPct}%`, background: plan.color, borderRadius: '1px' }} />
+                            </div>
+                            {w.total}
+                          </td>
+                        </tr>
+                      )})}
+                      <tr className="total-row" style={{ height: '54px', background: 'var(--card)' }}>
+                        <td colSpan={5} style={{ fontWeight: 800, textAlign: 'right', paddingRight: '16px' }}>TOTAL</td>
+                        <td style={{ fontWeight: 800, color: plan.color }}>{plan.totalStr}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Footer Area */}
+                <div style={{ padding: '16px 24px', background: 'var(--card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>PEAK WEEK</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{peakWeekKm} km</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>RUNNERS</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>{runnersCount}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -287,88 +299,164 @@ export default function RunClubApp({ users }: { users: any[] }) {
           
           {/* OVERALL LEADERBOARD */}
           {leaderboardTab === 'overall' && (
-          <div className="table-responsive reveal visible">
-            <table className="lb-table">
-              <thead>
-                <tr>
-                  <th>#</th><th>Runner</th><th>KM Done</th><th>Completion</th>
-                </tr>
-              </thead>
-              <tbody>
+          <>
+            <div className="table-responsive hidden-mobile reveal visible">
+              <table className="lb-table">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Runner</th><th>KM Done</th><th>Completion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mappedUsers.map((u, i) => {
+                    const planned = plannedKmSoFar(u)
+                    const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+                    return (
+                      <tr key={u.id}>
+                        <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
+                        <td>
+                          <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
+                                {u.initials}
+                              </div>
+                              <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}>{u.name}</span>
+                            </div>
+                          </Link>
+                        </td>
+                        <td><span className="lb-km">{u.actualKm.toFixed(2)} km</span></td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: u.status === 'green' ? 'var(--green)' : u.status === 'yellow' ? 'var(--yellow)' : 'var(--red)', borderRadius: '2px' }}></div>
+                            </div>
+                            <span className="lb-mono">{pct}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="visible-mobile reveal visible">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {mappedUsers.map((u, i) => {
                   const planned = plannedKmSoFar(u)
                   const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
                   return (
-                    <tr key={u.id}>
-                      <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
-                      <td>
-                        <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
-                              {u.initials}
-                            </div>
-                            <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}>{u.name}</span>
-                          </div>
-                        </Link>
-                      </td>
-                      <td><span className="lb-km">{u.actualKm.toFixed(2)} km</span></td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
-                            <div style={{ height: '100%', width: `${pct}%`, background: u.status === 'green' ? 'var(--green)' : u.status === 'yellow' ? 'var(--yellow)' : 'var(--red)', borderRadius: '2px' }}></div>
-                          </div>
-                          <span className="lb-mono">{pct}%</span>
+                    <Link key={u.id} href={`/dashboard/${u.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ 
+                        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', 
+                        padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' 
+                      }}>
+                        <div style={{ width: '40px', textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: i < 3 ? 'var(--text)' : 'var(--muted)' }}>
+                          #{i + 1}
                         </div>
-                      </td>
-                    </tr>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#000', flexShrink: 0 }}>
+                          {u.initials}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, marginBottom: '4px' }}>{u.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '4px', background: 'var(--surface)', borderRadius: '2px' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: u.status === 'green' ? 'var(--green)' : u.status === 'yellow' ? 'var(--yellow)' : 'var(--red)', borderRadius: '2px' }}></div>
+                            </div>
+                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)' }}>{pct}%</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700 }}>{u.actualKm.toFixed(1)}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px' }}>KM</span>
+                        </div>
+                      </div>
+                    </Link>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          </>
           )}
 
           {/* WEEKLY LEADERBOARD */}
           {leaderboardTab === 'weekly' && (
-          <div className="table-responsive reveal visible">
-            <table className="lb-table">
-              <thead>
-                <tr>
-                  <th>#</th><th>Runner</th><th>KM This Week</th><th>Week Target</th>
-                </tr>
-              </thead>
-              <tbody>
+          <>
+            <div className="table-responsive hidden-mobile reveal visible">
+              <table className="lb-table">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Runner</th><th>KM This Week</th><th>Week Target</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeklyTopUsers.map((u, i) => {
+                    const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
+                    const pct = weekTarget > 0 ? Math.min(100, Math.round((u.weekKm / weekTarget) * 100)) : 0
+                    return (
+                      <tr key={u.id}>
+                        <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
+                        <td>
+                          <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
+                                {u.initials}
+                              </div>
+                              <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}>{u.name}</span>
+                            </div>
+                          </Link>
+                        </td>
+                        <td><span className="lb-km" style={{ color: 'var(--blue)' }}>{u.weekKm.toFixed(2)} km</span></td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--blue)', borderRadius: '2px' }}></div>
+                            </div>
+                            <span className="lb-mono">{pct}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="visible-mobile reveal visible">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {weeklyTopUsers.map((u, i) => {
                   const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
                   const pct = weekTarget > 0 ? Math.min(100, Math.round((u.weekKm / weekTarget) * 100)) : 0
                   return (
-                    <tr key={u.id}>
-                      <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
-                      <td>
-                        <Link href={`/dashboard/${u.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#000' }}>
-                              {u.initials}
-                            </div>
-                            <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}>{u.name}</span>
-                          </div>
-                        </Link>
-                      </td>
-                      <td><span className="lb-km" style={{ color: 'var(--blue)' }}>{u.weekKm.toFixed(2)} km</span></td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ flex: 1, height: '4px', background: 'var(--border)', borderRadius: '2px', minWidth: '60px' }}>
-                            <div style={{ height: '100%', width: `${pct}%`, background: 'var(--blue)', borderRadius: '2px' }}></div>
-                          </div>
-                          <span className="lb-mono">{pct}%</span>
+                    <Link key={u.id} href={`/dashboard/${u.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ 
+                        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', 
+                        padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' 
+                      }}>
+                        <div style={{ width: '40px', textAlign: 'center', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: i < 3 ? 'var(--text)' : 'var(--muted)' }}>
+                          #{i + 1}
                         </div>
-                      </td>
-                    </tr>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#000', flexShrink: 0 }}>
+                          {u.initials}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, marginBottom: '4px' }}>{u.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '4px', background: 'var(--surface)', borderRadius: '2px' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--blue)', borderRadius: '2px' }}></div>
+                            </div>
+                            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)' }}>{pct}%</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{u.weekKm.toFixed(1)}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px' }}>KM WK</span>
+                        </div>
+                      </div>
+                    </Link>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          </>
           )}
         </div>
       </div>

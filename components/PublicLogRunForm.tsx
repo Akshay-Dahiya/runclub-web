@@ -47,7 +47,7 @@ export default function PublicLogRunForm({ runners }: { runners: {name: string, 
 
       <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+        <div className="form-row">
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Runner</label>
             <select className="form-input" name="email" required defaultValue="">
@@ -64,7 +64,7 @@ export default function PublicLogRunForm({ runners }: { runners: {name: string, 
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+        <div className="form-row">
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Date</label>
             <input className="form-input" type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} />
@@ -75,7 +75,7 @@ export default function PublicLogRunForm({ runners }: { runners: {name: string, 
           Enter Pace OR Duration (optional)
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+        <div className="form-row">
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Pace (MM:SS)</label>
             <input className="form-input" type="text" name="pace" placeholder="5:30" />
