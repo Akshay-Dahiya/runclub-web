@@ -1,17 +1,7 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react'
-
-function useChatStub() {
-  return {
-    messages: [] as any[],
-    input: '',
-    handleInputChange: () => {},
-    handleSubmit: (e: any) => { e.preventDefault(); },
-    setInput: (text: string) => {},
-    isLoading: false,
-    error: null as any,
-  };
-}
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
 
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -23,8 +13,28 @@ export default function CoachPage() {
   const userId = params.id as string
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: { userId }
+    })
+  });
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading, error } = useChatStub();
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  const [input, setInput] = useState('');
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+  
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    sendMessage({ text: input });
+    setInput('');
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -66,7 +76,7 @@ export default function CoachPage() {
                 </div>
               )}
               {messages.map(m => (
-                <ChatMessage key={m.id} role={m.role as 'user' | 'assistant'} content={m.content} />
+                <ChatMessage key={m.id} role={m.role as 'user' | 'assistant'} content={m.parts ? m.parts.map((p: any) => p.type === 'text' ? p.text : '').join('') : ((m as any).text || (m as any).content || '')} />
               ))}
               {isLoading && (
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', opacity: 0.5, padding: '16px' }}>
