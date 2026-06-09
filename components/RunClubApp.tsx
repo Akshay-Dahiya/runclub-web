@@ -571,7 +571,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                           borderBottom: '1px solid var(--border)',
                           transition: 'background 0.2s'
                         }}>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: isCurrent ? plan.color : 'var(--muted)', padding: '14px 8px' }}>{w.wk}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: isCurrent ? plan.color : 'var(--muted)', padding: '14px 8px' }}>{w.week}</td>
                           <td style={{ textAlign: 'center' }}>{w.tue}</td>
                           <td style={{ textAlign: 'center' }}>{w.thu}</td>
                           <td style={{ textAlign: 'center' }}>{w.sat}</td>
