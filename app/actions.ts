@@ -9,13 +9,11 @@ export async function logRun(formData: FormData) {
   const dateStr = formData.get('date') as string
   const pace = formData.get('pace') as string // "5:30" format
   const duration = formData.get('duration') as string // "45:00" format
+  const hrStr = formData.get('heartRate') as string
+  const avgHeartRate = hrStr ? parseInt(hrStr, 10) : null
 
   if (!email || !distanceKm || !dateStr) {
     throw new Error('Missing required fields')
-  }
-  
-  if (!pace && !duration) {
-    throw new Error('Please provide either Pace or Duration')
   }
 
   const parsePaceToSec = (timeStr: string) => {
@@ -63,6 +61,23 @@ export async function logRun(formData: FormData) {
       throw new Error('User not found')
     }
 
+    // Deduplication safeguard
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000)
+    const recentDuplicate = await prisma.run.findFirst({
+      where: {
+        userId: user.id,
+        distanceKm: distanceKm,
+        date: new Date(dateStr),
+        createdAt: {
+          gte: thirtySecondsAgo
+        }
+      }
+    })
+    
+    if (recentDuplicate) {
+      throw new Error('This run looks like a duplicate. It was not saved again.')
+    }
+
     await prisma.run.create({
       data: {
         userId: user.id,
@@ -70,6 +85,7 @@ export async function logRun(formData: FormData) {
         distanceKm,
         durationSec,
         paceSecPerKm,
+        avgHeartRate,
       }
     })
   } catch (error: any) {

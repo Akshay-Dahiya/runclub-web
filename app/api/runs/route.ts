@@ -44,6 +44,23 @@ export async function POST(req: Request) {
   const durationSec = body.durationSec ?? Math.round(distanceKm * (paceSecPerKm ?? 360))
   const finalPace = paceSecPerKm ?? Math.round(durationSec / distanceKm)
 
+  // Deduplication safeguard
+  const thirtySecondsAgo = new Date(Date.now() - 30 * 1000)
+  const recentDuplicate = await prisma.run.findFirst({
+    where: {
+      userId: userId,
+      distanceKm: parseFloat(distanceKm),
+      date: new Date(date),
+      createdAt: {
+        gte: thirtySecondsAgo
+      }
+    }
+  })
+  
+  if (recentDuplicate) {
+    return NextResponse.json({ error: 'This run looks like a duplicate. It was not saved again.' }, { status: 409 })
+  }
+
   const run = await prisma.run.create({
     data: {
       userId,

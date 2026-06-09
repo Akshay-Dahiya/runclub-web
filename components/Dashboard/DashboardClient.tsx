@@ -102,6 +102,7 @@ export default function DashboardClient({
   useEffect(() => setDate(new Date().toISOString().split('T')[0]), [])
   const [pace, setPace] = useState('')
   const [duration, setDuration] = useState('')
+  const [heartRate, setHeartRate] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -168,11 +169,14 @@ export default function DashboardClient({
       const res = await fetch('/api/runs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, date, distanceKm: distKm, paceSecPerKm, durationSec, notes })
+        body: JSON.stringify({ userId, date, distanceKm: distKm, paceSecPerKm, durationSec, notes, avgHeartRate: heartRate ? parseInt(heartRate, 10) : null })
       })
-      if (!res.ok) throw new Error('Failed to log run')
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error || 'Failed to log run')
+      }
       setSuccess(true)
-      setDistance(''); setPace(''); setDuration(''); setNotes('')
+      setDistance(''); setPace(''); setDuration(''); setNotes(''); setHeartRate('')
       setTimeout(() => { window.location.reload() }, 1200)
     } catch (err) {
       alert('Failed to log run. Please try again.')
@@ -340,7 +344,7 @@ export default function DashboardClient({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Duration (HH:MM:SS)</label>
+              <label className="form-label">Duration (HH:MM:SS) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
               <input
                 type="text" placeholder="45:00"
                 value={duration} onChange={e => setDuration(e.target.value)}
@@ -348,6 +352,14 @@ export default function DashboardClient({
               />
             </div>
             <div className="form-group">
+              <label className="form-label">Avg Heart Rate (bpm) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
+              <input
+                type="number" placeholder="e.g. 152" min="40" max="220"
+                value={heartRate} onChange={e => setHeartRate(e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group" style={{ width: '100%' }}>
               <label className="form-label">Notes</label>
               <input
                 type="text" placeholder="Felt great!"

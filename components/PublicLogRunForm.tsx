@@ -57,39 +57,39 @@ export default function PublicLogRunForm({ runners }: { runners: {name: string, 
               ))}
             </select>
           </div>
-          
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Distance (KM)</label>
-            <input className="form-input" type="number" name="distance" placeholder="5.00" step="0.01" min="0.01" required />
-          </div>
-        </div>
-
-        <div className="form-row">
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Date</label>
             <input className="form-input" type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} />
           </div>
         </div>
 
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.65rem', letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--accent)', marginTop: '8px', marginBottom: '-8px' }}>
-          Enter Pace OR Duration (optional)
+        <div className="form-row">
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Distance (KM)</label>
+            <input className="form-input" type="number" name="distance" placeholder="5.00" step="0.01" min="0.01" required />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Pace (MM:SS) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
+            <input className="form-input" type="text" name="pace" placeholder="5:30" />
+          </div>
         </div>
 
         <div className="form-row">
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Pace (MM:SS)</label>
-            <input className="form-input" type="text" name="pace" placeholder="5:30" />
-          </div>
-          
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Duration (HH:MM)</label>
+            <label className="form-label">Duration (HH:MM) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
             <input className="form-input" type="text" name="duration" placeholder="45:00" />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Avg Heart Rate (bpm) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
+            <input className="form-input" type="number" name="heartRate" placeholder="e.g. 152" min="40" max="220" />
           </div>
         </div>
 
-        <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
-          {loading ? 'Logging...' : 'Add Run →'}
-        </button>
+        <div className="form-actions">
+          <button type="submit" className="btn-primary form-submit-btn" disabled={loading}>
+            {loading ? 'Logging...' : 'Add Run →'}
+          </button>
+        </div>
       </form>
       
       <div id="log-msg" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '.8rem', color: 'var(--green)', letterSpacing: '1px', minHeight: '22px', marginTop: '12px', textAlign: 'center' }}>
