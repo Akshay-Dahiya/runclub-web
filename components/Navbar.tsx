@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function Navbar() {
       </div>
       <nav style={{ position: 'relative' }}>
       <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <img src="/logo.png?v=2" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
+        <Image src="/logo.png?v=2" alt="Joyville Road Runners Logo" width={32} height={32} style={{ height: '32px', width: 'auto' }} />
         JOYVILLE ROAD RUNNERS
       </Link>
       <button 
