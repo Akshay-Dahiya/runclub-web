@@ -61,7 +61,7 @@ export default function Navbar() {
       </div>
       <nav style={{ position: 'relative' }}>
       <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Image src="/logo.png?v=2" alt="Joyville Road Runners Logo" width={32} height={32} style={{ height: '32px', width: 'auto' }} />
+        <Image src="/logo.png?v=3" alt="Joyville Road Runners Logo" width={48} height={48} style={{ height: '48px', width: 'auto' }} />
         JOYVILLE ROAD RUNNERS
       </Link>
       <button 
