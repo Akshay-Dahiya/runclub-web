@@ -8,13 +8,9 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
 
   const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
-  const [activeRace, setActiveRace] = useState<'joyville' | 'tuffman'>('joyville')
-
   useEffect(() => {
-    // Joyville: August 23, 2026. Tuffman: August 31, 2026
-    const targetDate = activeRace === 'joyville' 
-      ? new Date('2026-08-23T05:00:00').getTime() 
-      : new Date('2026-08-31T05:00:00').getTime()
+    // Tuffman: August 23, 2026
+    const targetDate = new Date('2026-08-23T05:00:00').getTime()
 
     const updateCountdown = () => {
       const now = new Date().getTime()
@@ -41,25 +37,16 @@ export default function Navbar() {
     updateCountdown()
     const timerId = setInterval(updateCountdown, 1000)
     return () => clearInterval(timerId)
-  }, [activeRace])
+  }, [])
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
       {/* COUNTDOWN BANNER */}
       <div className="countdown-strip" style={{ padding: '8px 48px', borderBottom: 'none', background: 'var(--surface)', color: 'var(--text)', flexDirection: 'column', gap: '8px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={() => setActiveRace('joyville')}
-            style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid', borderColor: activeRace === 'joyville' ? 'var(--accent)' : 'var(--border)', background: activeRace === 'joyville' ? 'var(--accent)' : 'transparent', color: activeRace === 'joyville' ? '#000' : 'var(--muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            Joyville · Aug 23
-          </button>
-          <button 
-            onClick={() => setActiveRace('tuffman')}
-            style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid', borderColor: activeRace === 'tuffman' ? 'var(--accent)' : 'var(--border)', background: activeRace === 'tuffman' ? 'var(--accent)' : 'transparent', color: activeRace === 'tuffman' ? '#000' : 'var(--muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-          >
-            Tuffman · Aug 31
-          </button>
+          <span style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#000', fontSize: '0.75rem', fontWeight: 700 }}>
+            Tuffman · Aug 23
+          </span>
         </div>
         
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>

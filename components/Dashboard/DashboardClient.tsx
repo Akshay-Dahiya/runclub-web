@@ -84,7 +84,7 @@ const zones = [
 ]
 
 export default function DashboardClient({
-  dbUser,
+  dbUser: initialDbUser,
   participantDef,
   actualKm,
   plannedKm,
@@ -92,6 +92,16 @@ export default function DashboardClient({
   pct,
   totalTarget
 }: any) {
+  const uniqueRunsMap = new Map()
+  if (initialDbUser?.runs) {
+    initialDbUser.runs.forEach((r: any) => {
+      const d = new Date(r.date).toISOString().split('T')[0]
+      const key = `${d}-${r.distanceKm}-${r.paceSecPerKm}`
+      if (!uniqueRunsMap.has(key)) uniqueRunsMap.set(key, r)
+    })
+  }
+  const dbUser = { ...initialDbUser, runs: Array.from(uniqueRunsMap.values()) }
+
   const [connected, setConnected] = useState<Record<Provider, boolean>>({
     strava: false
   })
@@ -438,6 +448,13 @@ export default function DashboardClient({
                     )
                   })}
                 </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '16px', fontWeight: 700, fontSize: '12px' }}>TOTAL LOGGED</td>
+                    <td style={{ padding: '16px', color: 'var(--orange)', fontWeight: 700, fontSize: '14px' }}>{actualKm.toFixed(2)} km</td>
+                    <td colSpan={4}></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
@@ -490,6 +507,10 @@ export default function DashboardClient({
                   </div>
                 )
               })}
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700 }}>TOTAL LOGGED</span>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', color: 'var(--orange)', lineHeight: 1 }}>{actualKm.toFixed(2)} <span style={{ fontSize: '1rem', fontFamily: 'monospace' }}>KM</span></span>
+              </div>
             </div>
           </>
         </section>
