@@ -378,89 +378,167 @@ export default function DashboardClient({
       {dbUser.runs.length > 0 && (
         <section style={{ marginBottom: '80px' }}>
           <SectionHead label="03 / History" title="YOUR RUNS" />
-          
+
+          {/* Total Summary Tiles */}
           {(() => {
             const totalRuns = dbUser.runs.length;
             const totalTimeSec = dbUser.runs.reduce((s: number, r: any) => s + (r.durationSec || 0), 0);
             const totalTimeHrs = Math.floor(totalTimeSec / 3600);
             const totalTimeMins = Math.floor((totalTimeSec % 3600) / 60);
-
             const avgPaceTotal = totalRuns > 0 ? Math.round(dbUser.runs.reduce((s: number, r: any) => s + (r.paceSecPerKm || 0), 0) / totalRuns) : 0;
             const avgPaceTotalMin = Math.floor(avgPaceTotal / 60);
             const avgPaceTotalSec = String(avgPaceTotal % 60).padStart(2, '0');
-
+            const tiles = [
+              { label: 'TOTAL DISTANCE', value: actualKm.toFixed(1), unit: 'KM', accent: true },
+              { label: 'TOTAL TIME', value: `${totalTimeHrs}h ${totalTimeMins}m`, unit: '', accent: false },
+              { label: 'TOTAL RUNS', value: String(totalRuns), unit: '', accent: false },
+              { label: 'AVG PACE', value: `${avgPaceTotalMin}:${avgPaceTotalSec}`, unit: '/km', accent: false },
+            ];
             return (
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '32px', marginBottom: '40px', display: 'flex', flexWrap: 'wrap', gap: '48px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-                <div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>TOTAL DISTANCE</div>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--orange)', lineHeight: 1 }}>{actualKm.toFixed(1)} <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontFamily: 'monospace' }}>KM</span></div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>TOTAL TIME</div>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--text)', lineHeight: 1 }}>{totalTimeHrs}<span style={{ fontSize: '1.2rem', color: 'var(--muted)', fontFamily: 'monospace' }}>H</span> {totalTimeMins}<span style={{ fontSize: '1.2rem', color: 'var(--muted)', fontFamily: 'monospace' }}>M</span></div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>RUNS</div>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--text)', lineHeight: 1 }}>{totalRuns}</div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>AVG PACE</div>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--text)', lineHeight: 1 }}>{avgPaceTotalMin}:{avgPaceTotalSec} <span style={{ fontSize: '1.2rem', color: 'var(--muted)', fontFamily: 'monospace' }}>/KM</span></div>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2px', marginBottom: '48px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                {tiles.map((t, i) => (
+                  <div key={i} style={{
+                    background: t.accent ? 'rgba(252,76,2,0.12)' : 'var(--surface)',
+                    padding: '28px 24px',
+                    borderRight: i < tiles.length - 1 ? '1px solid var(--border)' : 'none',
+                    position: 'relative', overflow: 'hidden'
+                  }}>
+                    {t.accent && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: 'var(--orange)' }} />}
+                    <div style={{ fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.2em', color: 'var(--muted)', marginBottom: '12px', textTransform: 'uppercase' }}>{t.label}</div>
+                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.8rem', lineHeight: 1, color: t.accent ? 'var(--orange)' : 'var(--text)' }}>
+                      {t.value}<span style={{ fontSize: '1rem', color: 'var(--muted)', marginLeft: '4px', fontFamily: 'monospace' }}>{t.unit}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )
+            );
           })()}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-            {dbUser.runs.slice(0, 15).map((r: any) => {
-              const d = new Date(r.date)
-              const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-              const paceMin = Math.floor(r.paceSecPerKm / 60)
-              const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
-              const hrs = Math.floor(r.durationSec / 3600)
-              const mins = Math.floor((r.durationSec % 3600) / 60)
-              const secs = String(r.durationSec % 60).padStart(2, '0')
-              const durationStr = `${hrs > 0 ? hrs + ':' : ''}${String(mins).padStart(2, '0')}:${secs}`
-              
-              const notesLower = (r.notes || '').toLowerCase()
-              let effortTag = null
-              if (notesLower.includes('hard')) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
-              else if (notesLower.includes('moderate') || notesLower.includes('mod')) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
-              else if (notesLower.includes('easy')) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+          {/* Activity Feed Timeline */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            {dbUser.runs.slice(0, 15).map((r: any, idx: number) => {
+              const d = new Date(r.date);
+              const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+              const dayStr = d.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
+              const yearStr = d.getFullYear();
+              const paceMin = Math.floor(r.paceSecPerKm / 60);
+              const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0');
+              const hrs = Math.floor(r.durationSec / 3600);
+              const mins = Math.floor((r.durationSec % 3600) / 60);
+              const secs = String(r.durationSec % 60).padStart(2, '0');
+              const durationStr = hrs > 0
+                ? `${hrs}:${String(mins).padStart(2, '0')}:${secs}`
+                : `${String(mins).padStart(2, '0')}:${secs}`;
+
+              const notesLower = (r.notes || '').toLowerCase();
+              let effort: { label: string; color: string; bg: string } | null = null;
+              if (notesLower.includes('hard')) effort = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+              else if (notesLower.includes('moderate') || notesLower.includes('mod')) effort = { label: 'MODERATE', color: '#facc15', bg: 'rgba(250,204,21,0.12)' };
+              else if (notesLower.includes('easy')) effort = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.12)' };
+
+              const isLast = idx === Math.min(dbUser.runs.length, 15) - 1;
 
               return (
-                <div key={r.id} className="run-card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.05em' }}>{dateStr}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteRun(r.id); }} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'background 0.2s' }}>Delete</button>
+                <div key={r.id} style={{
+                  display: 'flex', alignItems: 'stretch', gap: '0',
+                  borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                }}>
+                  {/* Left accent + run number */}
+                  <div style={{
+                    width: '56px', flexShrink: 0,
+                    background: 'var(--surface)',
+                    borderLeft: '3px solid var(--orange)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '20px 0', gap: '6px',
+                    borderRight: '1px solid var(--border)',
+                  }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px' }}>RUN</span>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.4rem', color: 'var(--orange)', lineHeight: 1 }}>{dbUser.runs.length - idx}</span>
                   </div>
-                  
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '24px' }}>
-                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '4rem', color: 'var(--orange)', lineHeight: 0.9 }}>{r.distanceKm.toFixed(2)}</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '14px', color: 'var(--muted)', fontWeight: 600 }}>KM</span>
-                    {effortTag && (
-                      <span style={{ 
-                        marginLeft: 'auto', background: effortTag.bg, color: effortTag.color, 
-                        padding: '6px 12px', borderRadius: '6px', 
-                        fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' 
-                      }}>
-                        {effortTag.label}
+
+                  {/* Date block */}
+                  <div style={{
+                    width: '72px', flexShrink: 0,
+                    background: 'var(--surface)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '20px 8px',
+                    borderRight: '1px solid var(--border)',
+                  }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px' }}>{dayStr}</span>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.6rem', color: 'var(--text)', lineHeight: 1.1, textAlign: 'center' }}>{dateStr}</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', marginTop: '2px' }}>{yearStr}</span>
+                  </div>
+
+                  {/* Main content */}
+                  <div style={{
+                    flex: 1, background: 'var(--surface)',
+                    display: 'flex', alignItems: 'center',
+                    padding: '20px 28px', gap: '32px', flexWrap: 'wrap',
+                  }}>
+                    {/* Distance — hero number */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: '100px' }}>
+                      <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3rem', color: 'var(--orange)', lineHeight: 1 }}>
+                        {r.distanceKm.toFixed(2)}
+                      </span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', fontWeight: 700, letterSpacing: '1px' }}>KM</span>
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{ width: '1px', height: '36px', background: 'var(--border)', flexShrink: 0 }} />
+
+                    {/* Pace */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px', textTransform: 'uppercase' }}>Pace</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>{paceMin}:{paceSec}<span style={{ fontSize: '0.7rem', color: 'var(--muted)', marginLeft: '2px' }}>/km</span></span>
+                    </div>
+
+                    {/* Time */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '1px', textTransform: 'uppercase' }}>Duration</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>{durationStr}</span>
+                    </div>
+
+                    {/* Effort pill */}
+                    {effort && (
+                      <span style={{
+                        padding: '4px 12px', borderRadius: '20px',
+                        background: effort.bg, color: effort.color,
+                        fontFamily: 'monospace', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em'
+                      }}>{effort.label}</span>
+                    )}
+
+                    {/* Notes */}
+                    {r.notes && (
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', fontStyle: 'italic', marginLeft: 'auto', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        "{r.notes}"
                       </span>
                     )}
                   </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--subtle)', letterSpacing: '1px', marginBottom: '4px' }}>PACE</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>{paceMin}:{paceSec}/km</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--subtle)', letterSpacing: '1px', marginBottom: '4px' }}>TIME</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>{durationStr}</span>
-                    </div>
+
+                  {/* Delete button */}
+                  <div style={{
+                    width: '52px', flexShrink: 0,
+                    background: 'var(--surface)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderLeft: '1px solid var(--border)',
+                  }}>
+                    <button
+                      onClick={() => handleDeleteRun(r.id)}
+                      title="Delete run"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--muted)', fontSize: '16px', padding: '8px',
+                        borderRadius: '4px', transition: 'color 0.2s, background 0.2s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px'
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+                    >
+                      ✕
+                    </button>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </section>
