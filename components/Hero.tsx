@@ -53,18 +53,20 @@ export default function Hero() {
             <line x1="0" y1="350" x2="1200" y2="350" stroke="white" strokeWidth=".5"/>
           </svg>
         </div>
-        <div className="hero-eyebrow">▶ Race Day Aug 23, 2026</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(4rem, 10vw, 10rem)' }}>
-          <span style={{ color: 'var(--text)' }}>MILES</span><br/>
-          <span className="outline">AHEAD,</span><br/>
-          <span style={{ color: 'var(--text)' }}>TOGETHER</span>
-        </h1>
-        <p className="hero-sub" style={{ fontSize: '1.1rem', maxWidth: '700px' }}>
-          To empower a community of runners through shared grit, relentless support, and the pursuit of every personal milestone—one strong stride at a time.
-        </p>
-        <div className="hero-ctas">
-          <a href="/login" className="btn-primary">Go to Dashboard →</a>
-          <a href="#members" className="btn-ghost">View The Crew</a>
+        <div className="hero-inner">
+          <div className="hero-eyebrow">▶ Race Day Aug 23, 2026</div>
+          <h1 className="hero-title" style={{ fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
+            <span style={{ color: 'var(--text)' }}>THE ROAD TO</span><br/>
+            <span className="outline">21.1KM</span><br/>
+            <span style={{ color: 'var(--text)' }}>STARTS HERE.</span>
+          </h1>
+          <p className="hero-sub" style={{ fontSize: '1.2rem', maxWidth: '700px' }}>
+            Go the distance. Together. Empowering a community of runners through shared grit, relentless support, and the pursuit of every personal milestone.
+          </p>
+          <div className="hero-ctas">
+            <a href="/login" className="btn-primary">Go to Dashboard →</a>
+            <a href="#members" className="btn-ghost">View The Crew</a>
+          </div>
         </div>
       </div>
     </>

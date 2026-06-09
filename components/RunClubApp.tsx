@@ -65,7 +65,34 @@ export default function RunClubApp({ users }: { users: any[] }) {
     const weekKm = weekRuns.reduce((sum: number, r: any) => sum + r.distanceKm, 0)
     const status = getStatus(actualKm, p)
     const totalTarget = grandTotal(p)
-    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget }
+
+    // Streak logic
+    let currentStreak = 0;
+    if (runs.length > 0) {
+      const sortedRuns = runs.map((r: any) => new Date(r.date)).sort((a: any, b: any) => b.getTime() - a.getTime())
+      const today = new Date(); today.setHours(0,0,0,0);
+      const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+      
+      const runDates = Array.from(new Set(sortedRuns.map((d: Date) => {
+        const resetDate = new Date(d); resetDate.setHours(0,0,0,0);
+        return resetDate.getTime()
+      })))
+
+      if (runDates.includes(today.getTime()) || runDates.includes(yesterday.getTime())) {
+        let checkTime = runDates.includes(today.getTime()) ? today.getTime() : yesterday.getTime()
+        while (true) {
+          if (runDates.includes(checkTime)) {
+            currentStreak++
+            const nextDay = new Date(checkTime); nextDay.setDate(nextDay.getDate() - 1)
+            checkTime = nextDay.getTime()
+          } else {
+            break
+          }
+        }
+      }
+    }
+
+    return { ...p, dbUser, runs, actualKm, weekKm, status, totalTarget, currentStreak }
   }).sort((a, b) => b.actualKm - a.actualKm)
   
   const weeklyTopUsers = [...mappedUsers].sort((a, b) => b.weekKm - a.weekKm)
@@ -80,6 +107,18 @@ export default function RunClubApp({ users }: { users: any[] }) {
   const totalRuns = mappedUsers.reduce((sum, u) => sum + u.runs.length, 0)
   const totalKm = mappedUsers.reduce((sum, u) => sum + u.actualKm, 0)
   const weeksLeft = Math.max(0, Math.ceil((new Date('2026-08-23').getTime() - new Date().getTime()) / (7 * 86400000)))
+
+  const thisWeekTotalKm = mappedUsers.reduce((sum, u) => sum + u.weekKm, 0)
+  const thisWeekTotalRuns = mappedUsers.reduce((sum, u) => {
+    const weekRuns = u.runs.filter((r: any) => {
+      const d = new Date(r.date)
+      const now = new Date()
+      const start = new Date(now); start.setDate(now.getDate() - now.getDay())
+      return d >= start
+    })
+    return sum + weekRuns.length
+  }, 0)
+  const thisWeekActiveRunners = mappedUsers.filter(u => u.weekKm > 0).length
 
   // Scroll to current week in the blueprint tables on mount
   useEffect(() => {
@@ -99,6 +138,13 @@ export default function RunClubApp({ users }: { users: any[] }) {
     <>
       <Navbar />
       <Hero />
+
+      {/* THIS WEEK SUMMARY BAR */}
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '16px 48px', display: 'flex', justifyContent: 'center', gap: '48px', flexWrap: 'wrap', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px' }}>
+        <div><span style={{ color: 'var(--muted)' }}>This Week:</span> <strong style={{ color: 'var(--accent)', fontSize: '1rem' }}>{thisWeekTotalKm.toFixed(1)} KM</strong></div>
+        <div><span style={{ color: 'var(--muted)' }}>Runs:</span> <strong style={{ color: 'var(--text)', fontSize: '1rem' }}>{thisWeekTotalRuns}</strong></div>
+        <div><span style={{ color: 'var(--muted)' }}>Active Crew:</span> <strong style={{ color: 'var(--text)', fontSize: '1rem' }}>{thisWeekActiveRunners}</strong></div>
+      </div>
 
       {/* MEMBERS SECTION */}
       <div className="section" id="members">
@@ -138,9 +184,16 @@ export default function RunClubApp({ users }: { users: any[] }) {
               <div key={u.id} className={`participant-card status-${u.status}`}>
                 <div className="p-header">
                   <div className={`p-avatar av-${u.status}`}>{u.initials}</div>
-                  <span className={`p-badge badge-${u.status}`}>
-                    {u.status === 'green' ? '✓ On Track' : u.status === 'yellow' ? '~ Close' : '✕ Behind'}
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {u.currentStreak > 2 && (
+                      <span className="p-badge" style={{ background: 'var(--orange-dim)', color: 'var(--orange)', border: '1px solid var(--orange)' }}>
+                        🔥 {u.currentStreak} Day Streak
+                      </span>
+                    )}
+                    <span className={`p-badge badge-${u.status}`}>
+                      {u.status === 'green' ? '✓ On Track' : u.status === 'yellow' ? '~ Close' : '✕ Behind'}
+                    </span>
+                  </div>
                 </div>
                 <div className="p-name">{u.name}</div>
                 <div className="p-meta">{u.runs.length} runs · {u.actualKm.toFixed(2)} km done</div>

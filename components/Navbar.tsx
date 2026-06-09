@@ -8,10 +8,13 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
 
   const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
+  const [activeRace, setActiveRace] = useState<'joyville' | 'tuffman'>('joyville')
 
   useEffect(() => {
-    // August 23, 2026 at 05:00:00 (race morning)
-    const targetDate = new Date('2026-08-23T05:00:00').getTime()
+    // Joyville: August 23, 2026. Tuffman: August 31, 2026
+    const targetDate = activeRace === 'joyville' 
+      ? new Date('2026-08-23T05:00:00').getTime() 
+      : new Date('2026-08-31T05:00:00').getTime()
 
     const updateCountdown = () => {
       const now = new Date().getTime()
@@ -38,21 +41,35 @@ export default function Navbar() {
     updateCountdown()
     const timerId = setInterval(updateCountdown, 1000)
     return () => clearInterval(timerId)
-  }, [])
+  }, [activeRace])
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
       {/* COUNTDOWN BANNER */}
-      <div className="countdown-strip" style={{ padding: '8px 48px', borderBottom: 'none', background: 'var(--accent)', color: '#000' }}>
-        <span className="countdown-label" style={{ color: 'rgba(0,0,0,0.7)', fontWeight: 'bold' }}>⏱ Race Day: Aug 23, 2026</span>
+      <div className="countdown-strip" style={{ padding: '8px 48px', borderBottom: 'none', background: 'var(--surface)', color: 'var(--text)', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={() => setActiveRace('joyville')}
+            style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid', borderColor: activeRace === 'joyville' ? 'var(--accent)' : 'var(--border)', background: activeRace === 'joyville' ? 'var(--accent)' : 'transparent', color: activeRace === 'joyville' ? '#000' : 'var(--muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            Joyville · Aug 23
+          </button>
+          <button 
+            onClick={() => setActiveRace('tuffman')}
+            style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid', borderColor: activeRace === 'tuffman' ? 'var(--accent)' : 'var(--border)', background: activeRace === 'tuffman' ? 'var(--accent)' : 'transparent', color: activeRace === 'tuffman' ? '#000' : 'var(--muted)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            Tuffman · Aug 31
+          </button>
+        </div>
+        
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem', color: '#000' }}>{timeLeft.d}</span><span className="cd-lbl" style={{ color: 'rgba(0,0,0,0.7)' }}>Days</span></div>
-          <div className="cd-sep" style={{ fontSize: '1.4rem', color: 'rgba(0,0,0,0.4)', marginBottom: '4px' }}>:</div>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem', color: '#000' }}>{timeLeft.h}</span><span className="cd-lbl" style={{ color: 'rgba(0,0,0,0.7)' }}>Hours</span></div>
-          <div className="cd-sep" style={{ fontSize: '1.4rem', color: 'rgba(0,0,0,0.4)', marginBottom: '4px' }}>:</div>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem', color: '#000' }}>{timeLeft.m}</span><span className="cd-lbl" style={{ color: 'rgba(0,0,0,0.7)' }}>Mins</span></div>
-          <div className="cd-sep" style={{ fontSize: '1.4rem', color: 'rgba(0,0,0,0.4)', marginBottom: '4px' }}>:</div>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem', color: '#000' }}>{timeLeft.s}</span><span className="cd-lbl" style={{ color: 'rgba(0,0,0,0.7)' }}>Secs</span></div>
+          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.d}</span><span className="cd-lbl">Days</span></div>
+          <div className="cd-sep" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>:</div>
+          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.h}</span><span className="cd-lbl">Hours</span></div>
+          <div className="cd-sep" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>:</div>
+          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.m}</span><span className="cd-lbl">Mins</span></div>
+          <div className="cd-sep" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>:</div>
+          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.s}</span><span className="cd-lbl">Secs</span></div>
         </div>
       </div>
       <nav style={{ position: 'relative' }}>
