@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 
 export default function Hero() {
-  const [targetName, setTargetName] = useState<'joyville' | 'tuffman'>('joyville')
   const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
   const [scrolled, setScrolled] = useState(false)
 
@@ -43,7 +42,7 @@ export default function Hero() {
     updateCountdown()
     const timerId = setInterval(updateCountdown, 1000)
     return () => clearInterval(timerId)
-  }, [targetName])
+  }, [])
 
   return (
     <div className="hero-section">
@@ -90,13 +89,13 @@ export default function Hero() {
         <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · DELHI 2026</div>
         
         <h1 className="hero-headline">
-          <div className="hl-line1">EVERY MILE</div>
-          <div className="hl-line2">COUNTS.</div>
+          <div className="hl-line1">STRONGER TOGETHER</div>
+          <div className="hl-line2">ONE STRIDE AT A TIME.</div>
         </h1>
         
         <div className="hero-subheadline-block">
           <div className="sub-label">15 runners. One city. Race day Aug 23, 2026.</div>
-          <div className="sub-quote">The road to 21.1km starts here.</div>
+          <div className="sub-quote">To empower a community of runners through shared grit, relentless support, and the pursuit of every personal milestone—one strong stride at a time.</div>
         </div>
         
         <div className="hero-actions">
@@ -121,20 +120,6 @@ export default function Hero() {
             <div className="cd-box"><span className="cd-num">{timeLeft.m}</span><span className="cd-box-lbl">MINS</span></div>
             <div className="cd-sep">:</div>
             <div className="cd-box"><span className="cd-num">{timeLeft.s}</span><span className="cd-box-lbl">SECS</span></div>
-          </div>
-          <div className="cd-toggles">
-            <button 
-              className={`toggle-pill ${targetName === 'joyville' ? 'active' : ''}`}
-              onClick={() => setTargetName('joyville')}
-            >
-              Joyville · Aug 23
-            </button>
-            <button 
-              className={`toggle-pill ${targetName === 'tuffman' ? 'active' : ''}`}
-              onClick={() => setTargetName('tuffman')}
-            >
-              Tuffman · Aug 2026
-            </button>
           </div>
         </div>
       </div>
@@ -203,7 +188,7 @@ export default function Hero() {
         
         .hero-headline {
           font-family: 'Bebas Neue', sans-serif;
-          font-size: clamp(5rem, 12vw, 10rem);
+          font-size: clamp(3rem, 8vw, 6.5rem);
           line-height: 0.95; letter-spacing: 0.04em;
           margin-bottom: 32px; font-weight: normal;
           text-shadow: none;
@@ -338,7 +323,7 @@ export default function Hero() {
             text-align: center; display: flex; flex-direction: column; align-items: center;
           }
           .hero-headline {
-            font-size: clamp(3rem, 10vw, 5rem);
+            font-size: clamp(2.5rem, 8vw, 4rem);
           }
           .sub-quote {
             text-align: left; /* Keep quote styling intact */
