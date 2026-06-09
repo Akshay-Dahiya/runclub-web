@@ -13,11 +13,13 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.68",
+    "@ai-sdk/react": "^3.0.200",
     "@prisma/client": "^5.14.0",
     "ai": "^6.0.198",
     "axios": "^1.17.0",
     "bcryptjs": "2.4.3",
     "dotenv": "^17.4.2",
+    "jimp": "^0.22.10",
     "next": "^15.5.19",
     "next-auth": "^4.24.14",
     "openai": "^4.42.0",

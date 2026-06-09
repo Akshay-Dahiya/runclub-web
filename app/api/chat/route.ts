@@ -6,10 +6,11 @@ import { PARTICIPANTS, grandTotal } from '../../../lib/planData'
 
 export async function POST(req: Request) {
   try {
-    const { messages, userId, apiKey } = await req.json()
+    const { messages, userId, apiKey: clientApiKey } = await req.json()
+    const apiKey = process.env.OPENAI_API_KEY || clientApiKey
 
     if (!apiKey) {
-      return new Response('Missing OpenAI API Key', { status: 400 })
+      return new Response('Missing OpenAI API Key in server environment', { status: 500 })
     }
 
     if (!userId) {
