@@ -44,22 +44,37 @@ export const PLAN_10K: WeekPlan[] = [
 ]
 // Total: 239 km
 
-// 10-Week plan for 21.1K (Half Marathon) runners
-export const PLAN_HM: WeekPlan[] = [
+// 10-Week plan for 21.1K (Half Marathon) runners - Intermediate
+export const PLAN_HM_INT: WeekPlan[] = [
   { week: 1,  label: '8–14 Jun',     tue: 6, thu: 7,  sat: 7, sun: 10, total: 30 },
   { week: 2,  label: '15–21 Jun',    tue: 8, thu: 8,  sat: 8, sun: 10, total: 34 },
   { week: 3,  label: '22–28 Jun',    tue: 8, thu: 10, sat: 8, sun: 12, total: 38 },
   { week: 4,  label: '29–5 Jul',     tue: 8, thu: 10, sat: 8, sun: 15, total: 41 },
   { week: 5,  label: '6–12 Jul',     tue: 8, thu: 10, sat: 8, sun: 17, total: 43 },
-  { week: 6,  label: '13–19 Jul',    tue: 6, thu: 10, sat: 8, sun: 20, total: 44 },
-  { week: 7,  label: '20–26 Jul',    tue: 7, thu: 8,  sat: 8, sun: 15, total: 38 },
-  { week: 8,  label: '27 Jul–2 Aug', tue: 6, thu: 8,  sat: 7, sun: 12, total: 33 },
+  { week: 6,  label: '13–19 Jul',    tue: 8, thu: 10, sat: 8, sun: 20, total: 46 },
+  { week: 7,  label: '20–26 Jul',    tue: 8, thu: 8,  sat: 8, sun: 15, total: 39 },
+  { week: 8,  label: '27 Jul–2 Aug', tue: 7, thu: 8,  sat: 7, sun: 12, total: 34 },
   { week: 9,  label: '3–9 Aug',      tue: 7, thu: 7,  sat: 7, sun: 12, total: 33 },
   { week: 10, label: '10–16 Aug',    tue: 6, thu: 7,  sat: 7, sun: 10, total: 30 },
 ]
-// Total: 364 km
+// Total: 368 km
 
-export type RaceCategory = 'HM' | '10K'
+// 10-Week plan for 21.1K (Half Marathon) runners - Beginner
+export const PLAN_HM_BEG: WeekPlan[] = [
+  { week: 1,  label: '8–14 Jun',     tue: 6, thu: 6,  sat: 6, sun: 7,  total: 25 },
+  { week: 2,  label: '15–21 Jun',    tue: 7, thu: 7,  sat: 6, sun: 8,  total: 28 },
+  { week: 3,  label: '22–28 Jun',    tue: 7, thu: 8,  sat: 8, sun: 9,  total: 32 },
+  { week: 4,  label: '29–5 Jul',     tue: 9, thu: 9,  sat: 8, sun: 10, total: 36 },
+  { week: 5,  label: '6–12 Jul',     tue: 9, thu: 10, sat: 8, sun: 12, total: 39 },
+  { week: 6,  label: '13–19 Jul',    tue: 9, thu: 10, sat: 9, sun: 15, total: 43 },
+  { week: 7,  label: '20–26 Jul',    tue: 9, thu: 10, sat: 8, sun: 12, total: 39 },
+  { week: 8,  label: '27 Jul–2 Aug', tue: 9, thu: 9,  sat: 8, sun: 10, total: 36 },
+  { week: 9,  label: '3–9 Aug',      tue: 8, thu: 8,  sat: 7, sun: 9,  total: 32 },
+  { week: 10, label: '10–16 Aug',    tue: 7, thu: 7,  sat: 7, sun: 9,  total: 30 },
+]
+// Total: 340 km
+
+export type RaceCategory = 'HM_INT' | 'HM_BEG' | '10K'
 
 export interface Participant {
   id: number
@@ -70,21 +85,20 @@ export interface Participant {
 }
 
 // Official registered participants
-// HM = 21.1K Half Marathon | 10K = 10.5K
 export const PARTICIPANTS: Participant[] = [
-  { id: 1,  name: 'Naresh Grover',   initials: 'NG',  email: 'grovernaresh@yahoo.com',        cat: 'HM'  },
+  { id: 1,  name: 'Naresh Grover',   initials: 'NG',  email: 'grovernaresh@yahoo.com',        cat: 'HM_INT'  },
   { id: 2,  name: 'Ramesh Krishnan', initials: 'RK',  email: 'ramesh.krishnan2974@gmail.com', cat: '10K' },
-  { id: 3,  name: 'Aditya Arya',     initials: 'AA',  email: 'aditya.arya.civil@gmail.com',   cat: 'HM'  },
+  { id: 3,  name: 'Aditya Arya',     initials: 'AA',  email: 'aditya.arya.civil@gmail.com',   cat: 'HM_INT'  },
   { id: 4,  name: 'Arvind Chauhan',  initials: 'AC',  email: 'chauhan_arvind80@yahoo.com',    cat: '10K' },
-  { id: 5,  name: 'Vikram Singh',    initials: 'VS',  email: 'vikramhari@gmail.com',           cat: 'HM'  },
+  { id: 5,  name: 'Vikram Singh',    initials: 'VS',  email: 'vikramhari@gmail.com',           cat: 'HM_INT'  },
   { id: 6,  name: 'Anup Kaushik',    initials: 'AK',  email: 'anupkaushik44459@gmail.com',    cat: '10K' },
-  { id: 7,  name: 'Akshay Dahiya',   initials: 'AD',  email: 'akshaydahiya2004@gmail.com',    cat: 'HM'  },
+  { id: 7,  name: 'Akshay Dahiya',   initials: 'AD',  email: 'akshaydahiya2004@gmail.com',    cat: 'HM_INT'  },
   { id: 8,  name: 'Aditi Dahiya',    initials: 'ADi', email: 'aditidahiya2004@gmail.com',     cat: '10K' },
   { id: 9,  name: 'Geeta Dahiya',    initials: 'GD',  email: 'geetabura80@gmail.com',          cat: '10K' },
-  { id: 10, name: 'Rishabh Mishra',  initials: 'RM',  email: 'rishab.mishra@gmail.com',       cat: 'HM'  },
+  { id: 10, name: 'Rishabh Mishra',  initials: 'RM',  email: 'rishab.mishra@gmail.com',       cat: 'HM_INT'  },
   { id: 11, name: 'Rajat Tiwari',    initials: 'RT',  email: 'rajat@runclub.local',           cat: '10K' },
   { id: 12, name: 'Rohit Anand',     initials: 'RA',  email: 'rohit@runclub.local',           cat: '10K' },
-  { id: 13, name: 'Aryan Chaudhary', initials: 'AC',  email: 'aryan@runclub.local',           cat: 'HM'  },
+  { id: 13, name: 'Aryan Chaudhary', initials: 'AC',  email: 'aryan@runclub.local',           cat: 'HM_INT'  },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,12 +121,16 @@ export function currentWeekIdx(): number {
 
 /** Get the correct plan array for a participant */
 export function getPlan(p: Participant): WeekPlan[] {
-  return p.cat === 'HM' ? PLAN_HM : PLAN_10K
+  if (p.cat === 'HM_INT') return PLAN_HM_INT
+  if (p.cat === 'HM_BEG') return PLAN_HM_BEG
+  return PLAN_10K
 }
 
 /** Grand total km for the full plan */
 export function grandTotal(p: Participant): number {
-  return p.cat === 'HM' ? 364 : 239
+  if (p.cat === 'HM_INT') return 368
+  if (p.cat === 'HM_BEG') return 340
+  return 239
 }
 
 /** Planned km through the current week (inclusive), prorated by day */

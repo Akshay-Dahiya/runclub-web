@@ -27,7 +27,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
       create: {
         email: userEmail,
         name: participantDef.name,
-        runningGoal: participantDef.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run',
+        runningGoal: participantDef.cat.startsWith('HM') ? '21.1K Half Marathon' : '10.5K Run',
       },
       include: {
         runs: {

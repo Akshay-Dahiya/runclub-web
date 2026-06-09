@@ -66,7 +66,7 @@ export default function LoginPage() {
               <option value="">Select your name...</option>
               {PARTICIPANTS.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.name} — {p.cat === 'HM' ? 'Half Marathon' : '10K'}
+                  {p.name} — {p.cat === '10K' ? '10K' : p.cat === 'HM_INT' ? 'Half Marathon (Int)' : 'Half Marathon (Beg)'}
                 </option>
               ))}
             </select>

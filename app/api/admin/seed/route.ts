@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import bcrypt from 'bcryptjs'
-import { PARTICIPANTS, PLAN_10K, PLAN_HM, WEEK_STARTS } from '../../../../lib/planData'
+import { PARTICIPANTS, PLAN_10K, PLAN_HM_INT, PLAN_HM_BEG, WEEK_STARTS } from '../../../../lib/planData'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     for (let idx = 0; idx < PARTICIPANTS.length; idx++) {
       const p = PARTICIPANTS[idx]
       const factor = COMPLETION_FACTORS[idx] || 0.8
-      const plan = p.cat === 'HM' ? PLAN_HM : PLAN_10K
+      const plan = p.cat === 'HM_INT' ? PLAN_HM_INT : p.cat === 'HM_BEG' ? PLAN_HM_BEG : PLAN_10K
 
       const user = await prisma.user.upsert({
         where: { email: p.email || `placeholder_${p.id}@runclub.local` },
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
           email: p.email || `placeholder_${p.id}@runclub.local`,
           name: p.name,
           passwordHash,
-          runningGoal: p.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run',
+          runningGoal: p.cat.startsWith('HM') ? '21.1K Half Marathon' : '10.5K Run',
         },
       })
 
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
           if (Math.random() > factor) continue
 
           const actualKm = parseFloat((km * (0.85 + Math.random() * 0.30)).toFixed(2))
-          const basePace = p.cat === 'HM' ? 330 : 375
+          const basePace = p.cat.startsWith('HM') ? 330 : 375
           const paceSecPerKm = Math.round(basePace + (Math.random() - 0.5) * 60)
           const durationSec = Math.round(actualKm * paceSecPerKm)
           const avgHeartRate = Math.round(145 + Math.random() * 25)

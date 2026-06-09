@@ -7,7 +7,7 @@ import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
 import PublicLogRunForm from './PublicLogRunForm'
-import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM } from '../lib/planData'
+import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM_INT, PLAN_HM_BEG } from '../lib/planData'
 
 function DashboardPicker() {
   const router = useRouter()
@@ -26,7 +26,7 @@ function DashboardPicker() {
       >
         <option value="">Select your name...</option>
         {PARTICIPANTS.map(p => (
-          <option key={p.id} value={p.id}>{p.name} — {p.cat === 'HM' ? 'Half Marathon' : '10K'}</option>
+          <option key={p.id} value={p.id}>{p.name} — {p.cat === '10K' ? '10K' : p.cat === 'HM_INT' ? 'Half Marathon (Int)' : 'Half Marathon (Beg)'}</option>
         ))}
       </select>
       <button
@@ -70,7 +70,8 @@ export default function RunClubApp({ users }: { users: any[] }) {
   const weeklyTopUsers = [...mappedUsers].sort((a, b) => b.weekKm - a.weekKm)
 
   let filteredUsers = mappedUsers
-  if (activeFilter === 'HM') filteredUsers = mappedUsers.filter(u => u.cat === 'HM')
+  if (activeFilter === 'HM_INT') filteredUsers = mappedUsers.filter(u => u.cat === 'HM_INT')
+  if (activeFilter === 'HM_BEG') filteredUsers = mappedUsers.filter(u => u.cat === 'HM_BEG')
   if (activeFilter === '10K') filteredUsers = mappedUsers.filter(u => u.cat === '10K')
   if (activeFilter === 'green') filteredUsers = mappedUsers.filter(u => u.status === 'green')
   if (activeFilter === 'red') filteredUsers = mappedUsers.filter(u => u.status === 'red')
@@ -114,13 +115,13 @@ export default function RunClubApp({ users }: { users: any[] }) {
         </div>
 
         <div className="filter-tabs reveal visible">
-          {['all', 'HM', '10K', 'green', 'red'].map(f => (
+          {['all', 'HM_INT', 'HM_BEG', '10K', 'green', 'red'].map(f => (
             <button 
               key={f}
               className={`tab-btn ${activeFilter === f ? 'active' : ''}`}
               onClick={() => setActiveFilter(f)}
             >
-              {f === 'all' ? 'All Runners' : f === 'HM' ? 'Half Marathon' : f === '10K' ? '10K Runners' : f === 'green' ? '✓ On Track' : '✕ Behind'}
+              {f === 'all' ? 'All Runners' : f === 'HM_INT' ? 'HM (Intermediate)' : f === 'HM_BEG' ? 'HM (Beginner)' : f === '10K' ? '10K Runners' : f === 'green' ? '✓ On Track' : '✕ Behind'}
             </button>
           ))}
         </div>
@@ -141,8 +142,8 @@ export default function RunClubApp({ users }: { users: any[] }) {
                 </div>
                 <div className="p-name">{u.name}</div>
                 <div className="p-meta">{u.runs.length} runs · {u.actualKm.toFixed(2)} km done</div>
-                <span className={`p-category ${u.cat === 'HM' ? 'cat-hm' : 'cat-10k'}`}>
-                  {u.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run'}
+                <span className={`p-category ${u.cat.startsWith('HM') ? 'cat-hm' : 'cat-10k'}`}>
+                  {u.cat === '10K' ? '10.5K Run' : u.cat === 'HM_INT' ? '21.1K HM (Int)' : '21.1K HM (Beg)'}
                 </span>
                 
                 <div className="p-totals">
@@ -201,7 +202,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
           <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
             <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-              <div className="plan-title" style={{ fontSize: '1.4rem' }}>Half Marathon Plan</div>
+              <div className="plan-title" style={{ fontSize: '1.4rem' }}>Half Marathon Plan (Int)</div>
               <span className="p-category cat-hm">21.1K</span>
             </div>
             <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
@@ -209,7 +210,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                 <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
               </thead>
               <tbody>
-                {PLAN_HM.map((w, i) => {
+                {PLAN_HM_INT.map((w, i) => {
                   const isCurrent = i === currentWeekIdx()
                   return (
                   <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
@@ -226,7 +227,39 @@ export default function RunClubApp({ users }: { users: any[] }) {
                     <td className="km-cell" style={{ color: 'var(--blue)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
                   </tr>
                 )})}
-                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>364 km</td></tr>
+                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>368 km</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="plan-table-container" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px', scrollBehavior: 'smooth' }}>
+            <div className="plan-table-header" style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+              <div className="plan-title" style={{ fontSize: '1.4rem' }}>Half Marathon Plan (Beg)</div>
+              <span className="p-category cat-hm">21.1K</span>
+            </div>
+            <table className="plan-table" style={{ width: '100%', marginTop: '10px' }}>
+              <thead style={{ position: 'sticky', top: '56px', background: 'var(--surface)', zIndex: 9 }}>
+                <tr><th style={{ padding: '16px 8px' }}>Week</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
+              </thead>
+              <tbody>
+                {PLAN_HM_BEG.map((w, i) => {
+                  const isCurrent = i === currentWeekIdx()
+                  return (
+                  <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
+                    height: '64px', fontSize: '1.05rem',
+                    background: isCurrent ? 'rgba(34,211,238,0.1)' : 'transparent',
+                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--blue)' : 'none',
+                    transition: 'background 0.2s'
+                  }}>
+                    <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
+                    <td className="km-cell">{w.tue}</td>
+                    <td className="km-cell">{w.thu}</td>
+                    <td className="km-cell">{w.sat}</td>
+                    <td className="km-cell">{w.sun}</td>
+                    <td className="km-cell" style={{ color: 'var(--blue)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
+                  </tr>
+                )})}
+                <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>340 km</td></tr>
               </tbody>
             </table>
           </div>

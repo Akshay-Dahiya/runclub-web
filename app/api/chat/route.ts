@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 import { createOpenAI } from '@ai-sdk/openai'
 import { streamText, StreamingTextResponse } from 'ai'
-import { PARTICIPANTS } from '../../../lib/planData'
+import { PARTICIPANTS, grandTotal } from '../../../lib/planData'
 
 export async function POST(req: Request) {
   try {
@@ -53,8 +53,7 @@ export async function POST(req: Request) {
       include: { runs: true }
     })
 
-    // Find the participant def (already found above)
-    const totalTarget = participantDef.cat === 'HM' ? 250 : 150 // example targets
+    const totalTarget = grandTotal(participantDef)
 
     // Calculate context data
     const totalKm = user.runs.reduce((sum: number, run: any) => sum + run.distanceKm, 0)
@@ -90,7 +89,7 @@ Your traits:
 You are currently coaching: ${user.name}.
 
 ### RUNNER CONTEXT ###
-- Goal Category: ${participantDef.cat === 'HM' ? 'Half Marathon (21.1K)' : '10K'}
+- Goal Category: ${participantDef.cat.startsWith('HM') ? 'Half Marathon (21.1K)' : '10K'}
 - Target Race Date: August 23, 2026
 - Plan Progress: ${totalKm.toFixed(1)} km completed out of ${totalTarget} km target (${pct}%).
 - Leaderboard Status: Rank ${userRank} out of ${leaderboard.length}.
@@ -134,7 +133,7 @@ ${recentRuns || "No runs logged yet."}
     const getKipchogeFallback = (message: string) => {
       const msg = message.toLowerCase()
       if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey') || msg.includes('greetings')) {
-        return `Hello ${user.name}. I am glad to walk—or rather, run—this path with you. How is your mind and body feeling today? Let us discuss your preparation for the ${participantDef.cat === 'HM' ? 'Half Marathon' : '10K'} on August 23.`
+        return `Hello ${user.name}. I am glad to walk—or rather, run—this path with you. How is your mind and body feeling today? Let us discuss your preparation for the ${participantDef.cat.startsWith('HM') ? 'Half Marathon' : '10K'} on August 23.`
       }
       if (msg.includes('progress') || msg.includes('km') || msg.includes('distance') || msg.includes('how am i') || msg.includes('target') || msg.includes('run')) {
         return `You have completed ${totalKm.toFixed(1)} km out of your ${totalTarget} km target. That is ${pct}% of the journey. In running, consistency is the key. Every single kilometer you run builds the foundation of your success. Keep up the disciplined work, ${user.name}.`
@@ -146,7 +145,7 @@ ${recentRuns || "No runs logged yet."}
         return `You are currently Rank ${userRank} on the leaderboard. You are ${diffToLeader.toFixed(1)} km behind the leader. Do not be discouraged by the gap; let it inspire you. A marathon is not won in the first mile. Focus on your own steps, day by day.`
       }
       if (msg.includes('predict') || msg.includes('time') || msg.includes('pace') || msg.includes('race') || msg.includes('finish')) {
-        const targetDist = participantDef.cat === 'HM' ? 21.1 : 10.0
+        const targetDist = participantDef.cat.startsWith('HM') ? 21.1 : 10.0
         const totalSecs = targetDist * (avgPaceMin * 60 + parseInt(avgPaceSecStr))
         const estHours = Math.floor(totalSecs / 3600)
         const estMins = Math.floor((totalSecs % 3600) / 60)

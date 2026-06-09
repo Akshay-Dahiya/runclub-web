@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
-import { getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM, PARTICIPANTS } from '../../../lib/planData'
+import { getWeekIdx, WEEK_STARTS, PLAN_10K, PARTICIPANTS } from '../../../lib/planData'
 
 export const dynamic = 'force-dynamic'
 

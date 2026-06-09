@@ -126,24 +126,22 @@ export default function DashboardClient({
       let paceSecPerKm = 0
 
       const parsePaceToSec = (timeStr: string) => {
-        const clean = timeStr.trim()
+        const clean = timeStr.trim().replace(/\./g, ':')
         if (clean.includes(':')) {
           const parts = clean.split(':').map(Number)
           if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
           if (parts.length === 2) return parts[0] * 60 + parts[1] // MM:SS
         }
-        if (clean.includes('.')) return Math.round(parseFloat(clean) * 60) // decimal minutes
         return parseInt(clean, 10) * 60
       }
 
       const parseDurationToSec = (timeStr: string) => {
-        const clean = timeStr.trim()
+        const clean = timeStr.trim().replace(/\./g, ':')
         if (clean.includes(':')) {
           const parts = clean.split(':').map(Number)
           if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2] // HH:MM:SS
           if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60 // HH:MM
         }
-        if (clean.includes('.')) return Math.round(parseFloat(clean) * 3600) // decimal hours
         return parseInt(clean, 10) * 60 // plain number assumed minutes
       }
 
@@ -211,7 +209,7 @@ export default function DashboardClient({
           {dbUser.name}
         </h1>
         <p style={{ maxWidth: '500px', fontSize: '0.9rem', opacity: 0.7, lineHeight: 1.6 }}>
-          {participantDef.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run'} · Training to race Aug 23, 2026.
+          {participantDef.cat === '10K' ? '10.5K Run' : participantDef.cat === 'HM_INT' ? '21.1K Half Marathon (Int)' : '21.1K Half Marathon (Beg)'} · Training to race Aug 23, 2026.
         </p>
       </section>
 
