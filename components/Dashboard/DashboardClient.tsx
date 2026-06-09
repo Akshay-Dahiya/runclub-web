@@ -226,7 +226,7 @@ export default function DashboardClient({
             <p style={{ marginBottom: '16px', color: 'var(--text)' }}>You are currently on: <strong>{dbUser.runningGoal || participantDef.cat}</strong></p>
             <button
               onClick={() => setShowPlanModal(true)}
-              style={{ background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '4px', padding: '10px 16px', fontFamily: 'monospace', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'transparent', color: 'var(--orange)', border: 'none', textDecoration: 'underline', fontFamily: 'monospace', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, cursor: 'pointer', padding: 0 }}
             >
               Change Plan →
             </button>

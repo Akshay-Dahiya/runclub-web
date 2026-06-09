@@ -59,8 +59,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <Navbar />
-      <div className="section" style={{ minHeight: '80vh', paddingTop: '100px' }}>
+      <div style={{ padding: '24px 40px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <a href="/" style={{ 
+          display: 'inline-block', color: 'var(--muted)', textDecoration: 'none', 
+          fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', letterSpacing: '1px', textTransform: 'uppercase' 
+        }}>← Back to Home</a>
+      </div>
+      <div className="section" style={{ minHeight: '80vh', paddingTop: '60px' }}>
         <DashboardClient 
           dbUser={dbUser}
           participantDef={participantDef}
