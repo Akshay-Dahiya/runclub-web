@@ -393,126 +393,91 @@ export default function DashboardClient({
       {dbUser.runs.length > 0 && (
         <section style={{ marginBottom: '80px' }}>
           <SectionHead label="04 / History" title="YOUR RUNS" />
-          <>
-            <div className="table-responsive hidden-mobile">
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    {['Date', 'Distance', 'Pace', 'Duration', 'Effort', ''].map(h => (
-                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, fontWeight: 600 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dbUser.runs.slice(0, 15).map((r: any, i: number) => {
-                    const d = new Date(r.date)
-                    const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                    const paceMin = Math.floor(r.paceSecPerKm / 60)
-                    const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
-                    const hrs = Math.floor(r.durationSec / 3600)
-                    const mins = Math.floor((r.durationSec % 3600) / 60)
-                    const secs = String(r.durationSec % 60).padStart(2, '0')
-                    const durationStr = `${hrs > 0 ? hrs + ':' : ''}${String(mins).padStart(2, '0')}:${secs}`
-                    
-                    const notesLower = (r.notes || '').toLowerCase()
-                    const isHard = notesLower.includes('hard')
-                    const isModerate = notesLower.includes('moderate') || notesLower.includes('mod')
-                    const isEasy = notesLower.includes('easy')
-                    
-                    let effortTag = null
-                    if (isHard) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
-                    else if (isModerate) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
-                    else if (isEasy) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+          
+          {(() => {
+            const totalRuns = dbUser.runs.length;
+            const totalTimeSec = dbUser.runs.reduce((s: number, r: any) => s + (r.durationSec || 0), 0);
+            const totalTimeHrs = Math.floor(totalTimeSec / 3600);
+            const totalTimeMins = Math.floor((totalTimeSec % 3600) / 60);
 
-                    return (
-                      <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--surface)' }}>
-                        <td style={{ padding: '12px 16px', opacity: 0.7 }}>{dateStr}</td>
-                        <td style={{ padding: '12px 16px', color: 'var(--orange)', fontWeight: 700 }}>{r.distanceKm.toFixed(2)} km</td>
-                        <td style={{ padding: '12px 16px', opacity: 0.8 }}>{paceMin}:{paceSec} /km</td>
-                        <td style={{ padding: '12px 16px', opacity: 0.8 }}>{durationStr}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {effortTag && (
-                            <span style={{ 
-                              background: effortTag.bg, color: effortTag.color, 
-                              padding: '4px 8px', borderRadius: '4px', 
-                              fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' 
-                            }}>
-                              {effortTag.label}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                          <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', minHeight: '44px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: '16px', fontWeight: 700, fontSize: '12px' }}>TOTAL LOGGED</td>
-                    <td style={{ padding: '16px', color: 'var(--orange)', fontWeight: 700, fontSize: '14px' }}>{actualKm.toFixed(2)} km</td>
-                    <td colSpan={4}></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            const avgPaceTotal = totalRuns > 0 ? Math.round(dbUser.runs.reduce((s: number, r: any) => s + (r.paceSecPerKm || 0), 0) / totalRuns) : 0;
+            const avgPaceTotalMin = Math.floor(avgPaceTotal / 60);
+            const avgPaceTotalSec = String(avgPaceTotal % 60).padStart(2, '0');
 
-            <div className="visible-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {dbUser.runs.slice(0, 15).map((r: any) => {
-                const d = new Date(r.date)
-                const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                const paceMin = Math.floor(r.paceSecPerKm / 60)
-                const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
-                const hrs = Math.floor(r.durationSec / 3600)
-                const mins = Math.floor((r.durationSec % 3600) / 60)
-                const secs = String(r.durationSec % 60).padStart(2, '0')
-                const durationStr = `${hrs > 0 ? hrs + ':' : ''}${String(mins).padStart(2, '0')}:${secs}`
-                
-                const notesLower = (r.notes || '').toLowerCase()
-                let effortTag = null
-                if (notesLower.includes('hard')) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
-                else if (notesLower.includes('moderate') || notesLower.includes('mod')) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
-                else if (notesLower.includes('easy')) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+            return (
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '32px', marginBottom: '40px', display: 'flex', flexWrap: 'wrap', gap: '48px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+                <div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>TOTAL DISTANCE</div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--orange)', lineHeight: 1 }}>{actualKm.toFixed(1)} <span style={{ fontSize: '1.2rem', color: 'var(--text)', fontFamily: 'monospace' }}>KM</span></div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>TOTAL TIME</div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--text)', lineHeight: 1 }}>{totalTimeHrs}<span style={{ fontSize: '1.2rem', color: 'var(--muted)', fontFamily: 'monospace' }}>H</span> {totalTimeMins}<span style={{ fontSize: '1.2rem', color: 'var(--muted)', fontFamily: 'monospace' }}>M</span></div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>RUNS</div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--text)', lineHeight: 1 }}>{totalRuns}</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.1em' }}>AVG PACE</div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '3.5rem', color: 'var(--text)', lineHeight: 1 }}>{avgPaceTotalMin}:{avgPaceTotalSec} <span style={{ fontSize: '1.2rem', color: 'var(--muted)', fontFamily: 'monospace' }}>/KM</span></div>
+                </div>
+              </div>
+            )
+          })()}
 
-                return (
-                  <div key={r.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)' }}>{dateStr}</span>
-                      <button onClick={() => handleDeleteRun(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', opacity: 0.7 }}>delete</button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+            {dbUser.runs.slice(0, 15).map((r: any) => {
+              const d = new Date(r.date)
+              const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+              const paceMin = Math.floor(r.paceSecPerKm / 60)
+              const paceSec = String(r.paceSecPerKm % 60).padStart(2, '0')
+              const hrs = Math.floor(r.durationSec / 3600)
+              const mins = Math.floor((r.durationSec % 3600) / 60)
+              const secs = String(r.durationSec % 60).padStart(2, '0')
+              const durationStr = `${hrs > 0 ? hrs + ':' : ''}${String(mins).padStart(2, '0')}:${secs}`
+              
+              const notesLower = (r.notes || '').toLowerCase()
+              let effortTag = null
+              if (notesLower.includes('hard')) effortTag = { label: 'HARD', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' }
+              else if (notesLower.includes('moderate') || notesLower.includes('mod')) effortTag = { label: 'MOD', color: '#facc15', bg: 'rgba(250,204,21,0.15)' }
+              else if (notesLower.includes('easy')) effortTag = { label: 'EASY', color: '#4ade80', bg: 'rgba(74,222,128,0.15)' }
+
+              return (
+                <div key={r.id} className="run-card" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.05em' }}>{dateStr}</span>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteRun(r.id); }} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace', fontSize: '11px', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', transition: 'background 0.2s' }}>Delete</button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '24px' }}>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '4rem', color: 'var(--orange)', lineHeight: 0.9 }}>{r.distanceKm.toFixed(2)}</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '14px', color: 'var(--muted)', fontWeight: 600 }}>KM</span>
+                    {effortTag && (
+                      <span style={{ 
+                        marginLeft: 'auto', background: effortTag.bg, color: effortTag.color, 
+                        padding: '6px 12px', borderRadius: '6px', 
+                        fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em' 
+                      }}>
+                        {effortTag.label}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--subtle)', letterSpacing: '1px', marginBottom: '4px' }}>PACE</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>{paceMin}:{paceSec}/km</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
-                      <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', color: 'var(--orange)', lineHeight: 1 }}>{r.distanceKm.toFixed(2)}</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--muted)' }}>KM</span>
-                      {effortTag && (
-                        <span style={{ 
-                          marginLeft: 'auto', background: effortTag.bg, color: effortTag.color, 
-                          padding: '4px 8px', borderRadius: '4px', 
-                          fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em' 
-                        }}>
-                          {effortTag.label}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>PACE</span>
-                        <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>{paceMin}:{paceSec}/km</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--subtle)', letterSpacing: '1px' }}>TIME</span>
-                        <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>{durationStr}</span>
-                      </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--subtle)', letterSpacing: '1px', marginBottom: '4px' }}>TIME</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>{durationStr}</span>
                     </div>
                   </div>
-                )
-              })}
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700 }}>TOTAL LOGGED</span>
-                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', color: 'var(--orange)', lineHeight: 1 }}>{actualKm.toFixed(2)} <span style={{ fontSize: '1rem', fontFamily: 'monospace' }}>KM</span></span>
-              </div>
-            </div>
-          </>
+                </div>
+              )
+            })}
+          </div>
         </section>
       )}
 

@@ -337,3 +337,6 @@ footer { border-top:1px solid var(--border); padding:44px 40px; display:flex; al
   footer { padding: 30px 24px; flex-direction: column; text-align: center; }
 }
 @keyframes firePulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } } .fire-icon { display: inline-block; animation: firePulse 1.5s infinite; }
+
+.run-card:hover { transform: translateY(-4px); border-color: var(--accent) !important; box-shadow: 0 12px 40px rgba(0,0,0,0.3) !important; }
+.run-card:active { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important; }
