@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
 import { Play, TrendingUp, Award } from 'lucide-react';
+import Image from 'next/image';
 
 interface RunnerHeroProps {
   heading?: string;
@@ -171,13 +172,15 @@ const RunnerHero = ({
               variants={imageVariants}
             >
               <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                <div
-                  className="h-full w-full bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${backgroundImage})`,
-                  }}
-                >
-                  <div className="h-full w-full bg-gradient-to-t from-background/80 via-background/20 to-transparent"></div>
+                <div className="h-full w-full relative">
+                  <Image 
+                    src={backgroundImage} 
+                    alt="Runner Hero" 
+                    fill 
+                    priority 
+                    className="object-cover" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent"></div>
                 </div>
               </div>
 
