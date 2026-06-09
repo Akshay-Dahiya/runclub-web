@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 import { createOpenAI } from '@ai-sdk/openai'
-import { streamText, StreamingTextResponse } from 'ai'
+import { streamText } from 'ai'
 import { PARTICIPANTS, grandTotal } from '../../../lib/planData'
 
 export async function POST(req: Request) {
@@ -127,7 +127,7 @@ ${recentRuns || "No runs logged yet."}
           controller.close()
         }
       })
-      return new StreamingTextResponse(stream)
+      return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
     const getKipchogeFallback = (message: string) => {
@@ -182,7 +182,7 @@ ${recentRuns || "No runs logged yet."}
         messages,
       })
 
-      return result.toAIStreamResponse()
+      return result.toTextStreamResponse()
     } catch (apiError: any) {
       console.warn('OpenAI API call failed, falling back to local Kipchoge bot:', apiError)
       return createMockStream(getKipchogeFallback(lastUserMessage))

@@ -33,7 +33,7 @@ function DashboardPicker() {
         onClick={() => { if (selected) router.push(`/dashboard/${selected}`) }}
         disabled={!selected}
         style={{
-          background: selected ? 'var(--orange)' : 'var(--border)',
+          background: selected ? 'var(--accent)' : 'var(--border)',
           color: selected ? '#000' : 'var(--text)',
           border: 'none', borderRadius: '6px',
           padding: '14px 28px', fontSize: '1rem', fontWeight: 700,
@@ -49,6 +49,7 @@ function DashboardPicker() {
 
 export default function RunClubApp({ users }: { users: any[] }) {
   const [activeFilter, setActiveFilter] = useState('all')
+  const [leaderboardTab, setLeaderboardTab] = useState('overall')
 
   // Map DB Users back to the logic in PARTICIPANTS
   const mappedUsers = PARTICIPANTS.map(p => {
@@ -130,7 +131,8 @@ export default function RunClubApp({ users }: { users: any[] }) {
           {filteredUsers.map(u => {
             const planned = plannedKmSoFar(u)
             const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
-            const pct = Math.min(100, Math.round((u.actualKm / u.totalTarget) * 100))
+            const kmDue = Math.max(0, weekTarget - u.weekKm).toFixed(2)
+            const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
             
             return (
               <div key={u.id} className={`participant-card status-${u.status}`}>
@@ -148,7 +150,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                 
                 <div className="p-totals">
                   <div className="p-total-item"><div className="p-total-num">{u.actualKm.toFixed(2)}</div><div className="p-total-lbl">KM Done</div></div>
-                  <div className="p-total-item"><div className="p-total-num">{weekTarget}</div><div className="p-total-lbl">Week Target</div></div>
+                  <div className="p-total-item"><div className="p-total-num">{kmDue}</div><div className="p-total-lbl">KM Due</div></div>
                   <div className="p-total-item"><div className="p-total-num">{pct}%</div><div className="p-total-lbl">Completion</div></div>
                   <div className="p-total-item"><div className="p-total-num">{u.totalTarget}</div><div className="p-total-lbl">Total Km</div></div>
                 </div>
@@ -184,7 +186,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                   <tr key={i} className={isCurrent ? 'current-week' : ''} style={{
                     height: '64px', fontSize: '1.05rem',
                     background: isCurrent ? 'rgba(252,76,2,0.1)' : 'transparent',
-                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--orange)' : 'none',
+                    boxShadow: isCurrent ? 'inset 4px 0 0 var(--accent)' : 'none',
                     transition: 'background 0.2s'
                   }}>
                     <td style={{ fontWeight: isCurrent ? 700 : 400 }}>{w.label}</td>
@@ -192,7 +194,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                     <td className="km-cell">{w.thu}</td>
                     <td className="km-cell">{w.sat}</td>
                     <td className="km-cell">{w.sun}</td>
-                    <td className="km-cell" style={{ color: 'var(--orange)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
+                    <td className="km-cell" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '1.1rem' }}>{w.total}</td>
                   </tr>
                 )})}
                 <tr className="total-row" style={{ height: '64px' }}><td style={{ fontWeight: 800 }}>TOTAL</td><td colSpan={4}></td><td style={{ fontWeight: 800 }}>239 km</td></tr>
@@ -276,11 +278,16 @@ export default function RunClubApp({ users }: { users: any[] }) {
           <p className="section-sub">Ranked by KM logged. Automatically synced with the database.</p>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }} className="lb-grid">
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+          <button className={`tab-btn ${leaderboardTab === 'overall' ? 'active' : ''}`} onClick={() => setLeaderboardTab('overall')}>Overall</button>
+          <button className={`tab-btn ${leaderboardTab === 'weekly' ? 'active' : ''}`} onClick={() => setLeaderboardTab('weekly')}>This Week</button>
+        </div>
+
+        <div className="lb-grid">
           
           {/* OVERALL LEADERBOARD */}
+          {leaderboardTab === 'overall' && (
           <div className="table-responsive reveal visible">
-            <h3 style={{ fontFamily: 'Bebas Neue', fontSize: '2rem', marginBottom: '16px' }}>Overall</h3>
             <table className="lb-table">
               <thead>
                 <tr>
@@ -289,7 +296,8 @@ export default function RunClubApp({ users }: { users: any[] }) {
               </thead>
               <tbody>
                 {mappedUsers.map((u, i) => {
-                  const pct = Math.min(100, Math.round((u.actualKm / u.totalTarget) * 100))
+                  const planned = plannedKmSoFar(u)
+                  const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
                   return (
                     <tr key={u.id}>
                       <td><span className={`rank-num ${i < 3 ? 'top3' : ''}`}>{i + 1}</span></td>
@@ -318,10 +326,11 @@ export default function RunClubApp({ users }: { users: any[] }) {
               </tbody>
             </table>
           </div>
+          )}
 
           {/* WEEKLY LEADERBOARD */}
+          {leaderboardTab === 'weekly' && (
           <div className="table-responsive reveal visible">
-            <h3 style={{ fontFamily: 'Bebas Neue', fontSize: '2rem', marginBottom: '16px' }}>This Week</h3>
             <table className="lb-table">
               <thead>
                 <tr>
@@ -360,7 +369,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
               </tbody>
             </table>
           </div>
-
+          )}
         </div>
       </div>
 

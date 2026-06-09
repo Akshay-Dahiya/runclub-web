@@ -8,32 +8,50 @@ export async function logRun(formData: FormData) {
   const distanceKm = parseFloat(formData.get('distance') as string)
   const dateStr = formData.get('date') as string
   const pace = formData.get('pace') as string // "5:30" format
+  const duration = formData.get('duration') as string // "45:00" format
 
   if (!email || !distanceKm || !dateStr) {
     throw new Error('Missing required fields')
   }
-
-  // Parse pace to seconds per km (support MM:SS, decimal minutes, and raw minutes)
-  let paceSecPerKm = 330 // default 5:30
-  if (pace) {
-    const cleanPace = pace.trim()
-    if (cleanPace.includes(':')) {
-      const [min, sec] = cleanPace.split(':')
-      paceSecPerKm = (parseInt(min, 10) || 0) * 60 + (parseInt(sec, 10) || 0)
-    } else if (cleanPace.includes('.')) {
-      const decimalPace = parseFloat(cleanPace)
-      if (!isNaN(decimalPace)) {
-        paceSecPerKm = Math.round(decimalPace * 60)
-      }
-    } else {
-      const minutes = parseInt(cleanPace, 10)
-      if (!isNaN(minutes)) {
-        paceSecPerKm = minutes * 60
-      }
-    }
+  
+  if (!pace && !duration) {
+    throw new Error('Please provide either Pace or Duration')
   }
 
-  const durationSec = Math.round(distanceKm * paceSecPerKm)
+  const parsePaceToSec = (timeStr: string) => {
+    const clean = timeStr.trim().replace(/\./g, ':')
+    if (clean.includes(':')) {
+      const parts = clean.split(':').map(Number)
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+      if (parts.length === 2) return parts[0] * 60 + parts[1] // MM:SS
+    }
+    return parseInt(clean, 10) * 60 || 0
+  }
+
+  const parseDurationToSec = (timeStr: string) => {
+    const clean = timeStr.trim().replace(/\./g, ':')
+    if (clean.includes(':')) {
+      const parts = clean.split(':').map(Number)
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2] // HH:MM:SS
+      if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60 // HH:MM
+    }
+    return parseInt(clean, 10) * 60 || 0
+  }
+
+  let paceSecPerKm = 0
+  let durationSec = 0
+
+  if (pace && !duration) {
+    paceSecPerKm = parsePaceToSec(pace)
+    durationSec = Math.round(distanceKm * paceSecPerKm)
+  } else if (duration && !pace) {
+    durationSec = parseDurationToSec(duration)
+    paceSecPerKm = Math.round(durationSec / distanceKm)
+  } else {
+    // Both provided
+    durationSec = parseDurationToSec(duration)
+    paceSecPerKm = parsePaceToSec(pace)
+  }
 
   try {
     const queryPromise = prisma.user.findUnique({ where: { email } })

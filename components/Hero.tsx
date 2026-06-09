@@ -41,19 +41,7 @@ export default function Hero() {
 
   return (
     <>
-      {/* COUNTDOWN */}
-      <div className="countdown-strip" style={{ marginTop: '70px' }}>
-        <span className="countdown-label">⏱ Race Day Countdown</span>
-        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <div className="cd-unit"><span className="cd-num" id="cd-d">{timeLeft.d}</span><span className="cd-lbl">Days</span></div>
-          <div className="cd-sep">:</div>
-          <div className="cd-unit"><span className="cd-num" id="cd-h">{timeLeft.h}</span><span className="cd-lbl">Hours</span></div>
-          <div className="cd-sep">:</div>
-          <div className="cd-unit"><span className="cd-num" id="cd-m">{timeLeft.m}</span><span className="cd-lbl">Mins</span></div>
-          <div className="cd-sep">:</div>
-          <div className="cd-unit"><span className="cd-num" id="cd-s">{timeLeft.s}</span><span className="cd-lbl">Secs</span></div>
-        </div>
-      </div>
+
 
       <div className="hero">
         <div className="hero-bg"></div>
@@ -67,9 +55,9 @@ export default function Hero() {
         </div>
         <div className="hero-eyebrow">▶ Race Day Aug 23, 2026</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(4rem, 10vw, 10rem)' }}>
-          <span style={{ color: 'var(--text)' }}>JOYVILLE</span><br/>
-          <span className="outline">ROAD</span><br/>
-          <span style={{ color: 'var(--text)' }}>RUNNERS</span>
+          <span style={{ color: 'var(--text)' }}>MILES</span><br/>
+          <span className="outline">AHEAD,</span><br/>
+          <span style={{ color: 'var(--text)' }}>TOGETHER</span>
         </h1>
         <p className="hero-sub" style={{ fontSize: '1.1rem', maxWidth: '700px' }}>
           To empower a community of runners through shared grit, relentless support, and the pursuit of every personal milestone—one strong stride at a time.

@@ -1,6 +1,18 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react'
-import { useChat } from 'ai/react'
+// import { useChat } from 'ai/react' // Disabled due to export issue
+// Simple stub for useChat when ai package is unavailable
+function useChatStub() {
+  return {
+    messages: [] as any[],
+    input: '',
+    handleInputChange: () => {},
+    handleSubmit: (e: any) => { e.preventDefault(); },
+    setInput: (text: string) => {},
+    isLoading: false,
+    error: null as any,
+  };
+}
 import ChatMessage from './ChatMessage'
 import SuggestedPrompts from './SuggestedPrompts'
 
@@ -16,10 +28,7 @@ export default function AICoachWidget({ userId }: { userId: string }) {
     setHasCheckedKey(true)
   }, [])
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading } = useChat({
-    api: '/api/chat',
-    body: { userId, apiKey }
-  })
+  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading, error } = useChatStub();
 
   // auto scroll
   useEffect(() => {

@@ -12,9 +12,8 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import {
   PARTICIPANTS,
-  PLAN_10K,
-  PLAN_HM,
   WEEK_STARTS,
+  getPlan,
   type Participant,
 } from '../lib/planData'
 
@@ -22,7 +21,7 @@ const prisma = new PrismaClient()
 
 // Realistic completion factors per runner (index-matched to PARTICIPANTS)
 // 1.0 = always completes, 0.0 = never runs
-const COMPLETION_FACTORS = [0.95, 0.70, 0.88, 0.50, 0.92, 0.62, 1.00, 0.42, 0.78, 0.83, 0.35, 0.67]
+const COMPLETION_FACTORS = [0.95, 0.70, 0.88, 0.50, 0.92, 0.62, 1.00, 0.42, 0.78, 0.83, 0.35, 0.67, 0.8, 0.0, 0.0]
 
 async function main() {
   console.log('🌱 Seeding RunClub database...')
@@ -33,7 +32,7 @@ async function main() {
   for (let idx = 0; idx < PARTICIPANTS.length; idx++) {
     const p: Participant = PARTICIPANTS[idx]
     const factor = COMPLETION_FACTORS[idx]
-    const plan = p.cat === 'HM' ? PLAN_HM : PLAN_10K
+    const plan = getPlan(p)
 
     // Upsert user
     const user = await prisma.user.upsert({
@@ -43,7 +42,7 @@ async function main() {
         email: p.email || `placeholder_${p.id}@runclub.local`,
         name: p.name,
         passwordHash,
-        runningGoal: p.cat === 'HM' ? '21.1K Half Marathon' : '10.5K Run',
+        runningGoal: p.cat.startsWith('HM') ? '21.1K Half Marathon' : '10.5K Run',
       },
     })
 

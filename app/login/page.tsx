@@ -28,17 +28,17 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: '440px' }}>
 
         {/* Logo */}
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '48px', textDecoration: 'none' }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '48px', textDecoration: 'none' }}>
           <img src="/logo.png?v=2" alt="Joyville Road Runners Logo" style={{ height: '32px' }} />
           ← JOYVILLE ROAD RUNNERS
         </a>
 
         {/* Heading */}
-        <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--orange)', margin: '0 0 12px 0' }}>
+        <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--accent)', margin: '0 0 12px 0' }}>
           ▶ Runner Login
         </p>
         <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3.5rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 12px 0' }}>
-          YOUR<br /><span style={{ color: 'var(--orange)' }}>DASHBOARD.</span>
+          YOUR<br /><span style={{ color: 'var(--accent)' }}>DASHBOARD.</span>
         </h1>
         <p style={{ fontSize: '0.9rem', opacity: 0.6, marginBottom: '40px', lineHeight: 1.6 }}>
           Select your name and enter the club password to open your personal training stats.
@@ -104,7 +104,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             style={{
-              background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '6px',
+              background: 'var(--accent)', color: '#000', border: 'none', borderRadius: '6px',
               padding: '16px', fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.15em',
               opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s', marginTop: '8px'

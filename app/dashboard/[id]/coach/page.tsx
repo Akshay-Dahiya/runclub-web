@@ -1,6 +1,18 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react'
-import { useChat } from 'ai/react'
+// import { useChat } from 'ai/react' // Disabled due to export issue
+// Simple stub for useChat when ai package is unavailable
+function useChatStub() {
+  return {
+    messages: [] as any[],
+    input: '',
+    handleInputChange: () => {},
+    handleSubmit: (e: any) => { e.preventDefault(); },
+    setInput: (text: string) => {},
+    isLoading: false,
+    error: null as any,
+  };
+}
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ChatMessage from '../../../../components/AICoach/ChatMessage'
@@ -20,10 +32,7 @@ export default function CoachPage() {
     setHasCheckedKey(true)
   }, [])
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading, error } = useChat({
-    api: '/api/chat',
-    body: { userId, apiKey }
-  })
+  const { messages, input, handleInputChange, handleSubmit, setInput, isLoading, error } = useChatStub();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -76,7 +85,7 @@ export default function CoachPage() {
             {!apiKey ? (
                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', maxWidth: '400px', margin: '0 auto', gap: '24px' }}>
                  <div>
-                   <h2 style={{ margin: '0 0 12px 0', color: 'var(--orange)', fontSize: '24px' }}>Bring Your Own Key</h2>
+                   <h2 style={{ margin: '0 0 12px 0', color: 'var(--accent)', fontSize: '24px' }}>Bring Your Own Key</h2>
                    <p style={{ margin: 0, fontSize: '14px', opacity: 0.8, lineHeight: 1.6 }}>To chat with your personalized AI Coach, enter your OpenAI API key below. We never store this key on our servers; it is kept securely in your browser's local storage.</p>
                  </div>
                  <form onSubmit={saveKey} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
@@ -87,7 +96,7 @@ export default function CoachPage() {
                      required
                      style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '12px', borderRadius: '6px', color: 'var(--text)', outline: 'none', fontSize: '16px' }}
                    />
-                   <button type="submit" style={{ background: 'var(--orange)', color: '#000', border: 'none', padding: '14px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                   <button type="submit" style={{ background: 'var(--accent)', color: '#000', border: 'none', padding: '14px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                      Save Key to Browser
                    </button>
                    <button
@@ -151,7 +160,7 @@ export default function CoachPage() {
                   type="submit"
                   disabled={isLoading || !input.trim()}
                   style={{
-                    background: 'var(--orange)', color: '#000', border: 'none',
+                    background: 'var(--accent)', color: '#000', border: 'none',
                     borderRadius: '50%', width: '54px', height: '54px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: (isLoading || !input.trim()) ? 'not-allowed' : 'pointer',

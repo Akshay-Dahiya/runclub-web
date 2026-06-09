@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AICoachWidget from '../AICoach/AICoachWidget'
 type Provider = 'strava'
 
@@ -98,12 +98,16 @@ export default function DashboardClient({
   const toggle = (p: Provider) => setConnected(c => ({ ...c, [p]: !c[p] }))
 
   const [distance, setDistance] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState('')
+  useEffect(() => setDate(new Date().toISOString().split('T')[0]), [])
   const [pace, setPace] = useState('')
   const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  // New state for plan modal
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<string>('')
 
   const handleLogRun = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -205,12 +209,73 @@ export default function DashboardClient({
         <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--orange)', marginBottom: '12px' }}>
           ▶ Personal dashboard
         </p>
-        <h1 style={{ fontSize: 'clamp(3rem, 10vw, 6rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
-          {dbUser.name}
+        <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
+          Welcome back, {dbUser.name.split(' ')[0]} 👋
         </h1>
-        <p style={{ maxWidth: '500px', fontSize: '0.9rem', opacity: 0.7, lineHeight: 1.6 }}>
-          {participantDef.cat === '10K' ? '10.5K Run' : participantDef.cat === 'HM_INT' ? '21.1K Half Marathon (Int)' : '21.1K Half Marathon (Beg)'} · Training to race Aug 23, 2026.
-        </p>
+          <p style={{ maxWidth: '500px', fontSize: '0.9rem', opacity: 0.7, lineHeight: 1.6 }}>
+            {participantDef.cat === '10K' ? '10.5K Run' : participantDef.cat === 'HM_INT' ? '21.1K Half Marathon (Int)' : '21.1K Half Marathon (Beg)'} · Training to race Aug 23, 2026.
+          </p>
+
+          {/* NEW: Training Plan Switch Section */}
+          <section style={{ marginBottom: '64px' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '12px', color: 'var(--orange)' }}>⚙ Your Training Plan</h2>
+            <p style={{ marginBottom: '16px', color: 'var(--text)' }}>You are currently on: <strong>{dbUser.runningGoal || participantDef.cat}</strong></p>
+            <button
+              onClick={() => setShowPlanModal(true)}
+              style={{ background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '4px', padding: '10px 16px', fontFamily: 'monospace', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Change Plan →
+            </button>
+          </section>
+
+          {/* Plan Selection Modal */}
+          {showPlanModal && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+              <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'var(--orange)' }}>Select a Training Plan</h3>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {[
+                    { id: '10K', label: '10K Plan', description: '10.5km race · 239 km total training · Tue/Thu/Sat/Sun' },
+                    { id: 'HM', label: 'Half Marathon Plan', description: '21.1km race · 364 km total training · Tue/Thu/Sat/Sun' },
+                    { id: 'HM_INT', label: 'Half Marathon Intermediate', description: '21.1km race · ~10–15% more volume than standard HM, peak long run 22–24km' },
+                  ].map(plan => (
+                    <div key={plan.id} style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '12px', cursor: 'pointer', background: selectedPlan === plan.id ? 'rgba(252,76,2,0.1)' : 'transparent' }}
+                      onClick={() => setSelectedPlan(plan.id)}>
+                      <strong>{plan.label}</strong>
+                      <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>{plan.description}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button onClick={() => setShowPlanModal(false)} style={{ background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px', padding: '8px 12px', fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+                  <button
+                    onClick={async () => {
+                      if (!selectedPlan) return;
+                      if (selectedPlan === (dbUser.runningGoal || participantDef.cat)) {
+                        alert("You're already on this plan.");
+                        return;
+                      }
+                      const res = await fetch('/api/user/plan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: dbUser.id, plan: selectedPlan })
+                      });
+                      if (res.ok) {
+                        window.location.reload();
+                      } else {
+                        const err = await res.text();
+                        alert('Failed to change plan: ' + err);
+                      }
+                    }}
+                    style={{ background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '4px', padding: '8px 16px', fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer' }}
+                  >
+                    Yes, Switch
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
       </section>
 
       {/* 01 — INTEGRATIONS */}
@@ -252,9 +317,9 @@ export default function DashboardClient({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Distance (km)</label>
               <input
-                type="number" step="0.1" min="0" required
+                type="number" step="0.01" min="0.01" required
                 value={distance} onChange={e => setDistance(e.target.value)}
-                placeholder="5.0"
+                placeholder="5.00"
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
               />
             </div>
@@ -266,19 +331,20 @@ export default function DashboardClient({
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Duration (HH:MM)</label>
-              <input
-                type="text" placeholder="1:30"
-                value={duration} onChange={e => setDuration(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
-              />
-            </div>
+            <div style={{ gridColumn: '1 / -1', fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.8, color: 'var(--accent)', marginTop: '4px', marginBottom: '-4px' }}>Enter Pace OR Duration (optional)</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Pace (MM:SS)</label>
               <input
                 type="text" placeholder="5:30"
                 value={pace} onChange={e => setPace(e.target.value)}
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.6 }}>Duration (HH:MM:SS)</label>
+              <input
+                type="text" placeholder="45:00"
+                value={duration} onChange={e => setDuration(e.target.value)}
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', padding: '10px 12px', color: 'var(--text)', fontFamily: 'monospace', fontSize: '14px', outline: 'none' }}
               />
             </div>
@@ -469,18 +535,18 @@ function ProviderCard({ provider, connected, onToggle }: { provider: Provider; c
       <h3 style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 8px 0' }}>{meta.name}</h3>
       <p style={{ fontSize: '12px', opacity: 0.6, lineHeight: 1.6, flex: 1, margin: '0 0 20px 0' }}>{meta.blurb}</p>
       <button
-        onClick={onToggle}
+        disabled={true}
         style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          border: connected ? '1px solid var(--border)' : 'none',
-          background: connected ? 'var(--bg)' : 'var(--orange)',
-          color: connected ? 'var(--text)' : '#000',
+          border: 'none',
+          background: 'var(--bg)',
+          color: 'var(--text)', opacity: 0.5,
           borderRadius: '4px', padding: '10px 16px',
           fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700,
-          cursor: 'pointer', transition: 'opacity 0.2s'
+          cursor: 'not-allowed', transition: 'opacity 0.2s'
         }}
       >
-        {connected ? 'Disconnect' : '+ Connect'}
+        Coming Soon
       </button>
     </div>
   )
