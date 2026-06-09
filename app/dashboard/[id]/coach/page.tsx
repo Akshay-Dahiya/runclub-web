@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 
@@ -14,11 +14,13 @@ export default function CoachPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
+  const chatTransport = useMemo(() => new DefaultChatTransport({
+    api: '/api/chat',
+    body: { userId }
+  }), [userId]);
+
   const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: { userId }
-    })
+    transport: chatTransport
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
