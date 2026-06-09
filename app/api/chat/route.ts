@@ -122,13 +122,19 @@ ${recentRuns || "No runs logged yet."}
           const words = textResponse.split(' ')
           for (let i = 0; i < words.length; i++) {
             const word = words[i]
-            controller.enqueue(encoder.encode(word + (i === words.length - 1 ? '' : ' ')))
+            const textChunk = word + (i === words.length - 1 ? '' : ' ')
+            controller.enqueue(encoder.encode(`0:${JSON.stringify(textChunk)}\n`))
             await new Promise(resolve => setTimeout(resolve, 50))
           }
           controller.close()
         }
       })
-      return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+      return new Response(stream, { 
+        headers: { 
+          'Content-Type': 'text/plain; charset=utf-8',
+          'X-Vercel-AI-Data-Stream': 'v1'
+        } 
+      })
     }
 
     const getKipchogeFallback = (message: string) => {
@@ -183,7 +189,7 @@ ${recentRuns || "No runs logged yet."}
         messages,
       })
 
-      return result.toTextStreamResponse()
+      return result.toUIMessageStreamResponse()
     } catch (apiError: any) {
       console.warn('OpenAI API call failed, falling back to local Kipchoge bot:', apiError)
       return createMockStream(getKipchogeFallback(lastUserMessage))
