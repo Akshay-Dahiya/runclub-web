@@ -197,10 +197,9 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
         <div className="participants-grid reveal visible">
           {filteredUsers.map(u => {
-            const planned = plannedKmSoFar(u)
             const weekTarget = getPlan(u)[Math.min(currentWeekIdx(), 9)]?.total || 0
             const kmDue = Math.max(0, weekTarget - u.weekKm).toFixed(2)
-            const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+            const pct = weekTarget > 0 ? Math.min(100, Math.round((u.weekKm / weekTarget) * 100)) : 0
             
             return (
               <div key={u.id} className={`participant-card status-${u.status}`}>
