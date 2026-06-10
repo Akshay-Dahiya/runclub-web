@@ -144,13 +144,13 @@ export default function Hero() {
         
         .hero-headline {
           font-family: 'Bebas Neue', sans-serif;
-          font-size: clamp(3rem, 8vw, 6.5rem);
+          font-size: clamp(2.2rem, 7.5vw, 6.5rem);
           line-height: 0.95; letter-spacing: 0.04em;
           margin-bottom: 32px; font-weight: normal;
           text-shadow: none;
         }
-        .hl-line1 { color: #ffffff; }
-        .hl-line2 { color: #3b82f6; }
+        .hl-line1 { color: #ffffff; white-space: nowrap; }
+        .hl-line2 { color: #3b82f6; white-space: nowrap; }
         
         .hero-subheadline-block {
           margin-bottom: 32px;
@@ -229,7 +229,7 @@ export default function Hero() {
             text-align: center; display: flex; flex-direction: column; align-items: center;
           }
           .hero-headline {
-            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-size: clamp(1.3rem, 7.5vw, 4rem);
           }
           .sub-quote {
             text-align: left; /* Keep quote styling intact */
