@@ -241,10 +241,12 @@ export default function Hero() {
             text-align: center; display: flex; flex-direction: column; align-items: center;
           }
           .hero-headline {
-            font-size: clamp(1.3rem, 7.5vw, 4rem);
+            font-size: clamp(1.1rem, 6.2vw, 3rem);
           }
           .sub-quote {
             text-align: left; /* Keep quote styling intact */
+            font-size: 14px;
+            line-height: 1.4;
           }
           .hero-actions {
             flex-direction: column; width: 100%;
