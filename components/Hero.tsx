@@ -69,7 +69,7 @@ export default function Hero() {
         </div>
         
         <div className="hero-actions">
-          <a href="/login" className="hero-btn primary">Open My Dashboard →</a>
+          <a href="#dashboard" className="hero-btn primary">Open My Dashboard →</a>
           <a href="#members" className="hero-btn secondary">View The Crew</a>
         </div>
 
