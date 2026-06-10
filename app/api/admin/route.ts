@@ -43,11 +43,20 @@ export async function GET(req: Request) {
     const behindRunners = PARTICIPANTS.map((p: any) => {
       const dbUser = allUsers.find((u: any) => u.email === p.email || u.email === `placeholder_${p.id}@runclub.local`)
       if (!dbUser) return null
+      const name = dbUser.name || p.name
+      const initials = dbUser.initials || p.initials
+      let cat = p.cat
+      if (dbUser.runningGoal) {
+        if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
+        else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+        else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+      }
+      const updatedParticipant = { ...p, name, initials, cat }
       const actualKm = dbUser.runs.reduce((s: number, r: any) => s + r.distanceKm, 0)
-      const planned = plannedKmSoFar(p)
+      const planned = plannedKmSoFar(updatedParticipant)
       if (planned === 0) return null
       const pct = (actualKm / planned) * 100
-      if (pct < 80) return { name: p.name, pct: Math.round(pct), gap: (planned - actualKm).toFixed(1) }
+      if (pct < 80) return { name, pct: Math.round(pct), gap: (planned - actualKm).toFixed(1) }
       return null
     }).filter(Boolean)
 

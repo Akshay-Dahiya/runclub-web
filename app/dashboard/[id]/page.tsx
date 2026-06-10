@@ -70,11 +70,24 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
     }
   }
 
+  let cat = participantDef.cat
+  if (dbUser.runningGoal) {
+    if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
+    else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+    else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+  }
+  const updatedParticipantDef = {
+    ...participantDef,
+    name: dbUser.name || participantDef.name,
+    initials: dbUser.initials || participantDef.initials,
+    cat
+  }
+
   const actualKm = dbUser.runs.reduce((sum: number, r: any) => sum + (r.distanceKm || 0), 0)
-  const plannedKm = plannedKmSoFar(participantDef as any)
-  const status = getStatus(actualKm, participantDef as any)
+  const plannedKm = plannedKmSoFar(updatedParticipantDef as any)
+  const status = getStatus(actualKm, updatedParticipantDef as any)
   const pct = plannedKm > 0 ? Math.min(100, Math.round((actualKm / plannedKm) * 100)) : 0
-  const totalTarget = grandTotal(participantDef as any)
+  const totalTarget = grandTotal(updatedParticipantDef as any)
 
   return (
     <>
@@ -87,7 +100,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
       <div className="section" style={{ minHeight: '80vh', paddingTop: '60px' }}>
         <DashboardClient 
           dbUser={dbUser}
-          participantDef={participantDef}
+          participantDef={updatedParticipantDef}
           actualKm={actualKm}
           plannedKm={plannedKm}
           status={status}

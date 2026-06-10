@@ -54,7 +54,19 @@ export async function POST(req: Request) {
       include: { runs: true }
     })
 
-    const totalTarget = grandTotal(participantDef)
+    let cat = participantDef.cat
+    if (user.runningGoal) {
+      if (user.runningGoal === '10.5K Run' || user.runningGoal === '10K') cat = '10K'
+      else if (user.runningGoal === '21.1K Half Marathon' || user.runningGoal === 'HM' || user.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+      else if (user.runningGoal === 'HM_INT' || user.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+    }
+    const updatedParticipant = {
+      ...participantDef,
+      name: user.name || participantDef.name,
+      initials: user.initials || participantDef.initials,
+      cat
+    }
+    const totalTarget = grandTotal(updatedParticipant)
 
     // Calculate context data
     const totalKm = user.runs.reduce((sum: number, run: any) => sum + run.distanceKm, 0)
@@ -90,7 +102,7 @@ Your traits:
 You are currently coaching: ${user.name}.
 
 ### RUNNER CONTEXT ###
-- Goal Category: ${participantDef.cat.startsWith('HM') ? 'Half Marathon (21.1K)' : '10K'}
+- Goal Category: ${updatedParticipant.cat.startsWith('HM') ? 'Half Marathon (21.1K)' : '10K'}
 - Target Race Date: August 23, 2026
 - Plan Progress: ${totalKm.toFixed(1)} km completed out of ${totalTarget} km target (${pct}%).
 - Leaderboard Status: Rank ${userRank} out of ${leaderboard.length}.
@@ -140,7 +152,7 @@ ${recentRuns || "No runs logged yet."}
     const getKipchogeFallback = (message: string) => {
       const msg = message.toLowerCase()
       if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey') || msg.includes('greetings')) {
-        return `Hello ${user.name}. I am glad to walk—or rather, run—this path with you. How is your mind and body feeling today? Let us discuss your preparation for the ${participantDef.cat.startsWith('HM') ? 'Half Marathon' : '10K'} on August 23.`
+        return `Hello ${user.name}. I am glad to walk—or rather, run—this path with you. How is your mind and body feeling today? Let us discuss your preparation for the ${updatedParticipant.cat.startsWith('HM') ? 'Half Marathon' : '10K'} on August 23.`
       }
       if (msg.includes('progress') || msg.includes('km') || msg.includes('distance') || msg.includes('how am i') || msg.includes('target') || msg.includes('run')) {
         return `You have completed ${totalKm.toFixed(1)} km out of your ${totalTarget} km target. That is ${pct}% of the journey. In running, consistency is the key. Every single kilometer you run builds the foundation of your success. Keep up the disciplined work, ${user.name}.`
@@ -152,7 +164,7 @@ ${recentRuns || "No runs logged yet."}
         return `You are currently Rank ${userRank} on the leaderboard. You are ${diffToLeader.toFixed(1)} km behind the leader. Do not be discouraged by the gap; let it inspire you. A marathon is not won in the first mile. Focus on your own steps, day by day.`
       }
       if (msg.includes('predict') || msg.includes('time') || msg.includes('pace') || msg.includes('race') || msg.includes('finish')) {
-        const targetDist = participantDef.cat.startsWith('HM') ? 21.1 : 10.0
+        const targetDist = updatedParticipant.cat.startsWith('HM') ? 21.1 : 10.0
         const totalSecs = targetDist * (avgPaceMin * 60 + parseInt(avgPaceSecStr))
         const estHours = Math.floor(totalSecs / 3600)
         const estMins = Math.floor((totalSecs % 3600) / 60)

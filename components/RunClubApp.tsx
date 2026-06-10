@@ -9,7 +9,7 @@ import Footer from './Footer'
 import PublicLogRunForm from './PublicLogRunForm'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM_INT, PLAN_HM_BEG } from '../lib/planData'
 
-function DashboardPicker() {
+function DashboardPicker({ runners }: { runners: any[] }) {
   const router = useRouter()
   const [selected, setSelected] = useState('')
   return (
@@ -25,7 +25,7 @@ function DashboardPicker() {
         }}
       >
         <option value="">Select your name...</option>
-        {PARTICIPANTS.map(p => (
+        {runners.map(p => (
           <option key={p.id} value={p.id}>{p.name} — {p.cat === '10K' ? '10K' : p.cat === 'HM_INT' ? 'Half Marathon (Int)' : 'Half Marathon (Beg)'}</option>
         ))}
       </select>
@@ -53,8 +53,22 @@ export default function RunClubApp({ users }: { users: any[] }) {
   const [leaderboardSort, setLeaderboardSort] = useState('distance')
   const [activeModalPlan, setActiveModalPlan] = useState<string | null>(null)
 
+  // Merge database participant name/initials/category updates
+  const participantsWithDb = PARTICIPANTS.map(p => {
+    const dbUser = users.find(u => u.email === p.email)
+    const name = dbUser?.name || p.name
+    const initials = dbUser?.initials || p.initials
+    let cat = p.cat
+    if (dbUser?.runningGoal) {
+      if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
+      else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+      else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+    }
+    return { ...p, name, initials, cat }
+  })
+
   // Map DB Users back to the logic in PARTICIPANTS
-  const mappedUsers = PARTICIPANTS.map(p => {
+  const mappedUsers = participantsWithDb.map(p => {
     const dbUser = users.find(u => u.email === p.email)
     const runs = dbUser?.runs || []
     const actualKm = runs.reduce((sum: number, r: any) => sum + r.distanceKm, 0)
@@ -354,8 +368,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
                 </thead>
                 <tbody>
                   {sortedOverallUsers.map((u, i) => {
-                    const planned = plannedKmSoFar(u)
-                    const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+                    const pct = u.totalTarget > 0 ? Math.min(100, Math.round((u.actualKm / u.totalTarget) * 100)) : 0
                     const val = leaderboardSort === 'distance' ? u.actualKm : u.longestRun;
                     if (val === 0) return null; // empty state logic (skip 0s)
                     return (
@@ -392,8 +405,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
             <div className="visible-mobile reveal visible">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {sortedOverallUsers.map((u, i) => {
-                  const planned = plannedKmSoFar(u)
-                  const pct = planned > 0 ? Math.min(100, Math.round((u.actualKm / planned) * 100)) : 0
+                  const pct = u.totalTarget > 0 ? Math.min(100, Math.round((u.actualKm / u.totalTarget) * 100)) : 0
                   const val = leaderboardSort === 'distance' ? u.actualKm : u.longestRun;
                   if (val === 0) return null;
                   return (
@@ -534,7 +546,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
           <p className="section-sub" style={{ marginBottom: '32px' }}>
             Select your name to view your personal stats, log runs, and see your training plan progress.
           </p>
-          <DashboardPicker />
+          <DashboardPicker runners={participantsWithDb} />
         </div>
       </div>
 
@@ -544,7 +556,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
       </div>
 
       <div style={{ padding: '0 20px 80px 20px' }}>
-        <PublicLogRunForm runners={PARTICIPANTS.filter(p => p.email).map(p => ({ name: p.name, email: p.email }))} />
+        <PublicLogRunForm runners={participantsWithDb.filter(p => p.email).map(p => ({ name: p.name, email: p.email }))} />
       </div>
 
       <Footer />

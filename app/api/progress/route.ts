@@ -34,6 +34,9 @@ export async function GET() {
   const allUsers = await prisma.user.findMany({
     select: {
       email: true,
+      name: true,
+      initials: true,
+      runningGoal: true,
       runs: {
         select: { date: true, distanceKm: true, paceSecPerKm: true },
         orderBy: { date: 'desc' },
@@ -41,33 +44,43 @@ export async function GET() {
     },
   })
 
-const runsByEmail = new Map<
-  string,
-  { date: Date; distanceKm: number; paceSecPerKm: number | null }[]
->(
-  allUsers.map((u: any) => [u.email, u.runs])
-)
-
-const result = PARTICIPANTS.map((p) => {
-  const email = p.email || `placeholder_${p.id}@runclub.local`
-
-  const runs =
-    runsByEmail.get(email) ??
-    ([] as {
-      date: Date
-      distanceKm: number
-      paceSecPerKm: number | null
-    }[])
-
-  const plan = getPlan(p)
-
-  const totalKm = runs.reduce(
-    (s: number, r) => s + r.distanceKm,
-    0
+  const runsByEmail = new Map<
+    string,
+    { date: Date; distanceKm: number; paceSecPerKm: number | null }[]
+  >(
+    allUsers.map((u: any) => [u.email, u.runs])
   )
-    const plannedKm = plannedKmSoFar(p)
+
+  const result = PARTICIPANTS.map((p) => {
+    const email = p.email || `placeholder_${p.id}@runclub.local`
+    const dbUser = allUsers.find((u: any) => u.email === email)
+    const name = dbUser?.name || p.name
+    const initials = dbUser?.initials || p.initials
+    let cat = p.cat
+    if (dbUser?.runningGoal) {
+      if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
+      else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+      else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+    }
+    const updatedP = { ...p, name, initials, cat }
+
+    const runs =
+      runsByEmail.get(email) ??
+      ([] as {
+        date: Date
+        distanceKm: number
+        paceSecPerKm: number | null
+      }[])
+
+    const plan = getPlan(updatedP)
+
+    const totalKm = runs.reduce(
+      (s: number, r) => s + r.distanceKm,
+      0
+    )
+    const plannedKm = plannedKmSoFar(updatedP)
     const pct = plannedKm > 0 ? Math.min(100, Math.round((totalKm / plannedKm) * 100)) : 0
-    const status = getStatus(totalKm, p)
+    const status = getStatus(totalKm, updatedP)
 
     // Per-week breakdown
     const weeklyMap: Record<number, number> = {}
@@ -91,18 +104,18 @@ const result = PARTICIPANTS.map((p) => {
     }))
 
     return {
-      id: p.id,
-      name: p.name,
-      initials: p.initials,
-      email: p.email,
-      cat: p.cat,
+      id: updatedP.id,
+      name: updatedP.name,
+      initials: updatedP.initials,
+      email: updatedP.email,
+      cat: updatedP.cat,
       totalKm: parseFloat(totalKm.toFixed(1)),
       plannedKm: parseFloat(plannedKm.toFixed(1)),
       pct,
       status,         // 'green' | 'yellow' | 'red'
       runCount: runs.length,
       lastPace: runs[0]?.paceSecPerKm ?? null,
-      grandTotal: grandTotal(p),
+      grandTotal: grandTotal(updatedP),
       weeks,
     }
   })
