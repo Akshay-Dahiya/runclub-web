@@ -38,7 +38,24 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Prisma connection timeout')), 8000)
     )
-    dbUser = await Promise.race([queryPromise, timeoutPromise])
+    const queryResult: any = await Promise.race([queryPromise, timeoutPromise])
+    if (queryResult) {
+      dbUser = {
+        ...queryResult,
+        strava_athlete_id: queryResult.strava_athlete_id ? queryResult.strava_athlete_id.toString() : null,
+        last_synced_at: queryResult.last_synced_at ? queryResult.last_synced_at.toISOString() : null,
+        strava_token_expires_at: queryResult.strava_token_expires_at ? queryResult.strava_token_expires_at.toISOString() : null,
+        createdAt: queryResult.createdAt.toISOString(),
+        updatedAt: queryResult.updatedAt.toISOString(),
+        runs: queryResult.runs.map((r: any) => ({
+          ...r,
+          strava_activity_id: r.strava_activity_id ? r.strava_activity_id.toString() : null,
+          date: r.date.toISOString(),
+          createdAt: r.createdAt.toISOString(),
+          updatedAt: r.updatedAt.toISOString(),
+        }))
+      }
+    }
   } catch (error) {
     console.error('Prisma connection failed on dashboard:', error)
   }
@@ -47,7 +64,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
     // Emergency Fallback: If DB times out, create a fake user so they don't get kicked out!
     dbUser = {
       name: participantDef.name,
-      runs: []
+      runs: [],
+      strava_connected: false,
+      last_synced_at: null
     }
   }
 

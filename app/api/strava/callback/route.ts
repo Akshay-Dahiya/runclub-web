@@ -8,8 +8,8 @@ export async function GET(req: Request) {
   const code = url.searchParams.get('code')
   const userId = url.searchParams.get('state') // userId we passed as state
 
-  if (!code) return NextResponse.redirect('/?error=strava_no_code')
-  if (!userId) return NextResponse.redirect('/?error=strava_no_user')
+  if (!code) return NextResponse.redirect(new URL('/?error=strava_no_code', req.url))
+  if (!userId) return NextResponse.redirect(new URL('/?error=strava_no_user', req.url))
 
   try {
     // Exchange code for token
@@ -23,38 +23,35 @@ export async function GET(req: Request) {
         grant_type: 'authorization_code'
       })
     })
+
+    if (!tokenResp.ok) {
+      const errorData = await tokenResp.json().catch(() => null)
+      console.error('Strava token exchange failed API response:', errorData)
+      return NextResponse.redirect(new URL(`/dashboard/${userId}?error=strava_token_failed`, req.url))
+    }
+
     const data = await tokenResp.json()
 
     if (!data.access_token) {
-      console.error('Strava token exchange failed:', data)
-      return NextResponse.redirect(`/dashboard/${userId}?error=strava_token_failed`)
+      console.error('Strava token exchange failed - missing access token:', data)
+      return NextResponse.redirect(new URL(`/dashboard/${userId}?error=strava_token_failed`, req.url))
     }
 
-    // Upsert the connected account so re-connecting just refreshes the token
-    await prisma.connectedAccount.upsert({
-      where: {
-        // Use a unique combo — provider + providerId
-        id: `strava_${data.athlete?.id}`,
-      },
-      update: {
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        expiresAt: data.expires_at,
-      },
-      create: {
-        id: `strava_${data.athlete?.id}`,
-        provider: 'strava',
-        providerId: String(data.athlete?.id || ''),
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        expiresAt: data.expires_at,
-        user: { connect: { id: userId } }
+    // Save tokens and connect user
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        strava_access_token: data.access_token,
+        strava_refresh_token: data.refresh_token,
+        strava_token_expires_at: new Date(data.expires_at * 1000),
+        strava_athlete_id: BigInt(data.athlete?.id),
+        strava_connected: true
       }
     })
 
-    return NextResponse.redirect(`/dashboard/${userId}?connected=strava`)
+    return NextResponse.redirect(new URL(`/dashboard/${userId}?connected=true`, req.url))
   } catch (err) {
     console.error('Strava callback error:', err)
-    return NextResponse.redirect(`/dashboard/${userId}?error=strava_failed`)
+    return NextResponse.redirect(new URL(`/dashboard/${userId}?error=strava_failed`, req.url))
   }
 }

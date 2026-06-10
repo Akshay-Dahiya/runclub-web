@@ -26,6 +26,14 @@ model User {
   aiReports       AIReport[]
   leaderboardLikes LeaderboardLike[]
   checklistItems  ChecklistItem[]
+  
+  // Strava integration columns
+  strava_athlete_id       BigInt?
+  strava_access_token     String?
+  strava_refresh_token    String?
+  strava_token_expires_at DateTime?
+  strava_connected        Boolean           @default(false)
+  last_synced_at          DateTime?
 }
 
 model Run {
@@ -45,6 +53,10 @@ model Run {
   aiReport      AIReport?
   comments      Comment[]
   likes         Like[]
+
+  // Strava integration columns
+  source             String   @default("manual")
+  strava_activity_id BigInt?
 }
 
 model Activity {

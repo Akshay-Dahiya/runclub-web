@@ -102,10 +102,58 @@ export default function DashboardClient({
   }
   const dbUser = { ...initialDbUser, runs: Array.from(uniqueRunsMap.values()) }
 
-  const [connected, setConnected] = useState<Record<Provider, boolean>>({
-    strava: false
-  })
-  const toggle = (p: Provider) => setConnected(c => ({ ...c, [p]: !c[p] }))
+  // Toast on successful connect
+  const [showConnectedToast, setShowConnectedToast] = useState(false)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('connected') === 'true') {
+      setShowConnectedToast(true)
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, document.title, newUrl)
+      setTimeout(() => setShowConnectedToast(false), 4000)
+    }
+  }, [])
+
+  // Auto sync logic on dashboard load
+  useEffect(() => {
+    if (dbUser.strava_connected && dbUser.id) {
+      const lastSynced = dbUser.last_synced_at ? new Date(dbUser.last_synced_at) : null
+      const now = new Date()
+      const thirtyMins = 30 * 60 * 1000
+      const shouldAutoSync = !lastSynced || (now.getTime() - lastSynced.getTime() > thirtyMins)
+      
+      if (shouldAutoSync) {
+        console.log('[Strava] Triggering background auto-sync...')
+        fetch(`/api/strava/sync/${dbUser.id}`)
+          .then(res => res.json())
+          .then(data => {
+            console.log('[Strava] Background auto-sync finished:', data)
+            if (data.synced > 0) {
+              window.location.reload()
+            }
+          })
+          .catch(err => console.error('[Strava] Background auto-sync failed:', err))
+      }
+    }
+  }, [dbUser])
+
+  // Disconnect handler
+  const handleDisconnect = async () => {
+    if (!confirm("Disconnect Strava? Your already-logged runs will be kept. New runs won't sync automatically.")) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/strava/disconnect?userId=${dbUser.id}`, {
+        method: 'POST'
+      })
+      if (!res.ok) throw new Error('Disconnect failed')
+      alert("Strava disconnected.")
+      window.location.reload()
+    } catch (err) {
+      alert("Failed to disconnect Strava. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const [distance, setDistance] = useState('')
   const [date, setDate] = useState('')
@@ -217,6 +265,24 @@ export default function DashboardClient({
 
   return (
     <div style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+      {showConnectedToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: '#4ade80',
+          color: '#000',
+          padding: '16px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          zIndex: 10000,
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontWeight: 700,
+          fontSize: '0.95rem',
+        }}>
+          Strava connected! Your runs will sync automatically.
+        </div>
+      )}
       
       {/* HERO */}
       <section style={{ marginBottom: '64px' }}>
@@ -519,6 +585,22 @@ export default function DashboardClient({
                       }}>{effort.label}</span>
                     )}
 
+                    {/* Source Badge */}
+                    {r.source === 'strava' ? (
+                      <span style={{
+                        padding: '4px 12px', borderRadius: '20px',
+                        background: 'rgba(252,76,2,0.12)', color: '#FC4C02',
+                        border: '1px solid rgba(252,76,2,0.2)',
+                        fontFamily: 'monospace', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em'
+                      }}>via Strava</span>
+                    ) : (
+                      <span style={{
+                        padding: '4px 12px', borderRadius: '20px',
+                        background: 'rgba(255,255,255,0.05)', color: 'var(--muted)',
+                        fontFamily: 'monospace', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em'
+                      }}>Manual</span>
+                    )}
+
                     {/* Notes */}
                     {r.notes && (
                       <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', fontStyle: 'italic', marginLeft: 'auto', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -564,8 +646,8 @@ export default function DashboardClient({
             <ProviderCard
               key={p}
               provider={p}
-              connected={connected[p]}
-              onToggle={() => toggle(p)}
+              dbUser={dbUser}
+              onDisconnect={handleDisconnect}
             />
           ))}
         </div>
@@ -1024,8 +1106,48 @@ function StatBox({ label, value, unit, sub }: { label: string; value: string; un
   )
 }
 
-function ProviderCard({ provider, connected, onToggle }: { provider: Provider; connected: boolean; onToggle: () => void }) {
+function LastSyncedLabel({ lastSyncedAt }: { lastSyncedAt: string | null }) {
+  if (!lastSyncedAt) return <span>Never synced</span>
+  const diffMs = Date.now() - new Date(lastSyncedAt).getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return <span>Last synced: just now</span>
+  if (diffMins < 60) return <span>Last synced: {diffMins} min{diffMins > 1 ? 's' : ''} ago</span>
+  const diffHrs = Math.floor(diffMins / 60)
+  return <span>Last synced: {diffHrs} hour{diffHrs > 1 ? 's' : ''} ago</span>
+}
+
+function ProviderCard({
+  provider,
+  dbUser,
+  onDisconnect
+}: {
+  provider: Provider
+  dbUser: any
+  onDisconnect: () => void
+}) {
   const meta = providerMeta[provider]
+  const connected = dbUser.strava_connected
+  const [syncing, setSyncing] = useState(false)
+
+  const handleConnect = () => {
+    window.location.href = `/api/strava?userId=${dbUser.id}`
+  }
+
+  const handleManualSync = async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch(`/api/strava/sync/${dbUser.id}`)
+      if (!res.ok) throw new Error('Sync failed')
+      const data = await res.json()
+      alert(`Sync complete! Synced: ${data.synced}, Skipped: ${data.skipped}`)
+      window.location.reload()
+    } catch (err) {
+      alert('Failed to sync. Please try again.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: '4px', padding: '24px', background: 'var(--surface)', transition: 'border-color 0.2s', cursor: 'default' }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(252,76,2,0.5)')}
@@ -1036,25 +1158,59 @@ function ProviderCard({ provider, connected, onToggle }: { provider: Provider; c
           {meta.name[0]}
         </div>
         {connected && (
-          <span style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#4ade80' }}>✓ Linked</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#4ade80' }}>✓ Connected</span>
+            <button
+              onClick={onDisconnect}
+              style={{ background: 'none', border: 'none', color: 'var(--muted)', textDecoration: 'underline', fontFamily: 'monospace', fontSize: '10px', cursor: 'pointer', padding: 0 }}
+            >
+              Disconnect
+            </button>
+          </div>
         )}
       </div>
       <h3 style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 8px 0' }}>{meta.name}</h3>
-      <p style={{ fontSize: '12px', opacity: 0.6, lineHeight: 1.6, flex: 1, margin: '0 0 20px 0' }}>{meta.blurb}</p>
-      <button
-        disabled={true}
-        style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          border: 'none',
-          background: 'var(--bg)',
-          color: 'var(--text)', opacity: 0.5,
-          borderRadius: '4px', padding: '10px 16px',
-          fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700,
-          cursor: 'not-allowed', transition: 'opacity 0.2s'
-        }}
-      >
-        Coming Soon
-      </button>
+      <p style={{ fontSize: '12px', opacity: 0.6, lineHeight: 1.6, flex: 1, margin: '0 0 20px 0' }}>
+        {connected ? 'Your runs will automatically sync in the background.' : meta.blurb}
+      </p>
+      
+      {connected ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <button
+            onClick={handleManualSync}
+            disabled={syncing}
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              border: 'none',
+              background: 'var(--orange)',
+              color: '#000',
+              borderRadius: '4px', padding: '10px 16px',
+              fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700,
+              cursor: syncing ? 'not-allowed' : 'pointer', transition: 'opacity 0.2s', width: '100%'
+            }}
+          >
+            {syncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+          <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--muted)', textAlign: 'center' }}>
+            <LastSyncedLabel lastSyncedAt={dbUser.last_synced_at} />
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={handleConnect}
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            border: 'none',
+            background: 'var(--orange)',
+            color: '#000',
+            borderRadius: '4px', padding: '10px 16px',
+            fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700,
+            cursor: 'pointer', transition: 'opacity 0.2s'
+          }}
+        >
+          Connect Strava
+        </button>
+      )}
     </div>
   )
 }
