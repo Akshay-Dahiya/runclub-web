@@ -49,14 +49,14 @@ export default function Hero() {
           paddingLeft: '100%',
           animation: 'ticker 20s linear infinite'
         }}>
-          ▶ JOYVILLE ROAD RUNNERS · AUG 23, 2026 · DELHI · 10K & 21.1K · TUFFMAN AUG 2026 · 15 RUNNERS TRAINING ·
+          ▶ JOYVILLE ROAD RUNNERS · AUG 23, 2026 · GURUGRAM · 10K & 21.1K · TUFFMAN AUG 2026 · 15 RUNNERS TRAINING ·
         </div>
       </div>
 
       {/* CONTENT */}
       <div className="hero-content">
         <img src="/logo.png?v=3" alt="Joyville Road Runners Logo" className="hero-logo" />
-        <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · DELHI 2026</div>
+        <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · GURUGRAM 2026</div>
         
         <h1 className="hero-headline">
           <div className="hl-line1">STRONGER TOGETHER</div>
