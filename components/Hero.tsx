@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 
 export default function Hero() {
-  const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -12,36 +11,6 @@ export default function Hero() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  useEffect(() => {
-    const targetDate = new Date('2026-08-23T06:00:00+05:30').getTime()
-
-    const updateCountdown = () => {
-      const now = new Date().getTime()
-      const diff = targetDate - now
-
-      if (diff <= 0) {
-        setTimeLeft({ d: '00', h: '00', m: '00', s: '00' })
-        return
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-      setTimeLeft({
-        d: String(days).padStart(2, '0'),
-        h: String(hours).padStart(2, '0'),
-        m: String(minutes).padStart(2, '0'),
-        s: String(seconds).padStart(2, '0')
-      })
-    }
-
-    updateCountdown()
-    const timerId = setInterval(updateCountdown, 1000)
-    return () => clearInterval(timerId)
   }, [])
 
   return (
@@ -108,19 +77,6 @@ export default function Hero() {
           <span className="stat-pill">10 Weeks</span>
           <span className="stat-pill">3 Plans</span>
           <span className="stat-pill">1 Finish Line</span>
-        </div>
-
-        <div className="hero-countdown-section">
-          <div className="cd-label">⏱ RACE DAY COUNTDOWN</div>
-          <div className="cd-boxes">
-            <div className="cd-box"><span className="cd-num">{timeLeft.d}</span><span className="cd-box-lbl">DAYS</span></div>
-            <div className="cd-sep">:</div>
-            <div className="cd-box"><span className="cd-num">{timeLeft.h}</span><span className="cd-box-lbl">HOURS</span></div>
-            <div className="cd-sep">:</div>
-            <div className="cd-box"><span className="cd-num">{timeLeft.m}</span><span className="cd-box-lbl">MINS</span></div>
-            <div className="cd-sep">:</div>
-            <div className="cd-box"><span className="cd-num">{timeLeft.s}</span><span className="cd-box-lbl">SECS</span></div>
-          </div>
         </div>
       </div>
 
@@ -244,57 +200,7 @@ export default function Hero() {
           letter-spacing: 0.05em; padding: 6px 14px;
         }
         
-        /* COUNTDOWN */
-        .hero-countdown-section {
-          margin-top: 32px;
-        }
-        .cd-label {
-          font-family: monospace; font-size: 10px;
-          color: #3b82f6; letter-spacing: 0.2em;
-          margin-bottom: 12px;
-        }
-        .cd-boxes {
-          display: flex; gap: 8px; align-items: center;
-          margin-bottom: 16px;
-        }
-        .cd-box {
-          background: #0f1c2e; border: 1px solid #1e3a5f;
-          border-radius: 8px; padding: 16px 20px;
-          min-width: 72px; text-align: center;
-        }
-        .cd-num {
-          font-family: 'Bebas Neue', sans-serif; font-size: 3rem;
-          color: #f0f4f8; text-shadow: 0 0 20px #3b82f660;
-          display: block; line-height: 1;
-        }
-        .cd-box-lbl {
-          font-size: 9px; color: #64748b; letter-spacing: 0.15em;
-          text-transform: uppercase; margin-top: 4px; display: block;
-        }
-        .cd-sep {
-          color: #3b82f6; font-size: 2rem; font-family: 'Bebas Neue', sans-serif;
-          animation: pulse 1s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-        
-        .cd-toggles {
-          display: flex; gap: 8px;
-        }
-        .toggle-pill {
-          padding: 6px 14px; border-radius: 99px;
-          font-size: 11px; cursor: pointer; transition: all 0.2s ease;
-          background: transparent;
-        }
-        .toggle-pill.active {
-          background: #3b82f620; border: 1px solid #3b82f6; color: #3b82f6;
-        }
-        .toggle-pill:not(.active) {
-          border: 1px solid #1e3a5f; color: #64748b;
-        }
-        
+
         /* SCROLL INDICATOR */
         .hero-scroll-indicator {
           position: absolute; bottom: 24px; left: 50%;
@@ -332,8 +238,6 @@ export default function Hero() {
             flex-direction: column; width: 100%;
           }
           .hero-btn { width: 100%; }
-          .cd-boxes { justify-content: center; }
-          .cd-toggles { justify-content: center; }
           .hero-stat-pills { justify-content: center; }
         }
       `}} />
