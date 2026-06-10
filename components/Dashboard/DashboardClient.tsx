@@ -653,8 +653,6 @@ function MissedRunAlert({ runs, participantDef, userId }: { runs: any[]; partici
   const dayOfWeek = (now.getDay() + 6) % 7 // Mon=0
   const weekStart = new Date(now); weekStart.setDate(now.getDate() - dayOfWeek); weekStart.setHours(0, 0, 0, 0)
 
-  // Training days: Tue=1, Thu=3, Sat=5, Sun=6 (0-indexed from Mon)
-  const trainingDays = [1, 3, 5, 6]
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
   // Runs logged this week
@@ -666,7 +664,7 @@ function MissedRunAlert({ runs, participantDef, userId }: { runs: any[]; partici
   const weekKm = runs.filter(r => new Date(r.date) >= weekStart).reduce((s, r) => s + r.distanceKm, 0)
 
   // Get current week plan
-  const { getPlan, getWeekIdx, WEEK_STARTS } = require('../../lib/planData') as any
+  const { getPlan, getWeekIdx } = require('../../lib/planData') as any
   const cwi = getWeekIdx(now)
   if (cwi < 0) return null
   const weekPlan = getPlan(participantDef)[cwi]
@@ -675,16 +673,41 @@ function MissedRunAlert({ runs, participantDef, userId }: { runs: any[]; partici
   // If weekly total >= target, no alert needed
   if (weekKm >= weekTarget) return null
 
+  // Paired blocks missed runs check
+  const blocks = [
+    { name: 'Mon/Tue', days: [0, 1], planKey: 'tue', targetDay: 1 },
+    { name: 'Wed/Thu', days: [2, 3], planKey: 'thu', targetDay: 3 },
+    { name: 'Fri/Sat', days: [4, 5], planKey: 'sat', targetDay: 5 },
+    { name: 'Sun', days: [6], planKey: 'sun', targetDay: 6 }
+  ]
+
   // Find missed days
   const missedDays: { label: string; date: string; km: number }[] = []
-  for (const dayIdx of trainingDays) {
-    if (dayIdx >= dayOfWeek) continue // hasn't happened yet
-    const d = new Date(weekStart); d.setDate(weekStart.getDate() + dayIdx)
-    const dateStr = d.toISOString().split('T')[0]
-    const dayKmKey = DAYS[dayIdx] === 'Tue' ? 'tue' : DAYS[dayIdx] === 'Thu' ? 'thu' : DAYS[dayIdx] === 'Sat' ? 'sat' : 'sun'
-    const plannedKm = weekPlan?.[dayKmKey] || 0
-    if (!weekRunDates.has(dateStr)) {
-      missedDays.push({ label: `${DAYS[dayIdx]}, ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, date: dateStr, km: plannedKm })
+  for (const block of blocks) {
+    const lastDayOfBlock = block.days[block.days.length - 1]
+    if (dayOfWeek <= lastDayOfBlock) continue // block has not fully passed yet
+
+    let runLogged = false
+    for (const dayIdx of block.days) {
+      const d = new Date(weekStart)
+      d.setDate(weekStart.getDate() + dayIdx)
+      const dateStr = d.toISOString().split('T')[0]
+      if (weekRunDates.has(dateStr)) {
+        runLogged = true
+        break
+      }
+    }
+
+    if (!runLogged) {
+      const targetDate = new Date(weekStart)
+      targetDate.setDate(weekStart.getDate() + block.targetDay)
+      const dateStr = targetDate.toISOString().split('T')[0]
+      const plannedKm = weekPlan?.[block.planKey] || 0
+      missedDays.push({
+        label: `${block.name}, ${targetDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+        date: dateStr,
+        km: plannedKm
+      })
     }
   }
 

@@ -93,7 +93,7 @@ nav { position:fixed; top:0; left:0; right:0; z-index:100; display:flex; align-i
 
 /* PARTICIPANT CARDS */
 .participants-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.participant-card { background:var(--card); padding:28px 24px; transition:all .3s ease; cursor:pointer; position:relative; }
+.participant-card { background:var(--card); padding:28px 24px; transition:all .3s ease; position:relative; }
 .participant-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; transform:scaleX(0); transform-origin:left; transition:transform .4s cubic-bezier(0.16, 1, 0.3, 1); }
 .participant-card.status-green::before { background:var(--green); transform:scaleX(1); }
 .participant-card.status-yellow::before { background:var(--yellow); transform:scaleX(1); }
@@ -340,3 +340,15 @@ footer { border-top:1px solid var(--border); padding:44px 40px; display:flex; al
 
 .run-card:hover { transform: translateY(-4px); border-color: var(--accent) !important; box-shadow: 0 12px 40px rgba(0,0,0,0.3) !important; }
 .run-card:active { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important; }
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+  cursor: pointer;
+}

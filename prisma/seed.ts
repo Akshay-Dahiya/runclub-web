@@ -60,7 +60,7 @@ async function main() {
       const ws = WEEK_STARTS[wi]
       const w = plan[wi]
 
-      // Scheduled run days: Tue=+1, Thu=+3, Sat=+5, Sun=+6
+      // Scheduled run blocks: Mon/Tue=+1, Wed/Thu=+3, Fri/Sat=+5, Sun=+6
       const days = [
         { offset: 1, km: w.tue },
         { offset: 3, km: w.thu },

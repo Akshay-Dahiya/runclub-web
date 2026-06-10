@@ -252,17 +252,17 @@ export default function RunClubApp({ users }: { users: any[] }) {
         <div className="plan-wrap-3 reveal visible">
           {[
             {
-              id: '10K', title: '10K Plan', badge: '10.5 KM', vol: '239 km total', days: 'Tue · Thu · Sat · Sun',
+              id: '10K', title: '10K Plan', badge: '10.5 KM', vol: '239 km total', days: 'Mon/Tue · Wed/Thu · Fri/Sat · Sun',
               tagline: 'Build your base and peak at race pace.', color: 'var(--orange)', bg: 'rgba(252,76,2,0.1)',
               data: PLAN_10K, totalStr: '239 km'
             },
             {
-              id: 'HM_INT', title: 'Half Marathon (Int)', badge: '21.1 KM', vol: '364 km total', days: 'Tue · Thu · Sat · Sun',
+              id: 'HM_INT', title: 'Half Marathon (Int)', badge: '21.1 KM', vol: '364 km total', days: 'Mon/Tue · Wed/Thu · Fri/Sat · Sun',
               tagline: 'Go the distance. 21.1km awaits.', color: 'var(--blue)', bg: 'rgba(34,211,238,0.1)',
               data: PLAN_HM_INT, totalStr: '364 km'
             },
             {
-              id: 'HM_BEG', title: 'Half Marathon (Beg)', badge: '21.1 KM', vol: '340 km total', days: 'Tue · Thu · Sat · Sun',
+              id: 'HM_BEG', title: 'Half Marathon (Beg)', badge: '21.1 KM', vol: '340 km total', days: 'Mon/Tue · Wed/Thu · Fri/Sat · Sun',
               tagline: 'Your first half marathon starts here.', color: 'var(--green)', bg: 'rgba(34,197,94,0.1)',
               data: PLAN_HM_BEG, totalStr: '340 km'
             }

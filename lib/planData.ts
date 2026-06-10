@@ -5,7 +5,7 @@
 
 export const RACE_DATE = new Date('2026-08-23T07:00:00+05:30')
 
-// Week start dates (Monday). Plan runs Tue / Thu / Sat / Sun each week.
+// Week start dates (Monday). Plan blocks are Mon/Tue, Wed/Thu, Fri/Sat, Sun.
 export const WEEK_STARTS: Date[] = [
   new Date('2026-06-08'), // Week 1
   new Date('2026-06-15'), // Week 2
