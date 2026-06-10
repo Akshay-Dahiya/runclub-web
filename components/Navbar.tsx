@@ -6,6 +6,15 @@ import Image from 'next/image'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
   useEffect(() => {
@@ -42,7 +51,22 @@ export default function Navbar() {
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
       {/* COUNTDOWN BANNER */}
-      <div className="countdown-strip" style={{ padding: '8px 48px', borderBottom: 'none', background: 'var(--surface)', color: 'var(--text)', flexDirection: 'column', gap: '8px' }}>
+      <div 
+        className="countdown-strip" 
+        style={{ 
+          padding: scrolled ? '0px 5vw' : '8px 5vw', 
+          maxHeight: scrolled ? '0px' : '150px',
+          opacity: scrolled ? 0 : 1,
+          overflow: 'hidden',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          borderBottom: 'none', 
+          background: 'var(--surface)', 
+          color: 'var(--text)', 
+          flexDirection: 'column', 
+          gap: scrolled ? '0px' : '8px',
+          display: 'flex'
+        }}
+      >
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#000', fontSize: '0.75rem', fontWeight: 700 }}>
             Tuffman · Aug 23
@@ -59,7 +83,13 @@ export default function Navbar() {
           <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.s}</span><span className="cd-lbl">Secs</span></div>
         </div>
       </div>
-      <nav style={{ position: 'relative' }}>
+      <nav style={{ 
+        position: 'relative',
+        background: scrolled ? 'rgba(8, 15, 26, 0.85)' : undefined,
+        backdropFilter: scrolled ? 'blur(16px)' : undefined,
+        borderBottom: scrolled ? '1px solid rgba(59, 130, 246, 0.1)' : undefined,
+        transition: 'background 0.3s ease, backdrop-filter 0.3s ease, border-bottom 0.3s ease'
+      }}>
       <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Image src="/logo.png?v=3" alt="Joyville Road Runners Logo" width={48} height={48} style={{ height: '48px', width: 'auto' }} />
         JOYVILLE ROAD RUNNERS
