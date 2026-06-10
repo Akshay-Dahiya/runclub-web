@@ -576,7 +576,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
               <div style={{ overflowY: 'auto', padding: '0' }}>
                 <table className="plan-table" style={{ width: '100%' }}>
                   <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 9 }}>
-                    <tr><th style={{ padding: '16px 8px' }}>Wk</th><th>Tue</th><th>Thu</th><th>Sat</th><th>Sun</th><th>Total</th></tr>
+                    <tr><th style={{ padding: '16px 8px' }}>Wk</th><th>Mon/Tue</th><th>Wed/Thu</th><th>Fri/Sat</th><th>Sun</th><th>Total</th></tr>
                   </thead>
                   <tbody>
                     {plan.data.map((w, i) => {

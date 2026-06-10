@@ -249,8 +249,8 @@ export default function DashboardClient({
                 <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'var(--orange)' }}>Select a Training Plan</h3>
                 <div style={{ display: 'grid', gap: '12px' }}>
                   {[
-                    { id: '10K', label: '10K Plan', description: '10.5km race · 239 km total training · Tue/Thu/Sat/Sun' },
-                    { id: 'HM', label: 'Half Marathon Plan', description: '21.1km race · 364 km total training · Tue/Thu/Sat/Sun' },
+                    { id: '10K', label: '10K Plan', description: '10.5km race · 239 km total training · Mon/Tue · Wed/Thu · Fri/Sat · Sun' },
+                    { id: 'HM', label: 'Half Marathon Plan', description: '21.1km race · 364 km total training · Mon/Tue · Wed/Thu · Fri/Sat · Sun' },
                     { id: 'HM_INT', label: 'Half Marathon Intermediate', description: '21.1km race · ~10–15% more volume than standard HM, peak long run 22–24km' },
                   ].map(plan => (
                     <div key={plan.id} style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '12px', cursor: 'pointer', background: selectedPlan === plan.id ? 'rgba(252,76,2,0.1)' : 'transparent' }}
