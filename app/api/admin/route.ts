@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { sessionOptions, SessionData } from '../../../lib/session'
+import { cookies } from 'next/headers'
 import { prisma } from '../../../lib/prisma'
 import { PARTICIPANTS, getPlan, plannedKmSoFar, grandTotal, currentWeekIdx, WEEK_STARTS } from '../../../lib/planData'
 
 export const dynamic = 'force-dynamic'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'runclub2026'
 
 // ─── GET: Dashboard stats ────────────────────────────────────────────────────
 export async function GET(req: Request) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { searchParams } = new URL(req.url)
   const action = searchParams.get('action')
 
@@ -95,21 +100,8 @@ export async function POST(req: Request) {
   const body = await req.json()
   const { action } = body
 
-  // Auth check (except for 'auth' itself)
-  if (action !== 'auth') {
-    const token = body.token || ''
-    if (token !== `admin:${ADMIN_PASSWORD}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  }
-
-  // ── Authenticate ──
-  if (action === 'auth') {
-    if (body.password === ADMIN_PASSWORD) {
-      return NextResponse.json({ ok: true, token: `admin:${ADMIN_PASSWORD}` })
-    }
-    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 })
-  }
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // ── Add Runner ──
   if (action === 'addRunner') {
@@ -151,12 +143,39 @@ export async function POST(req: Request) {
   // ── Add Run for any runner ──
   if (action === 'addRun') {
     const { userId, date, distanceKm, paceSecPerKm, durationSec, notes, avgHeartRate } = body
+    
+    // Server-side validation (Section 4)
+    if (!userId) return NextResponse.json({ error: 'Invalid member' }, { status: 400 })
+    
+    const dist = parseFloat(distanceKm)
+    if (!dist || dist <= 0 || dist > 100) return NextResponse.json({ error: 'Distance must be between 0.01 and 100 km' }, { status: 400 })
+    
+    const runDate = new Date(date)
+    if (isNaN(runDate.getTime()) || runDate > new Date()) return NextResponse.json({ error: 'Date cannot be in the future' }, { status: 400 })
+    
+    if (paceSecPerKm && (paceSecPerKm < 120 || paceSecPerKm > 1200)) return NextResponse.json({ error: 'Pace must be reasonable' }, { status: 400 })
+    if (avgHeartRate && (parseInt(avgHeartRate) < 40 || parseInt(avgHeartRate) > 220)) return NextResponse.json({ error: 'Heart rate must be between 40 and 220 bpm' }, { status: 400 })
+
+    // Duplicate check
+    const existing = await prisma.run.findFirst({
+      where: {
+        userId,
+        date: runDate,
+        distanceKm: dist,
+        createdAt: { gte: new Date(Date.now() - 60000) }
+      }
+    })
+    
+    if (existing) {
+      return NextResponse.json({ error: 'Duplicate run detected. This run was not saved again.' }, { status: 409 })
+    }
+
     const run = await prisma.run.create({
       data: {
-        userId, date: new Date(date),
-        distanceKm: parseFloat(distanceKm),
-        durationSec: durationSec || Math.round(distanceKm * (paceSecPerKm || 360)),
-        paceSecPerKm: paceSecPerKm || Math.round((durationSec || 0) / distanceKm),
+        userId, date: runDate,
+        distanceKm: dist,
+        durationSec: durationSec || Math.round(dist * (paceSecPerKm || 360)),
+        paceSecPerKm: paceSecPerKm || Math.round((durationSec || 0) / dist),
         notes: notes || null,
         avgHeartRate: avgHeartRate ? parseInt(avgHeartRate) : null,
       }

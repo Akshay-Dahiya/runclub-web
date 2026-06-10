@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, message: 'Reset all runs to none.' })
     }
 
-    const passwordHash = await bcrypt.hash('runclub2026', 10)
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD as string, 10) // SECRET REMOVED — loaded from environment variable
     const now = new Date()
     let totalSeeded = 0
 

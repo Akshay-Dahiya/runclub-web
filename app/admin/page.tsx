@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { PARTICIPANTS, PLAN_10K, PLAN_HM_INT, PLAN_HM_BEG } from '../../lib/planData'
 
-const TOKEN_KEY = 'admin_token'
 const PLANS = ['10K', 'HM_INT', 'HM_BEG']
 const PLAN_LABELS: Record<string, string> = { '10K': '10K Run', 'HM_INT': 'Half Marathon (Int)', 'HM_BEG': 'Half Marathon (Beg)' }
 
@@ -32,50 +31,8 @@ const s = {
   alertBox: { background: '#1a1000', border: '1px solid #663300', borderRadius: '6px', padding: '12px 16px', marginTop: '12px', fontSize: '12px', color: '#ffbb55' },
 }
 
-// ─── Password Gate ────────────────────────────────────────────────────────────
-function LoginGate({ onAuth }: { onAuth: (token: string) => void }) {
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    try {
-      const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'auth', password }) })
-      const data = await res.json()
-      if (data.ok) { localStorage.setItem(TOKEN_KEY, data.token); onAuth(data.token) }
-      else setError('Incorrect password')
-    } catch { setError('Error connecting to server') }
-    setLoading(false)
-  }
-
-  return (
-    <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ ...s.modalBox, maxWidth: '360px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={s.badge}>ADMIN</div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '16px', marginBottom: '4px' }}>RunClub Admin</h1>
-          <p style={{ fontSize: '12px', color: '#555', margin: 0 }}>Restricted access</p>
-        </div>
-        <form onSubmit={submit}>
-          <div style={s.formGroup}>
-            <label style={s.label}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={s.input} autoFocus />
-          </div>
-          {error && <div style={{ color: '#ef4444', fontFamily: 'monospace', fontSize: '12px', marginBottom: '12px' }}>{error}</div>}
-          <button type="submit" disabled={loading} style={{ ...s.btn(), width: '100%', padding: '12px' }}>
-            {loading ? 'Checking...' : 'Enter Panel →'}
-          </button>
-        </form>
-      </div>
-    </div>
-  )
-}
-
 // ─── Quick Stats Tab ──────────────────────────────────────────────────────────
-function StatsTab({ token }: { token: string }) {
+function StatsTab() {
   const [data, setData] = useState<any>(null)
   useEffect(() => { fetch('/api/admin?action=stats').then(r => r.json()).then(setData) }, [])
   if (!data) return <div style={{ color: '#555', fontFamily: 'monospace', padding: '32px' }}>Loading stats...</div>
@@ -121,7 +78,7 @@ function StatsTab({ token }: { token: string }) {
 }
 
 // ─── Runner Management Tab ────────────────────────────────────────────────────
-function RunnersTab({ token }: { token: string }) {
+function RunnersTab() {
   const [runners, setRunners] = useState<any[]>([])
   const [showAdd, setShowAdd] = useState(false)
   const [editRunner, setEditRunner] = useState<any>(null)
@@ -133,7 +90,7 @@ function RunnersTab({ token }: { token: string }) {
   useEffect(() => { load() }, [])
 
   const adminCall = async (action: string, extra: any) => {
-    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, token, ...extra }) })
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...extra }) })
     return res.json()
   }
 
@@ -223,7 +180,7 @@ function RunnersTab({ token }: { token: string }) {
 }
 
 // ─── Run Log Tab ──────────────────────────────────────────────────────────────
-function RunLogTab({ token }: { token: string }) {
+function RunLogTab() {
   const [runs, setRuns] = useState<any[]>([])
   const [runners, setRunners] = useState<any[]>([])
   const [filterRunner, setFilterRunner] = useState('')
@@ -241,7 +198,7 @@ function RunLogTab({ token }: { token: string }) {
   useEffect(() => { load() }, [])
 
   const adminCall = async (action: string, extra: any) => {
-    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, token, ...extra }) })
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...extra }) })
     return res.json()
   }
 
@@ -341,7 +298,7 @@ function RunLogTab({ token }: { token: string }) {
 }
 
 // ─── Plan Management Tab ──────────────────────────────────────────────────────
-function PlansTab({ token }: { token: string }) {
+function PlansTab() {
   const [overrides, setOverrides] = useState<any[]>([])
   const [saving, setSaving] = useState<string | null>(null)
   const [localVals, setLocalVals] = useState<Record<string, string>>({})
@@ -358,7 +315,7 @@ function PlansTab({ token }: { token: string }) {
 
   const save = async (plan: string, week: number, day: string, km: number) => {
     const key = `${plan}_${week}_${day}`; setSaving(key)
-    await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setPlanOverride', token, plan, week, day, km }) })
+    await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setPlanOverride', plan, week, day, km }) })
     await loadOverrides(); setSaving(null)
   }
 
@@ -422,7 +379,7 @@ function PlansTab({ token }: { token: string }) {
 }
 
 // ─── Admin Notes Tab ──────────────────────────────────────────────────────────
-function NotesTab({ token }: { token: string }) {
+function NotesTab() {
   const [content, setContent] = useState('')
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -433,7 +390,7 @@ function NotesTab({ token }: { token: string }) {
 
   const save = async () => {
     setLoading(true)
-    await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveNote', token, content }) })
+    await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveNote', content }) })
     setSaved(true); setLoading(false); setTimeout(() => setSaved(false), 2000)
   }
 
@@ -460,17 +417,14 @@ function NotesTab({ token }: { token: string }) {
 
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
-  const [token, setToken] = useState<string | null>(null)
   const [tab, setTab] = useState('stats')
 
-  useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY)
-    if (stored) setToken(stored)
-  }, [])
-
-  const logout = () => { localStorage.removeItem(TOKEN_KEY); setToken(null) }
-
-  if (!token) return <LoginGate onAuth={setToken} />
+  const logout = async () => {
+    // You'd want to call a logout API if you implement true iron-session logout. 
+    // For now we can just clear cookies or rely on manual session expiry.
+    // As a simple client side redirect to /admin/login which will clear the scope conceptually or just stay there.
+    window.location.href = '/admin/login'
+  }
 
   const tabs = [
     { key: 'stats', label: '📊 Quick Stats' },
@@ -500,11 +454,11 @@ export default function AdminPage() {
       </nav>
 
       <div style={s.body}>
-        {tab === 'stats' && <StatsTab token={token} />}
-        {tab === 'runners' && <RunnersTab token={token} />}
-        {tab === 'runs' && <RunLogTab token={token} />}
-        {tab === 'plans' && <PlansTab token={token} />}
-        {tab === 'notes' && <NotesTab token={token} />}
+        {tab === 'stats' && <StatsTab />}
+        {tab === 'runners' && <RunnersTab />}
+        {tab === 'runs' && <RunLogTab />}
+        {tab === 'plans' && <PlansTab />}
+        {tab === 'notes' && <NotesTab />}
       </div>
     </div>
   )
