@@ -168,7 +168,7 @@ export default function Hero() {
           margin-bottom: 32px;
         }
         .sub-label {
-          font-size: 14px; color: #94a3b8;
+          font-size: 14px; color: #ffffff;
           letter-spacing: 0.05em; margin-bottom: 12px;
         }
         .sub-quote {
@@ -208,7 +208,7 @@ export default function Hero() {
         }
         .stat-pill {
           background: #0f1c2e; border: 1px solid #1e3a5f;
-          border-radius: 99px; font-size: 12px; color: #94a3b8;
+          border-radius: 99px; font-size: 12px; color: #ffffff;
           letter-spacing: 0.05em; padding: 6px 14px;
         }
         
@@ -223,7 +223,7 @@ export default function Hero() {
           opacity: 0; pointer-events: none;
         }
         .scroll-text {
-          font-size: 9px; color: #475569; letter-spacing: 0.3em;
+          font-size: 9px; color: #ffffff; letter-spacing: 0.3em;
         }
         .scroll-arrow {
           font-size: 14px; color: #3b82f6; margin-top: 4px;
