@@ -55,6 +55,7 @@ export default function Hero() {
 
       {/* CONTENT */}
       <div className="hero-content">
+        <img src="/logo.png?v=3" alt="Joyville Road Runners Logo" className="hero-logo" />
         <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · DELHI 2026</div>
         
         <h1 className="hero-headline">
@@ -134,6 +135,17 @@ export default function Hero() {
           position: relative; z-index: 10;
           width: 100%; max-width: 680px;
           margin-left: 10vw;
+        }
+        
+        .hero-logo {
+          height: 80px;
+          width: auto;
+          margin-bottom: 24px;
+          display: block;
+          transition: transform 0.3s ease;
+        }
+        .hero-logo:hover {
+          transform: scale(1.05);
         }
         
         .hero-eyebrow {
