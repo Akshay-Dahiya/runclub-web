@@ -40,19 +40,25 @@ export async function GET(req: Request) {
       .map((u: any) => u.name || u.email)
 
     // Runners behind by 20%+
-    const behindRunners = PARTICIPANTS.map((p: any) => {
-      const dbUser = allUsers.find((u: any) => u.email === p.email || u.email === `placeholder_${p.id}@runclub.local`)
-      if (!dbUser) return null
-      const name = dbUser.name || p.name
-      const initials = dbUser.initials || p.initials
-      let cat = p.cat
-      if (dbUser.runningGoal) {
-        if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
-        else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
-        else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+    const behindRunners = allUsers.map((u: any) => {
+      const staticPart = PARTICIPANTS.find(p => p.email === u.email)
+      const name = u.name || staticPart?.name || 'Unknown'
+      const initials = u.initials || staticPart?.initials || name.split(' ').map((w: string) => w[0]).join('').toUpperCase()
+      
+      let cat = staticPart?.cat || '10K'
+      if (u.runningGoal) {
+        if (u.runningGoal === '10.5K Run' || u.runningGoal === '10K') cat = '10K'
+        else if (u.runningGoal === '21.1K Half Marathon' || u.runningGoal === 'HM' || u.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+        else if (u.runningGoal === 'HM_INT' || u.runningGoal === 'HM Intermediate') cat = 'HM_INT'
       }
-      const updatedParticipant = { ...p, name, initials, cat }
-      const actualKm = dbUser.runs.reduce((s: number, r: any) => s + r.distanceKm, 0)
+      const updatedParticipant = {
+        id: u.id,
+        name,
+        initials,
+        email: u.email,
+        cat
+      }
+      const actualKm = u.runs.reduce((s: number, r: any) => s + r.distanceKm, 0)
       const planned = plannedKmSoFar(updatedParticipant)
       if (planned === 0) return null
       const pct = (actualKm / planned) * 100

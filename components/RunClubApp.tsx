@@ -54,17 +54,24 @@ export default function RunClubApp({ users }: { users: any[] }) {
   const [activeModalPlan, setActiveModalPlan] = useState<string | null>(null)
 
   // Merge database participant name/initials/category updates
-  const participantsWithDb = PARTICIPANTS.map(p => {
-    const dbUser = users.find(u => u.email === p.email)
-    const name = dbUser?.name || p.name
-    const initials = dbUser?.initials || p.initials
-    let cat = p.cat
-    if (dbUser?.runningGoal) {
-      if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
-      else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
-      else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+  const participantsWithDb = users.map(u => {
+    const staticPart = PARTICIPANTS.find(p => p.email === u.email)
+    const name = u.name || staticPart?.name || 'Unknown'
+    const initials = u.initials || staticPart?.initials || name.split(' ').map((w: string) => w[0]).join('').toUpperCase()
+    
+    let cat = staticPart?.cat || '10K'
+    if (u.runningGoal) {
+      if (u.runningGoal === '10.5K Run' || u.runningGoal === '10K') cat = '10K'
+      else if (u.runningGoal === '21.1K Half Marathon' || u.runningGoal === 'HM' || u.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+      else if (u.runningGoal === 'HM_INT' || u.runningGoal === 'HM Intermediate') cat = 'HM_INT'
     }
-    return { ...p, name, initials, cat }
+    return {
+      id: u.id,
+      name,
+      initials,
+      email: u.email,
+      cat
+    }
   })
 
   // Map DB Users back to the logic in PARTICIPANTS

@@ -30,9 +30,10 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const cwi = currentWeekIdx()
 
-  // Fetch all runs grouped by user email
+  // Fetch all runs grouped by user
   const allUsers = await prisma.user.findMany({
     select: {
+      id: true,
       email: true,
       name: true,
       initials: true,
@@ -44,38 +45,31 @@ export async function GET() {
     },
   })
 
-  const runsByEmail = new Map<
-    string,
-    { date: Date; distanceKm: number; paceSecPerKm: number | null }[]
-  >(
-    allUsers.map((u: any) => [u.email, u.runs])
-  )
-
-  const result = PARTICIPANTS.map((p) => {
-    const email = p.email || `placeholder_${p.id}@runclub.local`
-    const dbUser = allUsers.find((u: any) => u.email === email)
-    const name = dbUser?.name || p.name
-    const initials = dbUser?.initials || p.initials
-    let cat = p.cat
-    if (dbUser?.runningGoal) {
-      if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
-      else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
-      else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+  const result = allUsers.map((u: any) => {
+    const staticPart = PARTICIPANTS.find(p => p.email === u.email)
+    const name = u.name || staticPart?.name || 'Unknown'
+    const initials = u.initials || staticPart?.initials || name.split(' ').map((w: string) => w[0]).join('').toUpperCase()
+    
+    let cat = staticPart?.cat || '10K'
+    if (u.runningGoal) {
+      if (u.runningGoal === '10.5K Run' || u.runningGoal === '10K') cat = '10K'
+      else if (u.runningGoal === '21.1K Half Marathon' || u.runningGoal === 'HM' || u.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+      else if (u.runningGoal === 'HM_INT' || u.runningGoal === 'HM Intermediate') cat = 'HM_INT'
     }
-    const updatedP = { ...p, name, initials, cat }
 
-    const runs =
-      runsByEmail.get(email) ??
-      ([] as {
-        date: Date
-        distanceKm: number
-        paceSecPerKm: number | null
-      }[])
+    const updatedP = {
+      id: u.id,
+      name,
+      initials,
+      email: u.email,
+      cat
+    }
 
+    const runs = u.runs
     const plan = getPlan(updatedP)
 
     const totalKm = runs.reduce(
-      (s: number, r) => s + r.distanceKm,
+      (s: number, r: any) => s + r.distanceKm,
       0
     )
     const plannedKm = plannedKmSoFar(updatedP)
@@ -96,7 +90,6 @@ export async function GET() {
       logged: parseFloat((weeklyMap[wi] ?? 0).toFixed(1)),
       isCurrent: wi === cwi,
       isFuture: wi > cwi,
-      // per-day targets
       tue: w.tue,
       thu: w.thu,
       sat: w.sat,

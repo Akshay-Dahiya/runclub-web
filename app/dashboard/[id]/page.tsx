@@ -10,24 +10,17 @@ export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
-  const participantId = parseInt(resolvedParams.id)
-  const participantDef = PARTICIPANTS.find(p => p.id === participantId)
-
-  if (!participantDef) {
-    redirect('/')
-  }
-
-  const userEmail = participantDef.email || `placeholder_${participantId}@runclub.local`
+  const idOrSlug = resolvedParams.id
   
-  let dbUser = null
+  // Try to find the user in the database first
+  let dbUserRaw: any = null
   try {
-    const queryPromise = prisma.user.upsert({
-      where: { email: userEmail },
-      update: {},
-      create: {
-        email: userEmail,
-        name: participantDef.name,
-        runningGoal: participantDef.cat.startsWith('HM') ? '21.1K Half Marathon' : '10.5K Run',
+    const queryPromise = prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: idOrSlug },
+          { email: idOrSlug }
+        ]
       },
       include: {
         runs: {
@@ -38,50 +31,121 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Prisma connection timeout')), 8000)
     )
-    const queryResult: any = await Promise.race([queryPromise, timeoutPromise])
-    if (queryResult) {
-      dbUser = {
-        ...queryResult,
-        strava_athlete_id: queryResult.strava_athlete_id ? queryResult.strava_athlete_id.toString() : null,
-        last_synced_at: queryResult.last_synced_at ? queryResult.last_synced_at.toISOString() : null,
-        strava_token_expires_at: queryResult.strava_token_expires_at ? queryResult.strava_token_expires_at.toISOString() : null,
-        createdAt: queryResult.createdAt.toISOString(),
-        updatedAt: queryResult.updatedAt.toISOString(),
-        runs: queryResult.runs.map((r: any) => ({
-          ...r,
-          strava_activity_id: r.strava_activity_id ? r.strava_activity_id.toString() : null,
-          date: r.date.toISOString(),
-          createdAt: r.createdAt.toISOString(),
-          updatedAt: r.updatedAt.toISOString(),
-        }))
+    dbUserRaw = await Promise.race([queryPromise, timeoutPromise])
+  } catch (error) {
+    console.error('Prisma connection failed on dashboard query:', error)
+  }
+
+  let participantDef = null
+  let dbUser = null
+
+  if (dbUserRaw) {
+    const staticPart = PARTICIPANTS.find(p => p.email === dbUserRaw.email)
+    let cat: any = '10K'
+    if (dbUserRaw.runningGoal) {
+      if (dbUserRaw.runningGoal === '10.5K Run' || dbUserRaw.runningGoal === '10K') cat = '10K'
+      else if (dbUserRaw.runningGoal === '21.1K Half Marathon' || dbUserRaw.runningGoal === 'HM' || dbUserRaw.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+      else if (dbUserRaw.runningGoal === 'HM_INT' || dbUserRaw.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+    } else if (staticPart) {
+      cat = staticPart.cat
+    }
+
+    participantDef = {
+      id: dbUserRaw.id,
+      name: dbUserRaw.name || staticPart?.name || 'Unknown',
+      initials: dbUserRaw.initials || staticPart?.initials || '??',
+      email: dbUserRaw.email,
+      cat
+    }
+
+    dbUser = {
+      ...dbUserRaw,
+      strava_athlete_id: dbUserRaw.strava_athlete_id ? dbUserRaw.strava_athlete_id.toString() : null,
+      last_synced_at: dbUserRaw.last_synced_at ? dbUserRaw.last_synced_at.toISOString() : null,
+      strava_token_expires_at: dbUserRaw.strava_token_expires_at ? dbUserRaw.strava_token_expires_at.toISOString() : null,
+      createdAt: dbUserRaw.createdAt.toISOString(),
+      updatedAt: dbUserRaw.updatedAt.toISOString(),
+      runs: dbUserRaw.runs.map((r: any) => ({
+        ...r,
+        strava_activity_id: r.strava_activity_id ? r.strava_activity_id.toString() : null,
+        date: r.date.toISOString(),
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+      }))
+    }
+  } else {
+    // If not found by CUID or email, check if it is a legacy numeric ID
+    const numericId = parseInt(idOrSlug)
+    if (!isNaN(numericId)) {
+      const staticPart = PARTICIPANTS.find(p => p.id === numericId)
+      if (staticPart) {
+        const userEmail = staticPart.email || `placeholder_${numericId}@runclub.local`
+        try {
+          const queryPromise = prisma.user.upsert({
+            where: { email: userEmail },
+            update: {},
+            create: {
+              email: userEmail,
+              name: staticPart.name,
+              runningGoal: staticPart.cat.startsWith('HM') ? '21.1K Half Marathon' : '10.5K Run',
+            },
+            include: {
+              runs: {
+                orderBy: { date: 'desc' }
+              }
+            }
+          })
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Prisma connection timeout')), 8000)
+          )
+          const queryResult: any = await Promise.race([queryPromise, timeoutPromise])
+          if (queryResult) {
+            dbUser = {
+              ...queryResult,
+              strava_athlete_id: queryResult.strava_athlete_id ? queryResult.strava_athlete_id.toString() : null,
+              last_synced_at: queryResult.last_synced_at ? queryResult.last_synced_at.toISOString() : null,
+              strava_token_expires_at: queryResult.strava_token_expires_at ? queryResult.strava_token_expires_at.toISOString() : null,
+              createdAt: queryResult.createdAt.toISOString(),
+              updatedAt: queryResult.updatedAt.toISOString(),
+              runs: queryResult.runs.map((r: any) => ({
+                ...r,
+                strava_activity_id: r.strava_activity_id ? r.strava_activity_id.toString() : null,
+                date: r.date.toISOString(),
+                createdAt: r.createdAt.toISOString(),
+                updatedAt: r.updatedAt.toISOString(),
+              }))
+            }
+            participantDef = {
+              id: dbUser.id,
+              name: dbUser.name || staticPart.name,
+              initials: dbUser.initials || staticPart.initials,
+              email: dbUser.email,
+              cat: staticPart.cat
+            }
+          }
+        } catch (error) {
+          console.error('Prisma connection failed on fallback upsert:', error)
+        }
+
+        if (!dbUser) {
+          dbUser = {
+            name: staticPart.name,
+            runs: [],
+            strava_connected: false,
+            last_synced_at: null
+          }
+          participantDef = staticPart
+        }
       }
     }
-  } catch (error) {
-    console.error('Prisma connection failed on dashboard:', error)
   }
 
-  if (!dbUser) {
-    // Emergency Fallback: If DB times out, create a fake user so they don't get kicked out!
-    dbUser = {
-      name: participantDef.name,
-      runs: [],
-      strava_connected: false,
-      last_synced_at: null
-    }
+  if (!participantDef || !dbUser) {
+    redirect('/')
   }
 
-  let cat = participantDef.cat
-  if (dbUser.runningGoal) {
-    if (dbUser.runningGoal === '10.5K Run' || dbUser.runningGoal === '10K') cat = '10K'
-    else if (dbUser.runningGoal === '21.1K Half Marathon' || dbUser.runningGoal === 'HM' || dbUser.runningGoal === 'HM_BEG') cat = 'HM_BEG'
-    else if (dbUser.runningGoal === 'HM_INT' || dbUser.runningGoal === 'HM Intermediate') cat = 'HM_INT'
-  }
-  const updatedParticipantDef = {
-    ...participantDef,
-    name: dbUser.name || participantDef.name,
-    initials: dbUser.initials || participantDef.initials,
-    cat
-  }
+  const updatedParticipantDef = participantDef
+
 
   const actualKm = dbUser.runs.reduce((sum: number, r: any) => sum + (r.distanceKm || 0), 0)
   const plannedKm = plannedKmSoFar(updatedParticipantDef as any)

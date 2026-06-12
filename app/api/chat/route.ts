@@ -19,19 +19,46 @@ export async function POST(req: Request) {
 
     const openai = createOpenAI({ apiKey })
 
-    let participantDef = PARTICIPANTS.find(p => p.id === parseInt(userId)) || PARTICIPANTS.find(p => String(p.id) === String(userId))
-    let userEmail = ""
+    // Look up by database CUID first
+    const dbUserByCuid = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: userId },
+          { email: userId }
+        ]
+      }
+    })
 
-    if (participantDef) {
-      userEmail = participantDef.email || `placeholder_${participantDef.id}@runclub.local`
+    let userEmail = ""
+    let participantDef = null
+
+    if (dbUserByCuid) {
+      userEmail = dbUserByCuid.email
+      const staticPart = PARTICIPANTS.find(p => p.email === userEmail)
+      let cat: any = '10K'
+      if (dbUserByCuid.runningGoal) {
+        if (dbUserByCuid.runningGoal === '10.5K Run' || dbUserByCuid.runningGoal === '10K') cat = '10K'
+        else if (dbUserByCuid.runningGoal === '21.1K Half Marathon' || dbUserByCuid.runningGoal === 'HM' || dbUserByCuid.runningGoal === 'HM_BEG') cat = 'HM_BEG'
+        else if (dbUserByCuid.runningGoal === 'HM_INT' || dbUserByCuid.runningGoal === 'HM Intermediate') cat = 'HM_INT'
+      } else if (staticPart) {
+        cat = staticPart.cat
+      }
+      participantDef = {
+        id: dbUserByCuid.id,
+        name: dbUserByCuid.name || staticPart?.name || 'Unknown',
+        initials: dbUserByCuid.initials || staticPart?.initials || '??',
+        email: dbUserByCuid.email,
+        cat
+      }
     } else {
-      // Look up by database CUID first
-      const dbUserByCuid = await prisma.user.findUnique({
-        where: { id: userId }
-      })
-      if (dbUserByCuid) {
-        userEmail = dbUserByCuid.email
-        participantDef = PARTICIPANTS.find(p => p.email === userEmail || `placeholder_${p.id}@runclub.local` === userEmail)
+      // Fallback to static PARTICIPANTS lookup by numeric ID
+      const numericId = parseInt(userId)
+      if (!isNaN(numericId)) {
+        const staticPart = PARTICIPANTS.find(p => p.id === numericId)
+        if (staticPart) {
+          userEmail = staticPart.email || `placeholder_${numericId}@runclub.local`
+          participantDef = staticPart
+        }
       }
     }
 
