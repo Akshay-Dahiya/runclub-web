@@ -210,13 +210,32 @@ function RunLogTab() {
   })
 
   const parsePace = (s: string) => { const [m, sec] = s.split(':').map(Number); return m * 60 + (sec || 0) }
-  const parseDuration = (s: string) => { const p = s.split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 3600 + (p[1] || 0) * 60 }
+  const parseDuration = (s: string, dist: number) => {
+    const clean = s.trim().replace(/\./g, ':')
+    if (clean.includes(':')) {
+      const parts = clean.split(':').map(Number)
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+      if (parts.length === 2) {
+        const optionA = parts[0] * 3600 + parts[1] * 60
+        const optionB = parts[0] * 60 + parts[1]
+        const paceA = dist > 0 ? optionA / dist : 0
+        const paceB = dist > 0 ? optionB / dist : 0
+        const realisticA = paceA >= 150 && paceA <= 900
+        const realisticB = paceB >= 150 && paceB <= 900
+        if (realisticA && !realisticB) return optionA
+        if (realisticB && !realisticA) return optionB
+        if (parts[0] >= 3) return optionB
+        return optionA
+      }
+    }
+    return parseInt(clean, 10) * 60 || 0
+  }
 
   const handleAddRun = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true)
     const dist = parseFloat(addForm.distanceKm)
     const paceSecPerKm = addForm.pace ? parsePace(addForm.pace) : 0
-    const durationSec = addForm.duration ? parseDuration(addForm.duration) : Math.round(dist * (paceSecPerKm || 360))
+    const durationSec = addForm.duration ? parseDuration(addForm.duration, dist) : Math.round(dist * (paceSecPerKm || 360))
     await adminCall('addRun', { userId: addForm.userId, date: addForm.date, distanceKm: dist, paceSecPerKm: paceSecPerKm || Math.round(durationSec / dist), durationSec, notes: addForm.notes })
     setShowAdd(false); load(); setLoading(false)
   }
@@ -237,7 +256,7 @@ function RunLogTab() {
               <div style={s.formGroup}><label style={s.label}>Date</label><input type="date" style={s.input} value={addForm.date} onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} required /></div>
               <div style={s.formGroup}><label style={s.label}>Distance (km)</label><input type="number" step="0.01" style={s.input} value={addForm.distanceKm} onChange={e => setAddForm(f => ({ ...f, distanceKm: e.target.value }))} required /></div>
               <div style={s.formGroup}><label style={s.label}>Pace (MM:SS)</label><input style={s.input} placeholder="5:30" value={addForm.pace} onChange={e => setAddForm(f => ({ ...f, pace: e.target.value }))} /></div>
-              <div style={s.formGroup}><label style={s.label}>Duration (HH:MM:SS)</label><input style={s.input} placeholder="45:00" value={addForm.duration} onChange={e => setAddForm(f => ({ ...f, duration: e.target.value }))} /></div>
+              <div style={s.formGroup}><label style={s.label}>Duration (HH:MM)</label><input style={s.input} placeholder="0:45" value={addForm.duration} onChange={e => setAddForm(f => ({ ...f, duration: e.target.value }))} /></div>
             </div>
             <div style={s.formGroup}><label style={s.label}>Notes</label><input style={s.input} value={addForm.notes} onChange={e => setAddForm(f => ({ ...f, notes: e.target.value }))} /></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

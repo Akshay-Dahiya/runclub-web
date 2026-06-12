@@ -26,12 +26,23 @@ export async function logRun(formData: FormData) {
     return parseInt(clean, 10) * 60 || 0
   }
 
-  const parseDurationToSec = (timeStr: string) => {
+  const parseDurationToSec = (timeStr: string, dist: number) => {
     const clean = timeStr.trim().replace(/\./g, ':')
     if (clean.includes(':')) {
       const parts = clean.split(':').map(Number)
       if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2] // HH:MM:SS
-      if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60 // HH:MM
+      if (parts.length === 2) {
+        const optionA = parts[0] * 3600 + parts[1] * 60 // HH:MM
+        const optionB = parts[0] * 60 + parts[1] // MM:SS
+        const paceA = dist > 0 ? optionA / dist : 0
+        const paceB = dist > 0 ? optionB / dist : 0
+        const realisticA = paceA >= 150 && paceA <= 900
+        const realisticB = paceB >= 150 && paceB <= 900
+        if (realisticA && !realisticB) return optionA
+        if (realisticB && !realisticA) return optionB
+        if (parts[0] >= 3) return optionB
+        return optionA
+      }
     }
     return parseInt(clean, 10) * 60 || 0
   }
@@ -43,11 +54,11 @@ export async function logRun(formData: FormData) {
     paceSecPerKm = parsePaceToSec(pace)
     durationSec = Math.round(distanceKm * paceSecPerKm)
   } else if (duration && !pace) {
-    durationSec = parseDurationToSec(duration)
+    durationSec = parseDurationToSec(duration, distanceKm)
     paceSecPerKm = Math.round(durationSec / distanceKm)
   } else {
     // Both provided
-    durationSec = parseDurationToSec(duration)
+    durationSec = parseDurationToSec(duration, distanceKm)
     paceSecPerKm = parsePaceToSec(pace)
   }
 

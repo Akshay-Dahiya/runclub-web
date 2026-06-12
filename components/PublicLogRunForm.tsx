@@ -77,7 +77,7 @@ export default function PublicLogRunForm({ runners }: { runners: {name: string, 
         <div className="form-row">
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Duration (HH:MM) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
-            <input className="form-input" type="text" name="duration" placeholder="45:00" />
+            <input className="form-input" type="text" name="duration" placeholder="0:45" />
           </div>
           <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label">Avg Heart Rate (bpm) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
