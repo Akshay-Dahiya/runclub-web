@@ -1,13 +1,32 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../../lib/prisma'
 import { refreshStravaToken } from '../../../../../lib/strava'
+import { createRateLimiter, getIP } from '../../../../../lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
+// Rate limit: max 5 sync requests per IP per 15 minutes
+const syncLimiter = createRateLimiter(15 * 60 * 1000, 5)
+
 export async function GET(req: Request, { params }: { params: Promise<{ member_id: string }> }) {
   try {
+    // Rate limiting
+    const ip = getIP(req)
+    const rateCheck = syncLimiter.check(ip)
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Too many sync requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const resolvedParams = await params
     const memberId = resolvedParams.member_id
+
+    // Validate memberId format (CUIDs are alphanumeric + limited length)
+    if (!memberId || memberId.length > 30 || !/^[a-z0-9]+$/i.test(memberId)) {
+      return NextResponse.json({ error: 'Invalid member ID' }, { status: 400 })
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: memberId },

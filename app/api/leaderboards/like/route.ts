@@ -1,14 +1,40 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
+import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
+// Rate limit: max 20 like toggles per IP per 15 minutes
+const likeLimiter = createRateLimiter(15 * 60 * 1000, 20)
+
 export async function POST(req: Request) {
+  // Rate limiting
+  const ip = getIP(req)
+  const rateCheck = likeLimiter.check(ip)
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  }
+
   const body = await req.json()
   const { userId, leaderboardType, targetUserId } = body
   
   if (!userId || !leaderboardType || !targetUserId) {
-    return NextResponse.json({ error: 'missing fields' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
+
+  // Validate leaderboardType to prevent arbitrary data
+  const validTypes = ['weekly', 'monthly', '10k', '21k', 'improvement']
+  if (!validTypes.includes(leaderboardType)) {
+    return NextResponse.json({ error: 'Invalid leaderboard type' }, { status: 400 })
+  }
+
+  // Verify both users exist
+  const [user, target] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.user.findUnique({ where: { id: targetUserId } }),
+  ])
+  if (!user || !target) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
   const existing = await prisma.leaderboardLike.findUnique({ 

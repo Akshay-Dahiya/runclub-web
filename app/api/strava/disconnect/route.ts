@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { sessionOptions, SessionData } from '../../../../lib/session'
+import { cookies } from 'next/headers'
 import { prisma } from '../../../../lib/prisma'
 import { refreshStravaToken } from '../../../../lib/strava'
 
@@ -6,6 +9,12 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
+    // SECURITY: Require admin session to disconnect Strava
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+    if (!session.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized — admin login required' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
     if (!userId) {

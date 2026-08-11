@@ -105,6 +105,7 @@ export default function Navbar() {
         <li><Link href="/#members" onClick={() => setIsOpen(false)}>Members</Link></li>
         <li><Link href="/#plans" onClick={() => setIsOpen(false)}>Training Plans</Link></li>
         <li><Link href="/#leaderboard" onClick={() => setIsOpen(false)}>Leaderboard</Link></li>
+        <li><Link href="/#feed" onClick={() => setIsOpen(false)}>Club Feed</Link></li>
         <li>
           <Link href="/#dashboard" onClick={() => setIsOpen(false)} style={{
             background: 'var(--accent)', color: '#000', padding: '8px 18px',

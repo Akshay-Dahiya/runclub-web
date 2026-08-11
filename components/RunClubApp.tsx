@@ -7,6 +7,8 @@ import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
 import PublicLogRunForm from './PublicLogRunForm'
+import ActivityFeed from './ActivityFeed'
+import ClubProgressBar from './ClubProgressBar'
 import { PARTICIPANTS, currentWeekIdx, getPlan, getStatus, grandTotal, plannedKmSoFar, getWeekIdx, WEEK_STARTS, PLAN_10K, PLAN_HM_INT, PLAN_HM_BEG } from '../lib/planData'
 
 function DashboardPicker({ runners }: { runners: any[] }) {
@@ -188,6 +190,17 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
       {/* WHO RAN TODAY STRIP */}
       <WhoRanToday />
+
+      {/* CLUB COLLECTIVE PROGRESS BAR */}
+      <div className="section" style={{ paddingBottom: 0 }}>
+        <ClubProgressBar
+          totalKm={totalKm}
+          totalTarget={mappedUsers.reduce((s, u) => s + u.totalTarget, 0)}
+          weeksLeft={weeksLeft}
+          totalRuns={totalRuns}
+          activeRunners={mappedUsers.length}
+        />
+      </div>
 
       {/* MEMBERS SECTION */}
       <div className="section" id="members">
@@ -545,10 +558,26 @@ export default function RunClubApp({ users }: { users: any[] }) {
         </div>
       </div>
 
+      <hr className="divider"/>
+
+      {/* ACTIVITY FEED */}
+      <div className="section" id="feed" style={{ paddingTop: '80px' }}>
+        <div className="reveal visible">
+          <span className="section-tag">// 05 · Club Feed</span>
+          <h2 className="section-title">Recent Runs</h2>
+          <p className="section-sub">Every run logged by the crew — live from the database.</p>
+        </div>
+        <div style={{ marginTop: '32px' }}>
+          <ActivityFeed />
+        </div>
+      </div>
+
+      <hr className="divider"/>
+
       {/* DASHBOARD PICKER */}
       <div id="dashboard" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '80px 20px' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-          <span className="section-tag">// 05 · Your Dashboard</span>
+          <span className="section-tag">// 06 · Your Dashboard</span>
           <h2 className="section-title" style={{ marginBottom: '8px' }}>Open My Dashboard</h2>
           <p className="section-sub" style={{ marginBottom: '32px' }}>
             Select your name to view your personal stats, log runs, and see your training plan progress.
@@ -558,7 +587,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
       </div>
 
       <div className="section" style={{ textAlign: 'center', padding: '80px 20px', paddingBottom: '20px' }}>
-        <span className="section-tag">// 06 · Quick Log</span>
+        <span className="section-tag">// 07 · Quick Log</span>
         <h2 className="section-title">Log Your Progress</h2>
       </div>
 

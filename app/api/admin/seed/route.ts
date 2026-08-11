@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { sessionOptions, SessionData } from '../../../../lib/session'
+import { cookies } from 'next/headers'
 import { prisma } from '../../../../lib/prisma'
 import bcrypt from 'bcryptjs'
 import { PARTICIPANTS, PLAN_10K, PLAN_HM_INT, PLAN_HM_BEG, WEEK_STARTS } from '../../../../lib/planData'
@@ -9,10 +12,13 @@ const COMPLETION_FACTORS = [0.95, 0.70, 0.88, 0.50, 0.92, 0.62, 1.00, 0.42, 0.78
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    if (searchParams.get('secret') !== 'runclub') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // SECURITY: Require admin session instead of hardcoded secret
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+    if (!session.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized — admin login required' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
 
     if (searchParams.get('reset') === 'true') {
       await prisma.comment.deleteMany({})
@@ -23,7 +29,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, message: 'Reset all runs to none.' })
     }
 
-    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD as string, 10) // SECRET REMOVED — loaded from environment variable
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD as string, 10)
     const now = new Date()
     let totalSeeded = 0
 
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
       for (let wi = 0; wi < WEEK_STARTS.length; wi++) {
         const ws = WEEK_STARTS[wi]
         const w = plan[wi]
-        if (!w) continue  // no plan defined for this week, skip
+        if (!w) continue
         const days = [
           { offset: 1, km: w.tue },
           { offset: 3, km: w.thu },

@@ -3,11 +3,23 @@ import { prisma } from '../../../lib/prisma'
 import { createOpenAI } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 import { PARTICIPANTS, grandTotal } from '../../../lib/planData'
+import { createRateLimiter, getIP } from '../../../lib/rateLimit'
+
+// Rate limit: max 10 chat messages per IP per 15 minutes
+const chatLimiter = createRateLimiter(15 * 60 * 1000, 10)
 
 export async function POST(req: Request) {
   try {
-    const { messages, userId, apiKey: clientApiKey } = await req.json()
-    const apiKey = process.env.OPENAI_API_KEY || clientApiKey
+    // Rate limiting to prevent OpenAI API cost abuse
+    const ip = getIP(req)
+    const rateCheck = chatLimiter.check(ip)
+    if (!rateCheck.allowed) {
+      return new Response('Too many chat requests. Please try again later.', { status: 429 })
+    }
+
+    const { messages, userId } = await req.json()
+    // SECURITY: Only use server-side API key, never accept from client
+    const apiKey = process.env.OPENAI_API_KEY
 
     if (!apiKey) {
       return new Response('Missing OpenAI API Key in server environment', { status: 500 })
