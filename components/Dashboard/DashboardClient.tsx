@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import AICoachWidget from '../AICoach/AICoachWidget'
-import RacePredictor from './RacePredictor'
+import CoachDashboard from '../Coach/CoachDashboard'
 type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
@@ -650,12 +650,13 @@ export default function DashboardClient({
         </section>
       )}
 
-      {/* 04 — RACE PREDICTOR */}
+      {/* 04 — RUNCLUB AI COACH */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="04 / Race Predictor" title="YOUR PREDICTED FINISH TIME" />
-        <RacePredictor
+        <SectionHead label="04 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
+        <CoachDashboard
+          userId={dbUser.id}
+          userName={dbUser.name || participantDef?.name || 'Runner'}
           runs={dbUser.runs || []}
-          targetRace={participantDef?.cat === '10K' ? '10K' : 'HM'}
         />
       </section>
 
