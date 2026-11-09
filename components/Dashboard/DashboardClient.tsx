@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import AICoachWidget from '../AICoach/AICoachWidget'
+import RacePredictor from './RacePredictor'
 type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
@@ -649,9 +650,18 @@ export default function DashboardClient({
         </section>
       )}
 
-      {/* 04 — INTEGRATIONS */}
+      {/* 04 — RACE PREDICTOR */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="04 / Integrations" title="CONNECT YOUR DEVICES" />
+        <SectionHead label="04 / Race Predictor" title="YOUR PREDICTED FINISH TIME" />
+        <RacePredictor
+          runs={dbUser.runs || []}
+          targetRace={participantDef?.cat === '10K' ? '10K' : 'HM'}
+        />
+      </section>
+
+      {/* 05 — INTEGRATIONS */}
+      <section style={{ marginBottom: '80px' }}>
+        <SectionHead label="05 / Integrations" title="CONNECT YOUR DEVICES" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
           {(Object.keys(providerMeta) as Provider[]).map(p => (
             <ProviderCard
@@ -666,7 +676,7 @@ export default function DashboardClient({
 
       {/* 05 — METRICS DECODED */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="05 / Metrics decoded" title="WHAT YOUR WATCH IS TELLING YOU" />
+        <SectionHead label="06 / Metrics decoded" title="WHAT YOUR WATCH IS TELLING YOU" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
           {metrics.map(m => (
             <div key={m.title} style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '24px', background: 'var(--surface)', transition: 'border-color 0.2s' }}
@@ -698,7 +708,7 @@ export default function DashboardClient({
 
       {/* 06 — HR ZONES */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="06 / Heart rate zones" title="TRAINING INTENSITY" />
+        <SectionHead label="07 / Heart rate zones" title="TRAINING INTENSITY" />
         <div style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '28px', background: 'var(--surface)' }}>
           <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '24px', lineHeight: 1.7 }}>
             Your week split across the 5 zones. Most runners should spend{' '}
