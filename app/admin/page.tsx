@@ -451,7 +451,24 @@ export default function AdminPage() {
     { key: 'runs', label: '🏃 Run Log' },
     { key: 'plans', label: '📋 Plans' },
     { key: 'notes', label: '📝 Notes' },
+    { key: 'reset', label: '🔄 Fresh Start' },
   ]
+
+  const handleResetRuns = async () => {
+    if (!confirm('⚠️ Are you sure you want to remove all runs logged by everyone and start fresh from 0? This cannot be undone.')) return
+    try {
+      const res = await fetch('/api/admin/reset-runs', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        alert(data.message || 'All runs reset successfully! Everyone starts fresh.')
+        window.location.reload()
+      } else {
+        alert(data.error || 'Failed to reset runs')
+      }
+    } catch (e: any) {
+      alert(e.message || 'Error occurred')
+    }
+  }
 
   return (
     <div style={s.page}>
@@ -478,6 +495,29 @@ export default function AdminPage() {
         {tab === 'runs' && <RunLogTab />}
         {tab === 'plans' && <PlansTab />}
         {tab === 'notes' && <NotesTab />}
+        {tab === 'reset' && (
+          <div style={s.section}>
+            <div style={s.sectionTitle}>Fresh Start / Clear Old Runs</div>
+            <p style={{ fontSize: '14px', color: '#94A3B8', marginBottom: '20px', lineHeight: 1.6 }}>
+              Wipe out all previous run records across all participants so the community leaderboard, feeds, and runner profiles start clean from 0 km. Connected Strava accounts will keep their connection, allowing them to sync new runs seamlessly.
+            </p>
+            <button
+              onClick={handleResetRuns}
+              style={{
+                background: '#EF4444',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px 24px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              🗑️ Clear All Runs & Start Fresh
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
