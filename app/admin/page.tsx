@@ -497,9 +497,39 @@ export default function AdminPage() {
         {tab === 'notes' && <NotesTab />}
         {tab === 'reset' && (
           <div style={s.section}>
-            <div style={s.sectionTitle}>Fresh Start / Clear Old Runs</div>
+            <div style={s.sectionTitle}>Performance Data Backup & Fresh Start</div>
             <p style={{ fontSize: '14px', color: '#94A3B8', marginBottom: '20px', lineHeight: 1.6 }}>
-              Wipe out all previous run records across all participants so the community leaderboard, feeds, and runner profiles start clean from 0 km. Connected Strava accounts will keep their connection, allowing them to sync new runs seamlessly.
+              Before wiping the slate clean, download an archived snapshot of all 19 participants and 556 historic runs so you retain full historical training and performance data for analytics and reviews.
+            </p>
+
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '28px' }}>
+              <a
+                href="/api/admin/backup"
+                style={{
+                  background: '#0284C7',
+                  color: '#FFFFFF',
+                  borderRadius: '8px',
+                  padding: '12px 20px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                💾 Download Complete Data Backup (.json)
+              </a>
+              <span style={{ fontSize: '12px', color: '#64748B' }}>
+                ✓ Local archive also saved to <code>/backups/runclub_backup_historical_perf.json</code>
+              </span>
+            </div>
+
+            <hr style={{ borderColor: '#222', margin: '24px 0' }} />
+
+            <div style={{ ...s.sectionTitle, color: '#EF4444' }}>Wipe & Fresh Start</div>
+            <p style={{ fontSize: '14px', color: '#94A3B8', marginBottom: '20px', lineHeight: 1.6 }}>
+              Wipe all previous run records across all participants so the community leaderboard, feeds, and runner profiles start clean from 0 km. This lets everyone connect their own Strava cleanly.
             </p>
             <button
               onClick={handleResetRuns}
