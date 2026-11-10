@@ -16,106 +16,169 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
-  useEffect(() => {
-    // Indian Navy Half Marathon (Delhi): February 7, 2027
-    const targetDate = new Date('2027-02-07T05:00:00').getTime()
-
-    const updateCountdown = () => {
-      const now = new Date().getTime()
-      const diff = targetDate - now
-
-      if (diff <= 0) {
-        setTimeLeft({ d: '00', h: '00', m: '00', s: '00' })
-        return
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-      setTimeLeft({
-        d: String(days).padStart(2, '0'),
-        h: String(hours).padStart(2, '0'),
-        m: String(minutes).padStart(2, '0'),
-        s: String(seconds).padStart(2, '0')
-      })
-    }
-
-    updateCountdown()
-    const timerId = setInterval(updateCountdown, 1000)
-    return () => clearInterval(timerId)
-  }, [])
-
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }}>
-      {/* COUNTDOWN BANNER */}
-      <div 
-        className="countdown-strip" 
-        style={{ 
-          padding: scrolled ? '0px 5vw' : '8px 5vw', 
-          maxHeight: scrolled ? '0px' : '150px',
-          opacity: scrolled ? 0 : 1,
-          overflow: 'hidden',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          borderBottom: 'none', 
-          background: 'var(--surface)', 
-          color: 'var(--text)', 
-          flexDirection: 'column', 
-          gap: scrolled ? '0px' : '8px',
-          display: 'flex'
-        }}
-      >
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <span style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#000', fontSize: '0.75rem', fontWeight: 700 }}>
-            Indian Navy HM · Feb 7, 2027
-          </span>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.d}</span><span className="cd-lbl">Days</span></div>
-          <div className="cd-sep" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>:</div>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.h}</span><span className="cd-lbl">Hours</span></div>
-          <div className="cd-sep" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>:</div>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.m}</span><span className="cd-lbl">Mins</span></div>
-          <div className="cd-sep" style={{ fontSize: '1.4rem', marginBottom: '4px' }}>:</div>
-          <div className="cd-unit"><span className="cd-num" style={{ fontSize: '1.8rem' }}>{timeLeft.s}</span><span className="cd-lbl">Secs</span></div>
-        </div>
-      </div>
-      <nav style={{ 
-        position: 'relative',
-        background: scrolled ? 'rgba(8, 15, 26, 0.85)' : undefined,
-        backdropFilter: scrolled ? 'blur(16px)' : undefined,
-        borderBottom: scrolled ? '1px solid rgba(59, 130, 246, 0.1)' : undefined,
-        transition: 'background 0.3s ease, backdrop-filter 0.3s ease, border-bottom 0.3s ease'
+    <header style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+      background: scrolled ? 'rgba(255, 255, 255, 0.95)' : '#FFFFFF',
+      backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid #E2E8F0',
+      transition: 'all 0.2s ease',
+      boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.04)' : 'none'
+    }}>
+      <div style={{
+        maxWidth: '1240px',
+        margin: '0 auto',
+        padding: '14px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
       }}>
-      <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Image src="/logo.png?v=3" alt="Joyville Road Runners Logo" width={48} height={48} style={{ height: '48px', width: 'auto' }} />
-        JOYVILLE ROAD RUNNERS
-      </Link>
-      <button 
-        className="mobile-menu-btn" 
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ zIndex: 101, position: 'relative' }}
-      >
-        {isOpen ? '✕' : '☰'}
-      </button>
-      <ul className={`nav-links ${isOpen ? 'open' : ''}`}>
-        <li><Link href="/#members" onClick={() => setIsOpen(false)}>Members</Link></li>
-        <li><Link href="/#plans" onClick={() => setIsOpen(false)}>Training Plans</Link></li>
-        <li><Link href="/#leaderboard" onClick={() => setIsOpen(false)}>Leaderboard</Link></li>
-        <li><Link href="/#feed" onClick={() => setIsOpen(false)}>Club Feed</Link></li>
-        <li>
-          <Link href="/#dashboard" onClick={() => setIsOpen(false)} style={{
-            background: 'var(--accent)', color: '#000', padding: '8px 18px',
-            borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem'
-          }}>
+        {/* Brand Logo */}
+        <Link href="/" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          textDecoration: 'none'
+        }}>
+          <Image
+            src="/logo.png?v=3"
+            alt="RunClub Logo"
+            width={40}
+            height={40}
+            style={{ height: '40px', width: 'auto', borderRadius: '8px' }}
+          />
+          <div>
+            <div style={{
+              fontSize: '1.25rem',
+              fontWeight: 900,
+              color: '#0F172A',
+              letterSpacing: '-0.02em',
+              lineHeight: 1
+            }}>
+              RUNCLUB
+            </div>
+            <div style={{
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              color: '#FC4C02',
+              fontWeight: 700,
+              letterSpacing: '1px',
+              marginTop: '2px'
+            }}>
+              JOYVILLE ROAD RUNNERS
+            </div>
+          </div>
+        </Link>
+
+        {/* Desktop Nav Links */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }} className="desktop-nav">
+          <Link href="/#goals" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
+            Goals
+          </Link>
+          <Link href="/#feed" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
+            Activity Feed
+          </Link>
+          <Link href="/#leaderboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
+            Leaderboard
+          </Link>
+          <Link href="/#dashboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
+            Dashboards
+          </Link>
+          <a
+            href="/api/strava"
+            style={{
+              background: '#FC4C02',
+              color: '#FFFFFF',
+              textDecoration: 'none',
+              fontSize: '13px',
+              fontWeight: 700,
+              padding: '10px 20px',
+              borderRadius: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 14px rgba(252,76,2,0.25)',
+              transition: 'transform 0.15s'
+            }}
+          >
+            <span>Connect Strava</span>
+            <span>⚡</span>
+          </a>
+        </nav>
+
+        {/* Mobile Toggle Button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="mobile-toggle"
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '24px',
+            color: '#0F172A',
+            cursor: 'pointer',
+            padding: '4px'
+          }}
+        >
+          {isOpen ? '✕' : '☰'}
+        </button>
+      </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isOpen && (
+        <div style={{
+          background: '#FFFFFF',
+          borderTop: '1px solid #E2E8F0',
+          padding: '20px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
+          <Link href="/#goals" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
+            Goals
+          </Link>
+          <Link href="/#feed" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
+            Activity Feed
+          </Link>
+          <Link href="/#leaderboard" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
+            Leaderboard
+          </Link>
+          <Link href="/#dashboard" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
             My Dashboard
           </Link>
-        </li>
-      </ul>
-      </nav>
-    </div>
+          <a
+            href="/api/strava"
+            style={{
+              background: '#FC4C02',
+              color: '#FFFFFF',
+              textDecoration: 'none',
+              fontSize: '14px',
+              fontWeight: 700,
+              padding: '12px 20px',
+              borderRadius: '12px',
+              textAlign: 'center'
+            }}
+          >
+            Connect with Strava ⚡
+          </a>
+        </div>
+      )}
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          :global(.desktop-nav) {
+            display: none !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .mobile-toggle {
+            display: none !important;
+          }
+        }
+      `}</style>
+    </header>
   )
 }

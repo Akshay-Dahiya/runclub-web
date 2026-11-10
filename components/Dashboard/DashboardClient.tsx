@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import AICoachWidget from '../AICoach/AICoachWidget'
 import CoachDashboard from '../Coach/CoachDashboard'
+import PerformanceCharts from '../PerformanceCharts'
+import MicroGoalsWidget from '../MicroGoalsWidget'
 type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
@@ -304,69 +306,19 @@ export default function DashboardClient({
         <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
           Welcome back, {dbUser.name.split(' ')[0]} 👋
         </h1>
-          <p style={{ maxWidth: '500px', fontSize: '0.9rem', opacity: 0.7, lineHeight: 1.6 }}>
-            {participantDef.cat === '10K' ? '10.5K Run' : participantDef.cat === 'HM_INT' ? '21.1K Half Marathon (Int)' : '21.1K Half Marathon (Beg)'} · Training for Indian Navy Half Marathon (Delhi) · Feb 7, 2027.
-          </p>
+        <p style={{ maxWidth: '580px', fontSize: '1rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '32px' }}>
+          Your personal performance hub. Connect Strava to track weekly mileage, view pace progression, and tackle small achievable goals.
+        </p>
 
-          {/* NEW: Training Plan Switch Section */}
-          <section style={{ marginBottom: '64px' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '12px', color: 'var(--orange)' }}>⚙ Your Training Plan</h2>
-            <p style={{ marginBottom: '16px', color: 'var(--text)' }}>You are currently on: <strong>{dbUser.runningGoal || participantDef.cat}</strong></p>
-            <button
-              onClick={() => setShowPlanModal(true)}
-              style={{ background: 'transparent', color: 'var(--orange)', border: 'none', textDecoration: 'underline', fontFamily: 'monospace', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, cursor: 'pointer', padding: 0 }}
-            >
-              Change Plan →
-            </button>
-          </section>
+        {/* ── 01. PERFORMANCE CHARTS ── */}
+        <div style={{ marginBottom: '40px' }}>
+          <PerformanceCharts runs={dbUser.runs || []} />
+        </div>
 
-          {/* Plan Selection Modal */}
-          {showPlanModal && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-              <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '500px' }}>
-                <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'var(--orange)' }}>Select a Training Plan</h3>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {[
-                    { id: '10K', label: '10K Plan', description: '10.5km race · 239 km total training · Mon/Tue · Wed/Thu · Fri/Sat · Sun' },
-                    { id: 'HM', label: 'Half Marathon Plan', description: '21.1km race · 364 km total training · Mon/Tue · Wed/Thu · Fri/Sat · Sun' },
-                    { id: 'HM_INT', label: 'Half Marathon Intermediate', description: '21.1km race · ~10–15% more volume than standard HM, peak long run 22–24km' },
-                  ].map(plan => (
-                    <div key={plan.id} style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '12px', cursor: 'pointer', background: selectedPlan === plan.id ? 'rgba(252,76,2,0.1)' : 'transparent' }}
-                      onClick={() => setSelectedPlan(plan.id)}>
-                      <strong>{plan.label}</strong>
-                      <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>{plan.description}</p>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                  <button onClick={() => setShowPlanModal(false)} style={{ background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '4px', padding: '8px 12px', fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
-                  <button
-                    onClick={async () => {
-                      if (!selectedPlan) return;
-                      if (selectedPlan === (dbUser.runningGoal || participantDef.cat)) {
-                        alert("You're already on this plan.");
-                        return;
-                      }
-                      const res = await fetch('/api/user/plan', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: dbUser.id, plan: selectedPlan })
-                      });
-                      if (res.ok) {
-                        window.location.reload();
-                      } else {
-                        const err = await res.text();
-                        alert('Failed to change plan: ' + err);
-                      }
-                    }}
-                    style={{ background: 'var(--orange)', color: '#000', border: 'none', borderRadius: '4px', padding: '8px 16px', fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer' }}
-                  >
-                    Yes, Switch
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* ── 02. ACHIEVABLE MICRO-GOALS ── */}
+        <div style={{ marginBottom: '48px' }}>
+          <MicroGoalsWidget runs={dbUser.runs || []} userId={dbUser.id} />
+        </div>
 
       </section>
 
@@ -650,19 +602,9 @@ export default function DashboardClient({
         </section>
       )}
 
-      {/* 04 — RUNCLUB AI COACH */}
+      {/* 04 — INTEGRATIONS */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="04 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
-        <CoachDashboard
-          userId={dbUser.id}
-          userName={dbUser.name || participantDef?.name || 'Runner'}
-          runs={dbUser.runs || []}
-        />
-      </section>
-
-      {/* 05 — INTEGRATIONS */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="05 / Integrations" title="CONNECT YOUR DEVICES" />
+        <SectionHead label="04 / Integrations" title="CONNECT YOUR DEVICES" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
           {(Object.keys(providerMeta) as Provider[]).map(p => (
             <ProviderCard
@@ -675,62 +617,14 @@ export default function DashboardClient({
         </div>
       </section>
 
-      {/* 05 — METRICS DECODED */}
+      {/* 05 — RUNCLUB AI COACH */}
       <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="06 / Metrics decoded" title="WHAT YOUR WATCH IS TELLING YOU" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-          {metrics.map(m => (
-            <div key={m.title} style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '24px', background: 'var(--surface)', transition: 'border-color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--orange)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(252,76,2,0.1)', borderRadius: '4px', fontSize: '16px' }}>{m.icon}</div>
-                <h3 style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0 }}>{m.title}</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', lineHeight: 1.6 }}>
-                <div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, marginBottom: '4px' }}>What</div>
-                  <div style={{ opacity: 0.85 }}>{m.what}</div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.5, marginBottom: '4px' }}>Why it matters</div>
-                  <div style={{ opacity: 0.85 }}>{m.why}</div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', background: 'rgba(252,76,2,0.05)', border: '1px solid rgba(252,76,2,0.2)', borderRadius: '4px', padding: '10px 12px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--orange)', flexShrink: 0 }}>ℹ</span>
-                  <p style={{ fontFamily: 'monospace', fontSize: '11px', margin: 0 }}>{m.good}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 06 — HR ZONES */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="07 / Heart rate zones" title="TRAINING INTENSITY" />
-        <div style={{ border: '1px solid var(--border)', borderRadius: '4px', padding: '28px', background: 'var(--surface)' }}>
-          <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '24px', lineHeight: 1.7 }}>
-            Your week split across the 5 zones. Most runners should spend{' '}
-            <strong style={{ color: 'var(--text)' }}>80% in Z1–Z2</strong> (easy) and only{' '}
-            <strong style={{ color: 'var(--text)' }}>20% in Z4–Z5</strong> (hard). This is polarized training.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {zones.map(z => (
-              <div key={z.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em' }}>{z.name} · {z.range}</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: '11px', opacity: 0.6 }}>{z.pct}%</span>
-                </div>
-                <div style={{ height: '8px', borderRadius: '9999px', background: 'var(--border)', overflow: 'hidden', marginBottom: '4px' }}>
-                  <div style={{ height: '100%', width: `${z.pct}%`, background: z.color, borderRadius: '9999px' }} />
-                </div>
-                <p style={{ fontSize: '11px', opacity: 0.55, margin: 0 }}>{z.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <SectionHead label="05 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
+        <CoachDashboard
+          userId={dbUser.id}
+          userName={dbUser.name || participantDef?.name || 'Runner'}
+          runs={dbUser.runs || []}
+        />
       </section>
 
       {/* AI COACH WIDGET */}

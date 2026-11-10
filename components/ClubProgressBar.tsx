@@ -5,80 +5,77 @@ import React from 'react'
 interface ClubProgressBarProps {
   totalKm: number
   totalTarget: number
-  weeksLeft: number
+  weeksLeft?: number
   totalRuns: number
   activeRunners: number
 }
 
-export default function ClubProgressBar({ totalKm, totalTarget, weeksLeft, totalRuns, activeRunners }: ClubProgressBarProps) {
-  const pct = totalTarget > 0 ? Math.min(100, Math.round((totalKm / totalTarget) * 100)) : 0
-  const kmLeft = Math.max(0, totalTarget - totalKm)
+export default function ClubProgressBar({ totalKm, totalTarget, totalRuns, activeRunners }: ClubProgressBarProps) {
+  const target = Math.max(totalTarget, 2000)
+  const pct = target > 0 ? Math.min(100, Math.round((totalKm / target) * 100)) : 0
+  const kmLeft = Math.max(0, target - totalKm)
 
-  // Animated bar - simple CSS approach
   return (
     <div style={{
-      background: 'var(--surface)',
-      border: '1px solid var(--border)',
-      borderRadius: '16px',
+      background: '#FFFFFF',
+      border: '1px solid #E2E8F0',
+      borderRadius: '20px',
       padding: '32px',
       marginBottom: '48px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.04)'
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.6rem', letterSpacing: '1px', marginBottom: '4px' }}>
-            🏃 Club Race Mission
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginBottom: '4px' }}>
+            🏃 Collective Community Mileage
           </div>
-          <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', letterSpacing: '1px' }}>
-            COLLECTIVE KM ACROSS ALL {activeRunners} RUNNERS · {weeksLeft} WEEKS TO RACE DAY
+          <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#64748B', letterSpacing: '0.5px' }}>
+            EVERY MILE FROM EVERY RUNNER COUNTS · {activeRunners} CONNECTED RUNNERS
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.4rem', color: 'var(--accent)', lineHeight: 1 }}>
+          <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#FC4C02', lineHeight: 1 }}>
             {pct}%
           </div>
-          <div style={{ fontFamily: 'monospace', fontSize: '9px', color: 'var(--muted)', letterSpacing: '2px' }}>COMPLETE</div>
+          <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#64748B', letterSpacing: '1px', fontWeight: 700 }}>
+            COMMUNITY TARGET
+          </div>
         </div>
       </div>
 
-      {/* Big progress bar */}
-      <div style={{ position: 'relative', marginBottom: '16px' }}>
-        <div style={{ height: '24px', background: 'var(--bg)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+      {/* Progress Bar */}
+      <div style={{ position: 'relative', marginBottom: '20px' }}>
+        <div style={{ height: '20px', background: '#F1F5F9', borderRadius: '10px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
           <div style={{
             height: '100%',
             width: `${pct}%`,
-            background: pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--accent)' : 'var(--yellow)',
-            borderRadius: '12px',
+            background: 'linear-gradient(90deg, #FC4C02 0%, #F59E0B 100%)',
+            borderRadius: '10px',
             transition: 'width 1s ease',
             position: 'relative',
-            boxShadow: pct >= 80 ? '0 0 20px rgba(74,222,128,0.4)' : `0 0 20px rgba(252,76,2,0.3)`,
+            boxShadow: '0 2px 10px rgba(252,76,2,0.3)'
           }}>
-            {/* Animated shimmer */}
             <div style={{
               position: 'absolute', inset: 0,
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
               animation: 'shimmer 2s infinite',
             }} />
           </div>
         </div>
-        {/* Milestone marker at 50% */}
-        <div style={{
-          position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)',
-          width: '2px', height: '32px', background: 'var(--border)',
-        }} />
       </div>
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
         {[
-          { label: 'KM LOGGED', value: Math.round(totalKm).toLocaleString(), color: 'var(--accent)' },
-          { label: 'KM TARGET', value: Math.round(totalTarget).toLocaleString(), color: 'var(--text)' },
-          { label: 'KM LEFT', value: Math.round(kmLeft).toLocaleString(), color: kmLeft > 500 ? 'var(--yellow)' : 'var(--green)' },
-          { label: 'TOTAL RUNS', value: totalRuns.toLocaleString(), color: 'var(--blue)' },
+          { label: 'KM LOGGED', value: Math.round(totalKm).toLocaleString(), color: '#FC4C02' },
+          { label: 'COMMUNITY GOAL', value: Math.round(target).toLocaleString(), color: '#0F172A' },
+          { label: 'KM REMAINING', value: Math.round(kmLeft).toLocaleString(), color: '#16A34A' },
+          { label: 'RUNS LOGGED', value: totalRuns.toLocaleString(), color: '#0284C7' },
         ].map(s => (
-          <div key={s.label} style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: s.color }}>{s.value}</div>
-            <div style={{ fontFamily: 'monospace', fontSize: '8px', color: 'var(--muted)', letterSpacing: '1px' }}>{s.label}</div>
+          <div key={s.label} style={{ textAlign: 'center', background: '#F8FAFC', padding: '12px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontFamily: 'monospace', fontSize: '9px', color: '#64748B', letterSpacing: '0.5px', marginTop: '2px', fontWeight: 600 }}>{s.label}</div>
           </div>
         ))}
       </div>

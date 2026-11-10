@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 
-export default function Hero() {
+interface HeroProps {
+  thisWeekKm?: number
+  activeRunnersCount?: number
+}
+
+export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: HeroProps) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -14,247 +19,152 @@ export default function Hero() {
   }, [])
 
   return (
-    <div className="hero-section">
-      {/* BACKGROUND ELEMENTS */}
-      <div className="hero-bg-base"></div>
-      <div className="hero-track-container">
-        <svg className="hero-track" viewBox="0 0 1200 1200" preserveAspectRatio="xMidYMid slice">
-          <ellipse cx="600" cy="600" rx="560" ry="270" fill="none" stroke="#3b82f6" strokeWidth="1"/>
-          <ellipse cx="600" cy="600" rx="460" ry="200" fill="none" stroke="#3b82f6" strokeWidth="1"/>
-          <ellipse cx="600" cy="600" rx="360" ry="130" fill="none" stroke="#3b82f6" strokeWidth="1"/>
-          <ellipse cx="600" cy="600" rx="260" ry="60" fill="none" stroke="#3b82f6" strokeWidth="1"/>
-        </svg>
-      </div>
-      <div className="hero-bg-overlay"></div>
-
-      {/* TICKER */}
+    <div style={{
+      position: 'relative',
+      minHeight: '92vh',
+      width: '100%',
+      background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 60%, #FFF7ED 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      textAlign: 'center',
+      padding: '120px 24px 80px',
+      overflow: 'hidden'
+    }}>
+      {/* Subtle Warm Background Glow */}
       <div style={{
         position: 'absolute',
-        top: 0, left: 0, right: 0,
-        background: '#04090f',
-        height: '32px',
-        overflow: 'hidden',
-        display: 'flex',
+        top: '-10%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '800px',
+        height: '450px',
+        background: 'radial-gradient(circle, rgba(252,76,2,0.08) 0%, rgba(2,132,199,0.04) 50%, transparent 70%)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Live Community Mileage Ticker Pill */}
+      <div style={{
+        display: 'inline-flex',
         alignItems: 'center',
-        whiteSpace: 'nowrap',
-        zIndex: 50
+        gap: '10px',
+        background: '#FFFFFF',
+        border: '1px solid #E2E8F0',
+        borderRadius: '30px',
+        padding: '8px 20px',
+        marginBottom: '28px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+        animation: 'fadeSlideUp 0.4s ease both'
       }}>
-        <div style={{
-          display: 'inline-block',
-          fontFamily: 'monospace',
-          fontSize: '11px',
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          color: '#3b82f6',
-          paddingLeft: '100%',
-          animation: 'ticker 20s linear infinite'
+        <span style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          background: '#16A34A',
+          boxShadow: '0 0 0 3px rgba(34,197,94,0.2)'
+        }} />
+        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+          🔥 <strong>{Math.round(thisWeekKm)} KM</strong> logged by the community this week
+        </span>
+        <span style={{ fontSize: '12px', color: '#64748B' }}>
+          · {activeRunnersCount} active runners
+        </span>
+      </div>
+
+      {/* Main Tagline Headline */}
+      <div style={{ maxWidth: '920px', margin: '0 auto', marginBottom: '24px' }}>
+        <h1 style={{
+          fontSize: 'clamp(2.8rem, 7.5vw, 6rem)',
+          fontWeight: 900,
+          lineHeight: 1.05,
+          letterSpacing: '-0.03em',
+          color: '#0F172A',
+          margin: 0
         }}>
-          ▶ JOYVILLE ROAD RUNNERS · FEB 7, 2027 · NEW DELHI · 10K & 21.1K · INDIAN NAVY HALF MARATHON 2027 · 16 RUNNERS TRAINING ·
-        </div>
-      </div>
-
-      {/* CONTENT */}
-      <div className="hero-content">
-        <img src="/logo.png?v=3" alt="Joyville Road Runners Logo" className="hero-logo" />
-        <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · INDIAN NAVY HM 2027</div>
-        
-        <h1 className="hero-headline">
-          <div className="hl-line1">STRONGER TOGETHER</div>
-          <div className="hl-line2">ONE STRIDE AT A TIME.</div>
+          To run <span style={{ color: '#FC4C02' }}>FAST</span>,<br />
+          you must run <span style={{
+            background: 'linear-gradient(135deg, #0284C7 0%, #16A34A 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>SLOW</span>.
         </h1>
-        
-        <div className="hero-subheadline-block">
-          <div className="sub-label">16 runners. One mission. Indian Navy Half Marathon (Delhi) · Feb 7, 2027.</div>
-          <div className="sub-quote">To empower a community of runners through shared grit, relentless support, and the pursuit of every personal milestone—one strong stride at a time.</div>
-        </div>
-        
-        <div className="hero-actions">
-          <a href="#dashboard" className="hero-btn primary">Open My Dashboard →</a>
-          <a href="#members" className="hero-btn secondary">View The Crew</a>
-        </div>
+      </div>
 
-        <div className="hero-stat-pills">
-          <span className="stat-pill">15 Runners</span>
-          <span className="stat-pill">10 Weeks</span>
-          <span className="stat-pill">3 Plans</span>
-          <span className="stat-pill">1 Finish Line</span>
+      {/* Subheadline */}
+      <p style={{
+        fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)',
+        color: '#475569',
+        maxWidth: '680px',
+        lineHeight: 1.6,
+        margin: '0 auto 36px auto',
+        fontWeight: 400
+      }}>
+        Connect Strava, see your progress, and pick small goals you can actually hit. <strong>No event needed.</strong>
+      </p>
+
+      {/* Big Orange 1-Click Strava Button */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
+        <a
+          href="/api/strava"
+          style={{
+            background: '#FC4C02',
+            color: '#FFFFFF',
+            textDecoration: 'none',
+            fontSize: '1.25rem',
+            fontWeight: 800,
+            padding: '18px 42px',
+            borderRadius: '50px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 8px 30px rgba(252,76,2,0.35)',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'
+            e.currentTarget.style.boxShadow = '0 12px 36px rgba(252,76,2,0.45)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0) scale(1)'
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(252,76,2,0.35)'
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7.926 15.688h4.172"/>
+          </svg>
+          <span>Connect with Strava</span>
+          <span style={{ fontSize: '1.2rem' }}>→</span>
+        </a>
+
+        <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#64748B', fontWeight: 600 }}>
+          Takes 10 seconds · Free for every runner · No download required
         </div>
       </div>
 
-      <div className={`hero-scroll-indicator ${scrolled ? 'hidden' : ''}`}>
-        <div className="scroll-text">SCROLL</div>
-        <div className="scroll-arrow">↓</div>
+      {/* Quick Community Feature Badges */}
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        fontSize: '13px',
+        color: '#334155'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '8px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span>📊</span> Weekly Mileage Charts
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '8px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span>🎯</span> Achievable Micro-Goals
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '8px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span>🐢</span> Zero Pace Shaming
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '8px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span>🔥</span> Community High-Fives
+        </div>
       </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes ticker {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100%); }
-        }
-      
-        .hero-section {
-          position: relative;
-          min-height: 100vh;
-          width: 100%;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          padding-top: 80px; /* offset for navbar/ticker */
-        }
-        
-        /* BACKGROUNDS */
-        .hero-bg-base {
-          position: absolute; inset: 0; z-index: 1;
-          background-color: #080f1a;
-        }
-        
-        .hero-track-container {
-          position: absolute; inset: 0; z-index: 2;
-          display: flex; align-items: center; justify-content: center;
-          opacity: 0.12;
-        }
-        .hero-track {
-          width: 200vw; height: 200vw;
-          max-width: 1500px; max-height: 1500px;
-          animation: spin 60s linear infinite;
-        }
-        
-        .hero-bg-overlay {
-          position: absolute; inset: 0; z-index: 3;
-          background: radial-gradient(ellipse at center, #0f2a4a 0%, #080f1a 70%);
-          mix-blend-mode: normal;
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        /* CONTENT */
-        .hero-content {
-          position: relative; z-index: 10;
-          width: 100%; max-width: 680px;
-          margin-left: 10vw;
-        }
-        
-        .hero-logo {
-          height: 80px;
-          width: auto;
-          margin-bottom: 24px;
-          display: block;
-          transition: transform 0.3s ease;
-        }
-        .hero-logo:hover {
-          transform: scale(1.05);
-        }
-        
-        .hero-eyebrow {
-          font-family: monospace; font-size: 11px;
-          color: #3b82f6; letter-spacing: 0.2em;
-          margin-bottom: 24px;
-        }
-        
-        .hero-headline {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: clamp(2.2rem, 7.5vw, 6.5rem);
-          line-height: 0.95; letter-spacing: 0.04em;
-          margin-bottom: 32px; font-weight: normal;
-          text-shadow: none;
-        }
-        .hl-line1 { color: #ffffff; white-space: nowrap; }
-        .hl-line2 { color: #3b82f6; white-space: nowrap; }
-        
-        .hero-subheadline-block {
-          margin-bottom: 32px;
-        }
-        .sub-label {
-          font-size: 14px; color: #ffffff;
-          letter-spacing: 0.05em; margin-bottom: 12px;
-        }
-        .sub-quote {
-          border-left: 3px solid #3b82f6;
-          padding-left: 16px; font-style: italic;
-          font-size: 18px; color: #e2e8f0;
-          line-height: 1.5; display: inline-block;
-        }
-        
-        .hero-actions {
-          display: flex; gap: 12px; margin-bottom: 16px;
-        }
-        .hero-btn {
-          height: 48px; padding: 0 28px;
-          display: inline-flex; align-items: center; justify-content: center;
-          border-radius: 6px; font-size: 14px; font-weight: bold;
-          text-decoration: none; transition: all 0.2s ease;
-          cursor: pointer; font-family: inherit;
-        }
-        .hero-btn.primary {
-          background: #3b82f6; color: white; border: none;
-        }
-        .hero-btn.primary:hover {
-          background: #2563eb; transform: translateY(-2px);
-          box-shadow: 0 8px 24px #3b82f640;
-        }
-        .hero-btn.secondary {
-          background: transparent; border: 1px solid #3b82f6;
-          color: #3b82f6;
-        }
-        .hero-btn.secondary:hover {
-          background: #3b82f610;
-        }
-        
-        .hero-stat-pills {
-          display: flex; gap: 8px; flex-wrap: wrap;
-        }
-        .stat-pill {
-          background: #0f1c2e; border: 1px solid #1e3a5f;
-          border-radius: 99px; font-size: 12px; color: #ffffff;
-          letter-spacing: 0.05em; padding: 6px 14px;
-        }
-        
-
-        /* SCROLL INDICATOR */
-        .hero-scroll-indicator {
-          position: absolute; bottom: 24px; left: 50%;
-          transform: translateX(-50%); z-index: 10;
-          text-align: center; transition: opacity 0.3s ease;
-        }
-        .hero-scroll-indicator.hidden {
-          opacity: 0; pointer-events: none;
-        }
-        .scroll-text {
-          font-size: 9px; color: #ffffff; letter-spacing: 0.3em;
-        }
-        .scroll-arrow {
-          font-size: 14px; color: #3b82f6; margin-top: 4px;
-          animation: bounce 2s ease-in-out infinite;
-        }
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(6px); }
-        }
-        
-        /* MOBILE */
-        @media (max-width: 768px) {
-          .hero-content {
-            margin-left: 0; padding: 0 24px;
-            text-align: center; display: flex; flex-direction: column; align-items: center;
-          }
-          .hero-headline {
-            font-size: clamp(1.1rem, 6.2vw, 3rem);
-          }
-          .sub-quote {
-            text-align: left; /* Keep quote styling intact */
-            font-size: 14px;
-            line-height: 1.4;
-          }
-          .hero-actions {
-            flex-direction: column; width: 100%;
-          }
-          .hero-btn { width: 100%; }
-          .hero-stat-pills { justify-content: center; }
-        }
-      `}} />
     </div>
   )
 }
