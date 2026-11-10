@@ -148,7 +148,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
   const totalRuns = mappedUsers.reduce((sum, u) => sum + u.runs.length, 0)
   const totalKm = mappedUsers.reduce((sum, u) => sum + u.actualKm, 0)
-  const weeksLeft = Math.max(0, Math.ceil((new Date('2026-08-23').getTime() - new Date().getTime()) / (7 * 86400000)))
+  const weeksLeft = Math.max(0, Math.ceil((new Date('2027-02-07').getTime() - new Date().getTime()) / (7 * 86400000)))
 
   const thisWeekTotalKm = mappedUsers.reduce((sum, u) => sum + u.weekKm, 0)
   const thisWeekTotalRuns = mappedUsers.reduce((sum, u) => {

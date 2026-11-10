@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  RunClub — Single Source of Truth
-//  Training plans + participant roster for Delhi RunClub Aug 23, 2026 race
+//  Training plans + participant roster for Indian Navy Half Marathon (Delhi), Feb 7, 2027
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const RACE_DATE = new Date('2026-08-23T07:00:00+05:30')
+export const RACE_DATE = new Date('2027-02-07T05:00:00+05:30')
 
 // Week start dates (Monday). Plan blocks are Mon/Tue, Wed/Thu, Fri/Sat, Sun.
 export const WEEK_STARTS: Date[] = [

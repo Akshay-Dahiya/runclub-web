@@ -142,7 +142,8 @@ You are currently coaching: ${user.name}.
 
 ### RUNNER CONTEXT ###
 - Goal Category: ${updatedParticipant.cat.startsWith('HM') ? 'Half Marathon (21.1K)' : '10K'}
-- Target Race Date: August 23, 2026
+- Target Race: Indian Navy Half Marathon (Delhi)
+- Target Race Date: February 7, 2027
 - Plan Progress: ${totalKm.toFixed(1)} km completed out of ${totalTarget} km target (${pct}%).
 - Leaderboard Status: Rank ${userRank} out of ${leaderboard.length}.
 - Distance behind leader: ${diffToLeader.toFixed(1)} km.
@@ -191,7 +192,7 @@ ${recentRuns || "No runs logged yet."}
     const getKipchogeFallback = (message: string) => {
       const msg = message.toLowerCase()
       if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey') || msg.includes('greetings')) {
-        return `Hello ${user.name}. I am glad to walk—or rather, run—this path with you. How is your mind and body feeling today? Let us discuss your preparation for the ${updatedParticipant.cat.startsWith('HM') ? 'Half Marathon' : '10K'} on August 23.`
+        return `Hello ${user.name}. I am glad to walk—or rather, run—this path with you. How is your mind and body feeling today? Let us discuss your preparation for the Indian Navy ${updatedParticipant.cat.startsWith('HM') ? 'Half Marathon' : '10K'} in New Delhi on February 7, 2027.`
       }
       if (msg.includes('progress') || msg.includes('km') || msg.includes('distance') || msg.includes('how am i') || msg.includes('target') || msg.includes('run')) {
         return `You have completed ${totalKm.toFixed(1)} km out of your ${totalTarget} km target. That is ${pct}% of the journey. In running, consistency is the key. Every single kilometer you run builds the foundation of your success. Keep up the disciplined work, ${user.name}.`

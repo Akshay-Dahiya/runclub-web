@@ -49,14 +49,14 @@ export default function Hero() {
           paddingLeft: '100%',
           animation: 'ticker 20s linear infinite'
         }}>
-          ▶ JOYVILLE ROAD RUNNERS · AUG 23, 2026 · GURUGRAM · 10K & 21.1K · TUFFMAN AUG 2026 · 15 RUNNERS TRAINING ·
+          ▶ JOYVILLE ROAD RUNNERS · FEB 7, 2027 · NEW DELHI · 10K & 21.1K · INDIAN NAVY HALF MARATHON 2027 · 16 RUNNERS TRAINING ·
         </div>
       </div>
 
       {/* CONTENT */}
       <div className="hero-content">
         <img src="/logo.png?v=3" alt="Joyville Road Runners Logo" className="hero-logo" />
-        <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · GURUGRAM 2026</div>
+        <div className="hero-eyebrow">// JOYVILLE ROAD RUNNERS · INDIAN NAVY HM 2027</div>
         
         <h1 className="hero-headline">
           <div className="hl-line1">STRONGER TOGETHER</div>
@@ -64,7 +64,7 @@ export default function Hero() {
         </h1>
         
         <div className="hero-subheadline-block">
-          <div className="sub-label">15 runners. One city. Race day Aug 23, 2026.</div>
+          <div className="sub-label">16 runners. One mission. Indian Navy Half Marathon (Delhi) · Feb 7, 2027.</div>
           <div className="sub-quote">To empower a community of runners through shared grit, relentless support, and the pursuit of every personal milestone—one strong stride at a time.</div>
         </div>
         

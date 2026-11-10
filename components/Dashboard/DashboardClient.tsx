@@ -305,7 +305,7 @@ export default function DashboardClient({
           Welcome back, {dbUser.name.split(' ')[0]} 👋
         </h1>
           <p style={{ maxWidth: '500px', fontSize: '0.9rem', opacity: 0.7, lineHeight: 1.6 }}>
-            {participantDef.cat === '10K' ? '10.5K Run' : participantDef.cat === 'HM_INT' ? '21.1K Half Marathon (Int)' : '21.1K Half Marathon (Beg)'} · Training to race Aug 23, 2026.
+            {participantDef.cat === '10K' ? '10.5K Run' : participantDef.cat === 'HM_INT' ? '21.1K Half Marathon (Int)' : '21.1K Half Marathon (Beg)'} · Training for Indian Navy Half Marathon (Delhi) · Feb 7, 2027.
           </p>
 
           {/* NEW: Training Plan Switch Section */}
@@ -982,7 +982,7 @@ const CHECKLIST_SECTIONS = [
   {
     id: 'race_morning',
     title: 'Race Morning',
-    opens: new Date('2026-08-23T00:00:00+05:30'),
+    opens: new Date('2027-02-07T00:00:00+05:30'),
     items: [
       'Wake up 2.5–3 hours before race start',
       'Eat your practiced breakfast (rice/banana/toast + electrolytes)',

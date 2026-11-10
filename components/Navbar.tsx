@@ -18,8 +18,8 @@ export default function Navbar() {
 
   const [timeLeft, setTimeLeft] = useState({ d: '00', h: '00', m: '00', s: '00' })
   useEffect(() => {
-    // Tuffman: August 23, 2026
-    const targetDate = new Date('2026-08-23T05:00:00').getTime()
+    // Indian Navy Half Marathon (Delhi): February 7, 2027
+    const targetDate = new Date('2027-02-07T05:00:00').getTime()
 
     const updateCountdown = () => {
       const now = new Date().getTime()
@@ -69,7 +69,7 @@ export default function Navbar() {
       >
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ padding: '4px 12px', borderRadius: '16px', border: '1px solid var(--accent)', background: 'var(--accent)', color: '#000', fontSize: '0.75rem', fontWeight: 700 }}>
-            Tuffman · Aug 23
+            Indian Navy HM · Feb 7, 2027
           </span>
         </div>
         

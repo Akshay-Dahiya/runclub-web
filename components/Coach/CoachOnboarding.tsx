@@ -53,8 +53,8 @@ export default function CoachOnboarding({
   const [sleepHours, setSleepHours] = useState(existingProfile?.sleepHours?.toString() || '7.5')
 
   // Step 5: Next goal
-  const [goalRace, setGoalRace] = useState(existingProfile?.goalRace || '10K')
-  const [goalRaceDate, setGoalRaceDate] = useState(existingProfile?.goalRaceDate ? existingProfile.goalRaceDate.split('T')[0] : '')
+  const [goalRace, setGoalRace] = useState(existingProfile?.goalRace || 'HM')
+  const [goalRaceDate, setGoalRaceDate] = useState(existingProfile?.goalRaceDate ? existingProfile.goalRaceDate.split('T')[0] : '2027-02-07')
   const [goalTime, setGoalTime] = useState(existingProfile?.goalTimeSec ? fmtTime(existingProfile.goalTimeSec) : '')
   const [isFirstRace, setIsFirstRace] = useState(existingProfile?.isFirstRace ?? false)
 
@@ -670,7 +670,7 @@ export default function CoachOnboarding({
                 className="coach-input"
               />
               <span style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px', display: 'block' }}>
-                If you have a specific race day (e.g., Aug 23, 2026).
+                Indian Navy Half Marathon (Delhi) is on Feb 7, 2027.
               </span>
             </div>
           </div>
