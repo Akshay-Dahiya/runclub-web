@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     client_id: process.env.STRAVA_CLIENT_ID || '295756',
     response_type: 'code',
     redirect_uri: redirectUri,
-    approval_prompt: 'auto',
+    approval_prompt: 'force',
     scope: 'read,activity:read,activity:read_all',
     state: userId // pass userId if available, or empty string for new user auto-creation
   })

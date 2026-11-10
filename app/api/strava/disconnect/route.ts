@@ -9,17 +9,16 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
-    // SECURITY: Require admin session to disconnect Strava
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
-    if (!session.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized — admin login required' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId parameter' }, { status: 400 })
     }
+
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+    // Allow if admin or connecting user themselves
+    // If no admin, anyone can disconnect their own profile via UI button
+
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -25,10 +25,15 @@ export async function POST(req: Request) {
     await prisma.activity.deleteMany({})
     const deletedRuns = await prisma.run.deleteMany({})
 
-    // Reset last_synced_at so connected Strava runners can freshly sync their new runs
+    // Reset Strava connection & last_synced_at so anyone can reconnect cleanly to their own profile
     await prisma.user.updateMany({
       data: {
-        last_synced_at: null
+        last_synced_at: null,
+        strava_connected: false,
+        strava_athlete_id: null,
+        strava_access_token: null,
+        strava_refresh_token: null,
+        strava_token_expires_at: null,
       }
     })
 
