@@ -76,17 +76,17 @@ export default function Navbar() {
 
         {/* Desktop Nav Links */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }} className="desktop-nav">
+          <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
+            Dashboard
+          </Link>
           <Link href="/#goals" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Goals
           </Link>
           <Link href="/#feed" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-            Activity Feed
+            Feed
           </Link>
           <Link href="/#leaderboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Leaderboard
-          </Link>
-          <Link href="/#dashboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-            Dashboards
           </Link>
           <a
             href="/api/strava"

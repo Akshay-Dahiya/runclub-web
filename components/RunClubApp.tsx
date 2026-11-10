@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from './Navbar'
@@ -10,6 +10,8 @@ import ActivityFeed from './ActivityFeed'
 import ClubProgressBar from './ClubProgressBar'
 import InteractiveGoalPicker from './InteractiveGoalPicker'
 import InclusiveSection from './InclusiveSection'
+import PerformanceCharts from './PerformanceCharts'
+import MicroGoalsWidget from './MicroGoalsWidget'
 import { PARTICIPANTS, getStatus, grandTotal } from '../lib/planData'
 
 function DashboardPicker({ runners }: { runners: any[] }) {
@@ -140,6 +142,19 @@ export default function RunClubApp({ users }: { users: any[] }) {
     return leaderboardTab === 'weekly' ? b.weekKm - a.weekKm : b.actualKm - a.actualKm
   })
 
+  // Selected runner for top dashboard view (defaults to first runner with runs or connected)
+  const defaultRunnerId = mappedUsers.find(u => u.runs && u.runs.length > 0)?.id || mappedUsers[0]?.id || ''
+  const [activeDashboardId, setActiveDashboardId] = useState<string>(defaultRunnerId)
+  
+  useEffect(() => {
+    if (!activeDashboardId && mappedUsers.length > 0) {
+      const active = mappedUsers.find(u => u.runs && u.runs.length > 0) || mappedUsers[0]
+      if (active) setActiveDashboardId(active.id)
+    }
+  }, [mappedUsers, activeDashboardId])
+
+  const currentDashboardRunner = mappedUsers.find(u => u.id === activeDashboardId) || mappedUsers[0]
+
   return (
     <>
       <Navbar />
@@ -152,6 +167,150 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
       {/* WHO RAN TODAY TICKER */}
       <WhoRanToday />
+
+      {/* ── 00. RUNNER DASHBOARD (OPEN FIRST) ── */}
+      <div id="dashboard" style={{ background: '#F8FAFC', padding: '60px 24px 70px', borderBottom: '1px solid #E2E8F0' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            marginBottom: '32px'
+          }}>
+            <div>
+              <span className="section-tag">// Runner Hub</span>
+              <h2 className="section-title" style={{ marginBottom: '4px' }}>
+                Performance & Micro-Goals
+              </h2>
+              <p className="section-sub" style={{ margin: 0 }}>
+                Live metrics, 8-week volume trends, and achievable weekly targets.
+              </p>
+            </div>
+
+            {/* Runner Selector & Direct Dashboard Link */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <select
+                value={activeDashboardId}
+                onChange={e => setActiveDashboardId(e.target.value)}
+                style={{
+                  background: '#FFFFFF',
+                  color: '#0F172A',
+                  border: '1.5px solid #CBD5E1',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                }}
+              >
+                {mappedUsers.map(u => (
+                  <option key={u.id} value={u.id}>
+                    👤 {u.name} ({u.runs?.length || 0} runs)
+                  </option>
+                ))}
+              </select>
+
+              {currentDashboardRunner && (
+                <Link
+                  href={`/dashboard/${currentDashboardRunner.id}`}
+                  style={{
+                    background: '#FFFFFF',
+                    color: '#FC4C02',
+                    border: '1.5px solid #FC4C02',
+                    borderRadius: '12px',
+                    padding: '10px 18px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(252,76,2,0.1)'
+                  }}
+                >
+                  Full View →
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Active Runner Overview Cards */}
+          {currentDashboardRunner && (
+            <div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '16px',
+                marginBottom: '28px'
+              }}>
+                <div style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+                }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Runner
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', marginTop: '4px' }}>
+                    {currentDashboardRunner.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#FC4C02', fontWeight: 700, marginTop: '2px' }}>
+                    {currentDashboardRunner.runs?.length || 0} Total Activities Synced
+                  </div>
+                </div>
+
+                <div style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+                }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    This Week
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: '#FC4C02', marginTop: '4px' }}>
+                    {currentDashboardRunner.weekKm.toFixed(1)} km
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                    Logged in the last 7 days
+                  </div>
+                </div>
+
+                <div style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+                }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    All-Time Distance
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', marginTop: '4px' }}>
+                    {currentDashboardRunner.actualKm.toFixed(1)} km
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
+                    Active & Consistency
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Charts & Micro-Goals */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <PerformanceCharts runs={currentDashboardRunner.runs || []} />
+                <MicroGoalsWidget runs={currentDashboardRunner.runs || []} userId={currentDashboardRunner.id} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ── 01. INTERACTIVE GOAL PICKER (BITE-SIZED ACHIEVABLE GOALS) ── */}
       <div className="section" id="goals" style={{ paddingTop: '60px', paddingBottom: '40px' }}>
