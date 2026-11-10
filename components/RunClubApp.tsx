@@ -145,7 +145,27 @@ export default function RunClubApp({ users }: { users: any[] }) {
   // Selected runner for top dashboard view (defaults to first runner with runs or connected)
   const defaultRunnerId = mappedUsers.find(u => u.runs && u.runs.length > 0)?.id || mappedUsers[0]?.id || ''
   const [activeDashboardId, setActiveDashboardId] = useState<string>(defaultRunnerId)
+  const [connectedNotice, setConnectedNotice] = useState<string | null>(null)
   
+  useEffect(() => {
+    // Check if user was redirected from Strava connect
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const connectedName = params.get('connected_user')
+      const connectedId = params.get('user_id')
+      if (connectedName) {
+        setConnectedNotice(connectedName)
+        if (connectedId) {
+          setActiveDashboardId(connectedId)
+          localStorage.setItem('runclub_active_user', JSON.stringify({ id: connectedId, name: connectedName }))
+        }
+        // Clean URL parameters without reloading
+        window.history.replaceState({}, document.title, window.location.pathname + '#dashboard')
+        setTimeout(() => setConnectedNotice(null), 10000)
+      }
+    }
+  }, [])
+
   useEffect(() => {
     if (!activeDashboardId && mappedUsers.length > 0) {
       const active = mappedUsers.find(u => u.runs && u.runs.length > 0) || mappedUsers[0]
@@ -167,6 +187,34 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
       {/* WHO RAN TODAY TICKER */}
       <WhoRanToday />
+
+      {/* ── STRAVA CONNECT SUCCESS NOTIFICATION BANNER ── */}
+      {connectedNotice && (
+        <div style={{
+          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
+          borderBottom: '2px solid #FC4C02',
+          padding: '16px 24px',
+          textAlign: 'center',
+          animation: 'fadeSlideUp 0.3s ease-out'
+        }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '20px' }}>🎉</span>
+            <span style={{ fontSize: '15px', color: '#0F172A', fontWeight: 700 }}>
+              Connected Strava Athlete: <span style={{ color: '#FC4C02', fontWeight: 900 }}>{connectedNotice}</span>
+            </span>
+            <span style={{
+              background: '#FC4C02',
+              color: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '3px 12px',
+              fontSize: '12px',
+              fontWeight: 800
+            }}>
+              ✓ Runs Synced Live
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ── 00. RUNNER DASHBOARD (OPEN FIRST) ── */}
       <div id="dashboard" style={{ background: '#F8FAFC', padding: '60px 24px 70px', borderBottom: '1px solid #E2E8F0' }}>

@@ -150,7 +150,7 @@ export async function GET(req: Request) {
       console.warn('Initial Strava activity sync warning:', syncErr)
     }
 
-    return NextResponse.redirect(new URL(`/dashboard/${user.id}?connected=true`, req.url))
+    return NextResponse.redirect(new URL(`/?connected_user=${encodeURIComponent(user.name || fullName)}&user_id=${user.id}#dashboard`, req.url))
   } catch (err) {
     console.error('Strava callback error:', err)
     return NextResponse.redirect(new URL(`/?error=strava_failed`, req.url))
