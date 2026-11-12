@@ -24,3 +24,8 @@ pnpm-debug.log*
 .DS_Store
 .vercel
 .env*
+.venv/
+garmin-sync/.venv/
+garmin-sync/garmin/
+__pycache__/
+*.py[cod]

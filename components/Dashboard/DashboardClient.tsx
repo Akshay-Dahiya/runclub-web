@@ -5,6 +5,7 @@ import AICoachWidget from '../AICoach/AICoachWidget'
 import CoachDashboard from '../Coach/CoachDashboard'
 import PerformanceCharts from '../PerformanceCharts'
 import MicroGoalsWidget from '../MicroGoalsWidget'
+import GarminPanel from '../Garmin/GarminPanel'
 type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
@@ -626,6 +627,8 @@ export default function DashboardClient({
           runs={dbUser.runs || []}
         />
       </section>
+
+      <GarminPanel userId={dbUser.id} />
 
       {/* AI COACH WIDGET */}
       <AICoachWidget userId={dbUser.id} />
