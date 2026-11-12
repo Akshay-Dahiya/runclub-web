@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   const runner = await getCurrentRunner()
   if (!runner) {
-    return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
   }
 
   const body = await req.json()

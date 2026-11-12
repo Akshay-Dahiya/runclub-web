@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
     return NextResponse.json({ runner }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('Runner session lookup failed:', error)

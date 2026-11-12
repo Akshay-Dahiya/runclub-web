@@ -3,8 +3,8 @@ import Link from 'next/link'
 import RunnerAuthForm from '../../components/Auth/RunnerAuthForm'
 
 export const metadata: Metadata = {
-  title: 'Create runner account | RunClub',
-  description: 'Create a verified RunClub runner account to manage your training and activities.',
+  title: 'Join RunClub with Strava',
+  description: 'Connect Strava to automatically create your RunClub runner profile.',
 }
 
 export default function SignupPage() {

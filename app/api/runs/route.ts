@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   }
 
   const runner = await getCurrentRunner()
-  if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
   const body = await req.json()
   if (body.userId && body.userId !== runner.id) {
@@ -158,7 +158,7 @@ export async function DELETE(req: Request) {
 
   if (!session.isAdmin) {
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
     const ownedRun = await prisma.run.findFirst({ where: { id, userId: runner.id }, select: { id: true } })
     if (!ownedRun) return NextResponse.json({ error: 'Run not found' }, { status: 404 })
   }

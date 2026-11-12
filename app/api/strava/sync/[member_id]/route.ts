@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ member_
     const resolvedParams = await params
     const memberId = resolvedParams.member_id
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
     if (memberId !== runner.id) {
       return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
     }

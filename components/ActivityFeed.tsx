@@ -263,7 +263,7 @@ function RunCard({
           </div>
         ) : (
           <Link href="/login" style={{ color: '#FC4C02', fontSize: '12px', fontWeight: 700 }}>
-            Sign in to react or comment
+            Connect Strava to react or comment
           </Link>
         )}
       </div>
@@ -322,7 +322,7 @@ function RunCard({
             </form>
           ) : (
             <Link href="/login" style={{ color: '#FC4C02', fontSize: '12px', fontWeight: 700 }}>
-              Sign in to join the conversation
+              Connect Strava to join the conversation
             </Link>
           )}
         </div>

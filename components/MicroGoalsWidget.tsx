@@ -142,7 +142,7 @@ export default function MicroGoalsWidget({ runs = [], userId, selectedCategory }
 
       {isReadOnly && (
         <p role="status" style={{ color: '#64748B', fontSize: '13px', margin: '0 0 16px' }}>
-          Preview goals are read-only. <Link href="/login" style={{ color: '#FC4C02', fontWeight: 700 }}>Sign in</Link> to save progress.
+          Preview goals are read-only. <Link href="/login" style={{ color: '#FC4C02', fontWeight: 700 }}>Join with Strava</Link> to save your progress.
         </p>
       )}
       {loadError && <p role="alert" style={{ color: '#B91C1C', fontSize: '13px' }}>Saved goals could not be loaded.</p>}

@@ -89,7 +89,7 @@ export default function Navbar() {
             Leaderboard
           </Link>
           <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
-            Runner sign in
+            Join with Strava
           </Link>
           <Link href="/signup" style={{
             background: '#FC4C02',
@@ -103,7 +103,7 @@ export default function Navbar() {
             alignItems: 'center',
             boxShadow: '0 4px 14px rgba(252,76,2,0.25)',
           }}>
-            Create account
+            Connect Strava
           </Link>
         </nav>
 
@@ -144,7 +144,7 @@ export default function Navbar() {
             Leaderboard
           </Link>
           <Link href="/login" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
-            Runner sign in
+            Join with Strava
           </Link>
           <Link href="/signup" onClick={() => setIsOpen(false)} style={{
             background: '#FC4C02',
@@ -156,7 +156,7 @@ export default function Navbar() {
             borderRadius: '12px',
             textAlign: 'center'
           }}>
-            Create runner account
+            Connect Strava
           </Link>
         </div>
       )}

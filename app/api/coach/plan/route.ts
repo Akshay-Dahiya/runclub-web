@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
     const requestedUserId = searchParams.get('userId')
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     const body = await req.json()
     if (body.userId && body.userId !== runner.id) {
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     const body = await req.json()
     const { planId, weekNumber, dayOfWeek, status, perceivedEffort, runnerNotes } = body

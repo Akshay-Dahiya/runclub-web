@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   try {
     const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
     const requestedUserId = searchParams.get('userId')

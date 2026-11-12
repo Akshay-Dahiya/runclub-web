@@ -314,20 +314,19 @@ export default function DashboardClient({
         </h1>
         {isOwner ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-            <span style={{ color: 'var(--muted)', fontSize: '13px' }}>Signed in as {viewerRunnerName}</span>
+            <span style={{ color: 'var(--muted)', fontSize: '13px' }}>Connected as {viewerRunnerName}</span>
             <RunnerSignOutButton />
           </div>
         ) : (
           <div role="status" style={{ maxWidth: '680px', border: '1px solid var(--border)', borderRadius: '8px', padding: '18px 20px', marginBottom: '28px', background: 'var(--surface)' }}>
             <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: '0 0 14px' }}>
               {viewerRunnerName
-                ? `You are signed in as ${viewerRunnerName}. Sign in with this runner's account to manage their training.`
-                : 'This profile is public. Sign in to log runs, open private coaching, and manage device connections.'}
+                ? `You are connected as ${viewerRunnerName}. Open your own profile to manage your training.`
+                : 'This profile is public. Connect Strava to create your profile, log runs, and open private coaching.'}
             </p>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {viewerRunnerName && <RunnerSignOutButton />}
-              <Link href={`/login?next=${encodeURIComponent(`/dashboard/${dbUser.id}`)}`} style={{ color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}>Runner sign in</Link>
-              {!viewerRunnerName && <Link href="/signup" style={{ color: 'var(--text)', textDecoration: 'none' }}>Create account</Link>}
+              <Link href="/api/strava" style={{ color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}>Connect Strava</Link>
             </div>
           </div>
         )}

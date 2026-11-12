@@ -317,7 +317,7 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
                       Weekly goals and coaching are private to the signed-in runner.
                     </p>
                     <Link href={viewerRunnerId ? `/dashboard/${viewerRunnerId}/coach` : '/login'} style={{ color: '#FC4C02', fontWeight: 700 }}>
-                      {viewerRunnerId ? 'Open my coaching' : 'Sign in to access coaching'}
+                      {viewerRunnerId ? 'Open my coaching' : 'Join with Strava to access coaching'}
                     </Link>
                   </div>
                 )}
@@ -492,7 +492,7 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
           <DashboardPicker runners={mappedUsers} />
 
           <div style={{ marginTop: '36px', fontSize: '13px', color: '#64748B' }}>
-            New to RunClub? <Link href="/signup" style={{ color: '#FC4C02', fontWeight: 700, textDecoration: 'none' }}>Create an account</Link>, then connect Strava from your private profile.
+            New to RunClub? <Link href="/signup" style={{ color: '#FC4C02', fontWeight: 700, textDecoration: 'none' }}>Join with Strava</Link> and your runner profile will be created automatically.
           </div>
         </div>
       </div>

@@ -5,25 +5,27 @@ import { getCurrentRunner } from '../../../lib/auth/runner'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const runner = await getCurrentRunner()
-  if (!runner) {
-    const loginUrl = new URL('/login?next=%2Fdashboard', req.url)
-    return NextResponse.redirect(loginUrl)
+  const url = new URL(req.url)
+  const clientId = process.env.STRAVA_CLIENT_ID
+  const clientSecret = process.env.STRAVA_CLIENT_SECRET
+  const sessionSecret = process.env.SESSION_SECRET
+
+  if (!clientId || !clientSecret || !sessionSecret || sessionSecret.length < 32) {
+    return NextResponse.redirect(new URL('/login?error=strava_config', url))
   }
 
-  const { searchParams, origin } = new URL(req.url)
-  const requestedUserId = searchParams.get('userId')
-  if (requestedUserId && requestedUserId !== runner.id) {
+  const runner = await getCurrentRunner()
+  const requestedUserId = url.searchParams.get('userId')
+  if (runner && requestedUserId && requestedUserId !== runner.id) {
     return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
   }
 
-  const redirectUri = new URL('/api/strava/callback', origin).toString()
   const state = randomBytes(32).toString('hex')
   const params = new URLSearchParams({
-    client_id: process.env.STRAVA_CLIENT_ID || '295756',
+    client_id: clientId,
     response_type: 'code',
-    redirect_uri: redirectUri,
-    approval_prompt: 'force',
+    redirect_uri: new URL('/api/strava/callback', url.origin).toString(),
+    approval_prompt: 'auto',
     scope: 'read,activity:read,activity:read_all',
     state,
   })
@@ -31,7 +33,7 @@ export async function GET(req: Request) {
   const response = NextResponse.redirect(`https://www.strava.com/oauth/authorize?${params.toString()}`)
   response.cookies.set('strava_oauth_state', state, {
     httpOnly: true,
-    secure: new URL(req.url).protocol === 'https:',
+    secure: url.protocol === 'https:',
     sameSite: 'lax',
     path: '/api/strava/callback',
     maxAge: 10 * 60,

@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   }
 
   const runner = await getCurrentRunner()
-  if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
   const { userId: requestedUserId, itemKey, checked } = await req.json()
   if (requestedUserId && requestedUserId !== runner.id) {
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   const runner = await getCurrentRunner()
-  if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
   const requestedUserId = new URL(req.url).searchParams.get('userId')
   if (requestedUserId && requestedUserId !== runner.id) {

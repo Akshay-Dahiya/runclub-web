@@ -44,7 +44,7 @@ function readMessages(value: unknown): ModelMessage[] | null {
 
 export async function POST(request: Request) {
   const runner = await getCurrentRunner()
-  if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
   const rateCheck = chatLimiter.check(getIP(request))
   if (!rateCheck.allowed) {
