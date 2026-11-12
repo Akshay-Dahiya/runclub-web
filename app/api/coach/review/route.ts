@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
@@ -8,13 +9,19 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
-    const weekNumber = parseInt(searchParams.get('weekNumber') || '1', 10)
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    const { searchParams } = new URL(req.url)
+    const requestedUserId = searchParams.get('userId')
+    const weekNumber = parseInt(searchParams.get('weekNumber') || '1', 10)
+    if (requestedUserId && requestedUserId !== runner.id) {
+      return NextResponse.json({ error: 'Weekly review not found' }, { status: 404 })
     }
+    if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 60) {
+      return NextResponse.json({ error: 'Invalid week number' }, { status: 400 })
+    }
+    const userId = runner.id
 
     const plan = await prisma.trainingPlan.findFirst({
       where: { userId, status: 'active' },

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { generateTrainingPlan } from '../../../../lib/training-engine'
 
@@ -6,12 +7,15 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    const { searchParams } = new URL(req.url)
+    const requestedUserId = searchParams.get('userId')
+    if (requestedUserId && requestedUserId !== runner.id) {
+      return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
     }
+    const userId = runner.id
 
     const profile = await prisma.coachProfile.findUnique({
       where: { userId },
@@ -32,12 +36,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const { userId, ...data } = body
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    const body = await req.json()
+    if (body.userId && body.userId !== runner.id) {
+      return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
     }
+    const userId = runner.id
+    const data = body
 
     // Upsert CoachProfile
     const profile = await prisma.coachProfile.upsert({

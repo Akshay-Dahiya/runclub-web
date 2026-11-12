@@ -21,14 +21,14 @@ const getPrismaClient = () => {
     return client
   } catch (error) {
     console.warn('[Prisma] Failed to initialize client - using mock for build time')
-    console.warn('[Prisma] Failed to initialize client - missing DATABASE_URL or invalid config.')
+    console.warn('[Prisma] Failed to initialize client - missing PRISMA_DATABASE_URL or invalid config.')
     
     // Return a mock that throws a helpful error at runtime
     const handler: ProxyHandler<any> = {
       get: function(target: any, prop: string | symbol): any {
         if (prop === 'then') return undefined;
         return new Proxy(async () => {
-          throw new Error("DATABASE_URL is missing! Please configure a PostgreSQL database on Vercel and add the DATABASE_URL environment variable.");
+throw new Error("PRISMA_DATABASE_URL is missing! Configure the PostgreSQL connection for this project.");
         }, handler);
       },
       apply: async function() {
@@ -40,6 +40,10 @@ const getPrismaClient = () => {
 }
 
 export const prisma = getPrismaClient()
+
+export function hasDatabaseConfig() {
+  return Boolean(process.env.PRISMA_DATABASE_URL)
+}
 
 if (typeof BigInt !== 'undefined') {
   (BigInt.prototype as any).toJSON = function () {

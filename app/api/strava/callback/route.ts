@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -6,9 +8,25 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
-  const passedUserId = url.searchParams.get('state') // optional userId
+  const state = url.searchParams.get('state')
+  const cookieStore = await cookies()
+  const expectedState = cookieStore.get('strava_oauth_state')?.value
+  const clearStateCookie = (response: NextResponse) => {
+    response.cookies.set('strava_oauth_state', '', {
+      httpOnly: true,
+      secure: url.protocol === 'https:',
+      sameSite: 'lax',
+      path: '/api/strava/callback',
+      maxAge: 0,
+    })
+    return response
+  }
 
-  if (!code) return NextResponse.redirect(new URL('/?error=strava_no_code', req.url))
+  const runner = await getCurrentRunner()
+  if (!runner) return clearStateCookie(NextResponse.redirect(new URL('/login?error=strava_auth', url)))
+  if (!code || !state || !expectedState || state !== expectedState) {
+    return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${runner.id}?error=strava_state`, url)))
+  }
 
   try {
     // Exchange code for token
@@ -24,81 +42,42 @@ export async function GET(req: Request) {
     })
 
     if (!tokenResp.ok) {
-      const errorData = await tokenResp.json().catch(() => null)
-      console.error('Strava token exchange failed API response:', errorData)
-      return NextResponse.redirect(new URL(`/?error=strava_token_failed`, req.url))
+      console.error('Strava token exchange failed with status:', tokenResp.status)
+      return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${runner.id}?error=strava_token_failed`, url)))
     }
 
     const data = await tokenResp.json()
 
     if (!data.access_token || !data.athlete) {
-      console.error('Strava token exchange failed - missing access token or athlete:', data)
-      return NextResponse.redirect(new URL(`/?error=strava_token_failed`, req.url))
+      console.error('Strava token exchange response was missing required fields')
+      return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${runner.id}?error=strava_token_failed`, url)))
     }
 
     const athleteId = BigInt(data.athlete.id)
-    let user = null
-
-    // 1. Try to find user by passed userId
-    if (passedUserId && passedUserId.trim().length > 0) {
-      user = await prisma.user.findUnique({
-        where: { id: passedUserId }
-      })
-    }
-
-    // 2. Or try to find user by Strava athlete ID
-    if (!user) {
-      user = await prisma.user.findFirst({
-        where: { strava_athlete_id: athleteId }
-      })
+    const alreadyLinked = await prisma.user.findFirst({
+      where: { strava_athlete_id: athleteId, NOT: { id: runner.id } },
+      select: { id: true },
+    })
+    if (alreadyLinked) {
+      return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${runner.id}?error=strava_account_in_use`, url)))
     }
 
     const fullName = `${data.athlete.firstname || ''} ${data.athlete.lastname || ''}`.trim() || 'Runner'
     const initials = `${data.athlete.firstname?.[0] || 'R'}${data.athlete.lastname?.[0] || ''}`.toUpperCase()
-
-    // 3. If still no user, create a new one!
-    if (!user) {
-      const email = `strava_${data.athlete.id}@runclub.local`
-      user = await prisma.user.upsert({
-        where: { email },
-        update: {
-          name: fullName,
-          initials,
-          image: data.athlete.profile || null,
-          strava_access_token: data.access_token,
-          strava_refresh_token: data.refresh_token,
-          strava_token_expires_at: new Date(data.expires_at * 1000),
-          strava_athlete_id: athleteId,
-          strava_connected: true
-        },
-        create: {
-          name: fullName,
-          email,
-          initials,
-          image: data.athlete.profile || null,
-          strava_access_token: data.access_token,
-          strava_refresh_token: data.refresh_token,
-          strava_token_expires_at: new Date(data.expires_at * 1000),
-          strava_athlete_id: athleteId,
-          strava_connected: true
-        }
-      })
-    } else {
-      // Update existing user with fresh tokens and athlete id
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          name: user.name || fullName,
-          initials: user.initials || initials,
-          image: user.image || data.athlete.profile || null,
-          strava_access_token: data.access_token,
-          strava_refresh_token: data.refresh_token,
-          strava_token_expires_at: new Date(data.expires_at * 1000),
-          strava_athlete_id: athleteId,
-          strava_connected: true
-        }
-      })
-    }
+    const user = await prisma.user.update({
+      where: { id: runner.id },
+      data: {
+        name: runner.name || fullName,
+        initials: runner.initials || initials,
+        image: data.athlete.profile || null,
+        strava_access_token: data.access_token,
+        strava_refresh_token: data.refresh_token,
+        strava_token_expires_at: new Date(data.expires_at * 1000),
+        strava_athlete_id: athleteId,
+        strava_connected: true,
+      },
+      select: { id: true, name: true },
+    })
 
     // 4. Initial sync: fetch last 30 activities from Strava immediately
     try {
@@ -150,9 +129,9 @@ export async function GET(req: Request) {
       console.warn('Initial Strava activity sync warning:', syncErr)
     }
 
-    return NextResponse.redirect(new URL(`/?connected_user=${encodeURIComponent(user.name || fullName)}&user_id=${user.id}#dashboard`, req.url))
-  } catch (err) {
-    console.error('Strava callback error:', err)
-    return NextResponse.redirect(new URL(`/?error=strava_failed`, req.url))
+    return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${user.id}?connected=true`, url)))
+  } catch {
+    console.error('Strava callback failed for the signed-in runner')
+    return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${runner.id}?error=strava_failed`, url)))
   }
 }

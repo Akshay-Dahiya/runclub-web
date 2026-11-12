@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getCurrentRunner } from '../../../../../lib/auth/runner'
 import { prisma } from '../../../../../lib/prisma'
 import { refreshStravaToken } from '../../../../../lib/strava'
 import { createRateLimiter, getIP } from '../../../../../lib/rateLimit'
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic'
 // Rate limit: max 5 sync requests per IP per 15 minutes
 const syncLimiter = createRateLimiter(15 * 60 * 1000, 5)
 
-export async function GET(req: Request, { params }: { params: Promise<{ member_id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ member_id: string }> }) {
   try {
     // Rate limiting
     const ip = getIP(req)
@@ -22,6 +23,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ member_i
 
     const resolvedParams = await params
     const memberId = resolvedParams.member_id
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    if (memberId !== runner.id) {
+      return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
+    }
 
     // Validate memberId format (CUIDs are alphanumeric + limited length)
     if (!memberId || memberId.length > 30 || !/^[a-z0-9]+$/i.test(memberId)) {

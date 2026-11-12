@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getIronSession } from 'iron-session'
-import { sessionOptions, SessionData } from '../../../../lib/session'
-import { cookies } from 'next/headers'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { refreshStravaToken } from '../../../../lib/strava'
 
@@ -9,16 +7,14 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId parameter' }, { status: 400 })
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+
+    const requestedUserId = new URL(req.url).searchParams.get('userId')
+    if (requestedUserId && requestedUserId !== runner.id) {
+      return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
     }
-
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
-    // Allow if admin or connecting user themselves
-    // If no admin, anyone can disconnect their own profile via UI button
-
+    const userId = runner.id
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getIronSession } from 'iron-session'
 import { sessionOptions, SessionData } from './lib/session'
+import { updateSession } from './lib/supabase/proxy'
 
 export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin')) {
@@ -15,9 +16,10 @@ export async function middleware(request: NextRequest) {
     }
     return response
   }
-  return NextResponse.next()
+
+  return updateSession(request)
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)']
 }

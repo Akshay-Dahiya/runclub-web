@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { generateTrainingPlan } from '../../../../lib/training-engine'
 
@@ -6,18 +7,21 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
-    const planId = searchParams.get('planId')
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
 
-    if (!userId && !planId) {
-      return NextResponse.json({ error: 'Missing userId or planId' }, { status: 400 })
+    const { searchParams } = new URL(req.url)
+    const requestedUserId = searchParams.get('userId')
+    const planId = searchParams.get('planId')
+    if (requestedUserId && requestedUserId !== runner.id) {
+      return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
     }
+    const userId = runner.id
 
     let plan = null
     if (planId) {
-      plan = await prisma.trainingPlan.findUnique({
-        where: { id: planId },
+      plan = await prisma.trainingPlan.findFirst({
+        where: { id: planId, userId },
         include: { weeklyReviews: true },
       })
     } else if (userId) {
@@ -37,10 +41,17 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const { userId, goalRace, goalTimeSec, goalRaceDate, daysPerWeek } = body
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
 
-    if (!userId || !goalRace || !goalTimeSec) {
+    const body = await req.json()
+    if (body.userId && body.userId !== runner.id) {
+      return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+    }
+    const { goalRace, goalTimeSec, goalRaceDate, daysPerWeek } = body
+    const userId = runner.id
+
+    if (!goalRace || !goalTimeSec) {
       return NextResponse.json({ error: 'Missing required plan parameters' }, { status: 400 })
     }
 
@@ -109,6 +120,9 @@ export async function POST(req: Request) {
 // PATCH allows marking workouts done, adjusting RPE, or updating plan progress
 export async function PATCH(req: Request) {
   try {
+    const runner = await getCurrentRunner()
+    if (!runner) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+
     const body = await req.json()
     const { planId, weekNumber, dayOfWeek, status, perceivedEffort, runnerNotes } = body
 
@@ -116,8 +130,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
     }
 
-    const plan = await prisma.trainingPlan.findUnique({
-      where: { id: planId },
+    const plan = await prisma.trainingPlan.findFirst({
+      where: { id: planId, userId: runner.id },
     })
 
     if (!plan) {

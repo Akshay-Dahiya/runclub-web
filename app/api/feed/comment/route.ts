@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,46 +15,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too many comments. Please wait a bit.' }, { status: 429 })
     }
 
-    const { runId, text, authorName, authorUserId } = await req.json()
+    const runner = await getCurrentRunner()
+    if (!runner) {
+      return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
+    }
 
-    if (!runId || !text || !text.trim()) {
-      return NextResponse.json({ error: 'Missing runId or comment text' }, { status: 400 })
+    const { runId, text, authorUserId } = await req.json()
+    if (authorUserId && authorUserId !== runner.id) {
+      return NextResponse.json({ error: 'Run not found' }, { status: 404 })
+    }
+    if (typeof runId !== 'string' || typeof text !== 'string' || !text.trim() || text.length > 300) {
+      return NextResponse.json({ error: 'Invalid runId or comment text' }, { status: 400 })
     }
 
     // Find the run
     const run = await prisma.run.findUnique({
       where: { id: runId },
-      include: { user: true }
+      select: { id: true },
     })
 
     if (!run) {
       return NextResponse.json({ error: 'Run not found' }, { status: 404 })
     }
 
-    // Determine commenting user
-    let user = null
-    if (authorUserId) {
-      user = await prisma.user.findUnique({ where: { id: authorUserId } })
-    }
-    if (!user) {
-      // Find or create guest commenter profile
-      const name = (authorName || 'Teammate').trim().slice(0, 40)
-      const email = `guest_${name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'runner'}@runclub.local`
-      user = await prisma.user.upsert({
-        where: { email },
-        update: { name },
-        create: {
-          email,
-          name,
-          initials: name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 3) || 'TM'
-        }
-      })
-    }
-
     const comment = await prisma.comment.create({
       data: {
         runId,
-        userId: user.id,
+        userId: runner.id,
         text: text.trim().slice(0, 300)
       },
       include: {
@@ -74,8 +62,8 @@ export async function POST(req: Request) {
         userId: comment.user.id
       }
     })
-  } catch (error: any) {
-    console.error('Comment submission error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to post comment' }, { status: 500 })
+  } catch (error) {
+    console.error('Comment submission failed:', error)
+    return NextResponse.json({ error: 'Failed to post comment' }, { status: 500 })
   }
 }

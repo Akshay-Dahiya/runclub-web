@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../lib/prisma'
+import { prisma, hasDatabaseConfig } from '../../../lib/prisma'
 import { PARTICIPANTS } from '../../../lib/planData'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +13,9 @@ export async function GET() {
 
   const todayStart = new Date(`${todayIST}T00:00:00+05:30`)
   const todayEnd = new Date(`${todayIST}T23:59:59+05:30`)
+  if (!hasDatabaseConfig()) {
+    return NextResponse.json({ runners: [], totalKm: 0, date: todayIST })
+  }
 
   const runs = await prisma.run.findMany({
     where: { date: { gte: todayStart, lte: todayEnd } },

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../lib/prisma'
+import { prisma, hasDatabaseConfig } from '../../../lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +12,7 @@ function daysAgo(n:number){
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const type = url.searchParams.get('type') || 'weekly'
+  if (!hasDatabaseConfig()) return NextResponse.json({ type, entries: [] })
 
   if (type === 'weekly' || type === 'monthly') {
     const since = type === 'weekly' ? daysAgo(7) : daysAgo(30)

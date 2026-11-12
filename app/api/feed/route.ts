@@ -1,30 +1,43 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../lib/prisma'
+import { prisma, hasDatabaseConfig } from '../../../lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  if (!hasDatabaseConfig()) {
+    return NextResponse.json({ runs: [], mostImproved: [] })
+  }
+
   try {
     const runs = await prisma.run.findMany({
       orderBy: { date: 'desc' },
       take: 100,
-      include: {
+      select: {
+        id: true,
+        distanceKm: true,
+        durationSec: true,
+        paceSecPerKm: true,
+        date: true,
+        source: true,
         user: {
-          select: { id: true, name: true, initials: true }
+          select: { id: true, name: true, initials: true },
         },
         comments: {
           orderBy: { createdAt: 'asc' },
           take: 20,
-          include: {
+          select: {
+            id: true,
+            text: true,
+            createdAt: true,
             user: {
-              select: { id: true, name: true, initials: true }
-            }
-          }
+              select: { id: true, name: true, initials: true },
+            },
+          },
         },
         likes: {
-          select: { userId: true }
-        }
-      }
+          select: { userId: true },
+        },
+      },
     })
 
     // Calculate "Most Improved" runners over the last 14 days
@@ -34,11 +47,14 @@ export async function GET() {
     const prevWeekStart = new Date(now.getTime() - 14 * 24 * 3600 * 1000)
 
     const allUsers = await prisma.user.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
         runs: {
-          where: { date: { gte: prevWeekStart } }
-        }
-      }
+          where: { date: { gte: prevWeekStart } },
+          select: { date: true, distanceKm: true },
+        },
+      },
     })
 
     const improvements = allUsers
@@ -73,11 +89,8 @@ export async function GET() {
       distanceKm: r.distanceKm,
       durationSec: r.durationSec,
       paceSecPerKm: r.paceSecPerKm,
-      avgHeartRate: r.avgHeartRate,
       date: r.date.toISOString(),
-      notes: r.notes,
       source: r.source,
-      strava_activity_id: r.strava_activity_id ? r.strava_activity_id.toString() : null,
       likesCount: r.likes ? r.likes.length : 0,
       user: {
         id: r.user.id,
@@ -90,7 +103,6 @@ export async function GET() {
         createdAt: c.createdAt.toISOString(),
         userName: c.user?.name || 'Runner',
         userInitials: c.user?.initials || 'R',
-        userId: c.user?.id
       }))
     }))
 

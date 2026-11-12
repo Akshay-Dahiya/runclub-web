@@ -12,7 +12,7 @@ import InteractiveGoalPicker from './InteractiveGoalPicker'
 import InclusiveSection from './InclusiveSection'
 import PerformanceCharts from './PerformanceCharts'
 import MicroGoalsWidget from './MicroGoalsWidget'
-import { PARTICIPANTS, getStatus, grandTotal } from '../lib/planData'
+import { getStatus, grandTotal } from '../lib/planData'
 
 function DashboardPicker({ runners }: { runners: any[] }) {
   const router = useRouter()
@@ -99,38 +99,35 @@ function WhoRanToday() {
   )
 }
 
-export default function RunClubApp({ users }: { users: any[] }) {
+export default function RunClubApp({ users, viewerRunnerId = null }: { users: any[]; viewerRunnerId?: string | null }) {
   const [activeFilter, setActiveFilter] = useState('all')
   const [leaderboardTab, setLeaderboardTab] = useState<'weekly' | 'overall'>('weekly')
 
-  // Map users with DB stats
-  const mappedUsers = users.map(u => {
-    const staticPart = PARTICIPANTS.find(p => p.email === u.email)
-    const name = u.name || staticPart?.name || 'Runner'
-    const initials = u.initials || staticPart?.initials || name.split(' ').map((w: string) => w[0]).join('').toUpperCase()
-    const runs = u.runs || []
-    const actualKm = runs.reduce((sum: number, r: any) => sum + (r.distanceKm || 0), 0)
+  const mappedUsers = users.map((user: any) => {
+    const name = user.name || 'Runner'
+    const initials = user.initials || name.split(' ').map((part: string) => part[0]).join('').toUpperCase()
+    const runs = user.runs || []
+    const actualKm = runs.reduce((sum: number, run: any) => sum + (run.distanceKm || 0), 0)
 
     const now = new Date()
     const startOfWeek = new Date(now)
     startOfWeek.setDate(now.getDate() - now.getDay())
-    startOfWeek.setHours(0,0,0,0)
+    startOfWeek.setHours(0, 0, 0, 0)
 
-    const weekRuns = runs.filter((r: any) => new Date(r.date) >= startOfWeek)
-    const weekKm = weekRuns.reduce((sum: number, r: any) => sum + (r.distanceKm || 0), 0)
-    const fallbackParticipant: any = { id: 1, name, initials, cat: '10K' as const }
-    const status = getStatus(actualKm, staticPart || fallbackParticipant)
+    const weekRuns = runs.filter((run: any) => new Date(run.date) >= startOfWeek)
+    const weekKm = weekRuns.reduce((sum: number, run: any) => sum + (run.distanceKm || 0), 0)
+    const participant = { id: user.id, email: '', name, initials, cat: user.category || '10K' }
+    const status = getStatus(actualKm, participant)
 
     return {
-      id: u.id,
+      id: user.id,
       name,
       initials,
-      email: u.email,
       runs,
       actualKm,
       weekKm,
       status,
-      totalTarget: grandTotal(staticPart || fallbackParticipant)
+      totalTarget: grandTotal(participant),
     }
   })
 
@@ -143,28 +140,12 @@ export default function RunClubApp({ users }: { users: any[] }) {
   })
 
   // Selected runner for top dashboard view (defaults to first runner with runs or connected)
-  const defaultRunnerId = mappedUsers.find(u => u.runs && u.runs.length > 0)?.id || mappedUsers[0]?.id || ''
+  const defaultRunnerId =
+    (viewerRunnerId && mappedUsers.some((user) => user.id === viewerRunnerId) ? viewerRunnerId : null) ||
+    mappedUsers.find((user) => user.runs.length > 0)?.id ||
+    mappedUsers[0]?.id ||
+    ''
   const [activeDashboardId, setActiveDashboardId] = useState<string>(defaultRunnerId)
-  const [connectedNotice, setConnectedNotice] = useState<string | null>(null)
-  
-  useEffect(() => {
-    // Check if user was redirected from Strava connect
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      const connectedName = params.get('connected_user')
-      const connectedId = params.get('user_id')
-      if (connectedName) {
-        setConnectedNotice(connectedName)
-        if (connectedId) {
-          setActiveDashboardId(connectedId)
-          localStorage.setItem('runclub_active_user', JSON.stringify({ id: connectedId, name: connectedName }))
-        }
-        // Clean URL parameters without reloading
-        window.history.replaceState({}, document.title, window.location.pathname + '#dashboard')
-        setTimeout(() => setConnectedNotice(null), 10000)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     if (!activeDashboardId && mappedUsers.length > 0) {
@@ -187,34 +168,6 @@ export default function RunClubApp({ users }: { users: any[] }) {
 
       {/* WHO RAN TODAY TICKER */}
       <WhoRanToday />
-
-      {/* ── STRAVA CONNECT SUCCESS NOTIFICATION BANNER ── */}
-      {connectedNotice && (
-        <div style={{
-          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
-          borderBottom: '2px solid #FC4C02',
-          padding: '16px 24px',
-          textAlign: 'center',
-          animation: 'fadeSlideUp 0.3s ease-out'
-        }}>
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '20px' }}>🎉</span>
-            <span style={{ fontSize: '15px', color: '#0F172A', fontWeight: 700 }}>
-              Connected Strava Athlete: <span style={{ color: '#FC4C02', fontWeight: 900 }}>{connectedNotice}</span>
-            </span>
-            <span style={{
-              background: '#FC4C02',
-              color: '#FFFFFF',
-              borderRadius: '20px',
-              padding: '3px 12px',
-              fontSize: '12px',
-              fontWeight: 800
-            }}>
-              ✓ Runs Synced Live
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* ── 00. RUNNER DASHBOARD (OPEN FIRST) ── */}
       <div id="dashboard" style={{ background: '#F8FAFC', padding: '60px 24px 70px', borderBottom: '1px solid #E2E8F0' }}>
@@ -241,6 +194,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <select
                 value={activeDashboardId}
+                disabled={mappedUsers.length === 0}
                 onChange={e => setActiveDashboardId(e.target.value)}
                 style={{
                   background: '#FFFFFF',
@@ -255,9 +209,11 @@ export default function RunClubApp({ users }: { users: any[] }) {
                   boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
                 }}
               >
-                {mappedUsers.map(u => (
-                  <option key={u.id} value={u.id}>
-                    👤 {u.name} ({u.runs?.length || 0} runs)
+                {mappedUsers.length === 0 ? (
+                  <option value="">No runner data available</option>
+                ) : mappedUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.runs.length} runs)
                   </option>
                 ))}
               </select>
@@ -353,7 +309,18 @@ export default function RunClubApp({ users }: { users: any[] }) {
               {/* Performance Charts & Micro-Goals */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                 <PerformanceCharts runs={currentDashboardRunner.runs || []} />
-                <MicroGoalsWidget runs={currentDashboardRunner.runs || []} userId={currentDashboardRunner.id} />
+                {viewerRunnerId === currentDashboardRunner.id ? (
+                  <MicroGoalsWidget runs={currentDashboardRunner.runs || []} userId={currentDashboardRunner.id} />
+                ) : (
+                  <div role="status" style={{ padding: '20px 22px', border: '1px solid #E2E8F0', borderRadius: '14px', background: '#FFFFFF' }}>
+                    <p style={{ margin: '0 0 12px', color: '#475569' }}>
+                      Weekly goals and coaching are private to the signed-in runner.
+                    </p>
+                    <Link href={viewerRunnerId ? `/dashboard/${viewerRunnerId}/coach` : '/login'} style={{ color: '#FC4C02', fontWeight: 700 }}>
+                      {viewerRunnerId ? 'Open my coaching' : 'Sign in to access coaching'}
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -392,7 +359,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
           </p>
         </div>
         <div style={{ marginTop: '24px' }}>
-          <ActivityFeed />
+          <ActivityFeed isSignedIn={Boolean(viewerRunnerId)} />
         </div>
       </div>
 
@@ -525,7 +492,7 @@ export default function RunClubApp({ users }: { users: any[] }) {
           <DashboardPicker runners={mappedUsers} />
 
           <div style={{ marginTop: '36px', fontSize: '13px', color: '#64748B' }}>
-            New runner? Just click <a href="/api/strava" style={{ color: '#FC4C02', fontWeight: 700, textDecoration: 'none' }}>Connect with Strava</a> to create your profile in 1 click.
+            New to RunClub? <Link href="/signup" style={{ color: '#FC4C02', fontWeight: 700, textDecoration: 'none' }}>Create an account</Link>, then connect Strava from your private profile.
           </div>
         </div>
       </div>
