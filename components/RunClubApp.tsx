@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from './Navbar'
@@ -139,22 +139,8 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
     return leaderboardTab === 'weekly' ? b.weekKm - a.weekKm : b.actualKm - a.actualKm
   })
 
-  // Selected runner for top dashboard view (defaults to first runner with runs or connected)
-  const defaultRunnerId =
-    (viewerRunnerId && mappedUsers.some((user) => user.id === viewerRunnerId) ? viewerRunnerId : null) ||
-    mappedUsers.find((user) => user.runs.length > 0)?.id ||
-    mappedUsers[0]?.id ||
-    ''
-  const [activeDashboardId, setActiveDashboardId] = useState<string>(defaultRunnerId)
-
-  useEffect(() => {
-    if (!activeDashboardId && mappedUsers.length > 0) {
-      const active = mappedUsers.find(u => u.runs && u.runs.length > 0) || mappedUsers[0]
-      if (active) setActiveDashboardId(active.id)
-    }
-  }, [mappedUsers, activeDashboardId])
-
-  const currentDashboardRunner = mappedUsers.find(u => u.id === activeDashboardId) || mappedUsers[0]
+  const [activeDashboardId, setActiveDashboardId] = useState('')
+  const currentDashboardRunner = mappedUsers.find(u => u.id === activeDashboardId)
 
   return (
     <>
@@ -211,11 +197,14 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
               >
                 {mappedUsers.length === 0 ? (
                   <option value="">No runner data available</option>
-                ) : mappedUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.runs.length} runs)
-                  </option>
-                ))}
+                ) : (
+                  <>
+                    <option value="">Choose a runner profile...</option>
+                    {mappedUsers.map((user) => (
+                      <option key={user.id} value={user.id}>{user.name}</option>
+                    ))}
+                  </>
+                )}
               </select>
 
               {currentDashboardRunner && (
@@ -242,6 +231,12 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
             </div>
           </div>
 
+          {!currentDashboardRunner && mappedUsers.length > 0 && (
+            <p role="status" style={{ margin: '0 0 24px', color: '#64748B', fontSize: '14px' }}>
+              Choose a runner profile to view their progress.
+            </p>
+          )}
+
           {/* Active Runner Overview Cards */}
           {currentDashboardRunner && (
             <div>
@@ -263,9 +258,6 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
                   </div>
                   <div style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', marginTop: '4px' }}>
                     {currentDashboardRunner.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#FC4C02', fontWeight: 700, marginTop: '2px' }}>
-                    {currentDashboardRunner.runs?.length || 0} Total Activities Synced
                   </div>
                 </div>
 
