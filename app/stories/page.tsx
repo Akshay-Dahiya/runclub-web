@@ -27,22 +27,21 @@ export default async function StoriesPage() {
   return (
     <>
       <Navbar />
-      <main style={{ minHeight: '70vh', padding: '112px 20px 76px', background: '#FFFFFF' }}>
-        <div style={{ maxWidth: '860px', margin: '0 auto' }}>
-          <Link href="/" style={{ color: '#C2410C', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>
-            ← Back to RunClub
+      <main className="stories-page">
+        <div className="stories-shell">
+          <Link href="/" className="stories-back">
+            <span aria-hidden="true">←</span> Back to RunClub
           </Link>
-          <div style={{ margin: '26px 0 30px' }}>
-            <p style={{ margin: '0 0 12px', color: '#C2410C', fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-              RunClub / Group journal
+          <header className="stories-hero">
+            <p className="stories-hero__eyebrow">Joyville Road Runners / Club journal</p>
+            <h1 id="club-stories-page-heading">Run moments worth remembering.</h1>
+            <p className="stories-hero__description">
+              A shared place for the miles, race days, and little wins our runners want the whole crew to remember.
             </p>
-            <h1 id="club-stories-page-heading" style={{ margin: '0 0 12px', color: '#0F172A', fontSize: 'clamp(2.5rem, 10vw, 4.25rem)', fontWeight: 900, letterSpacing: '-0.06em', lineHeight: 0.98 }}>
-              Club stories
-            </h1>
-            <p style={{ maxWidth: '600px', margin: 0, color: '#64748B', fontSize: '16px', lineHeight: 1.65 }}>
-              A shared place for the miles, moments, and photos our runners want the whole group to remember.
-            </p>
-          </div>
+            <Link href="#club-stories-feed" className="stories-hero__link">
+              Read the stories <span aria-hidden="true">↓</span>
+            </Link>
+          </header>
           <ClubStories viewerRunnerId={viewerRunnerId} variant="full" />
         </div>
       </main>

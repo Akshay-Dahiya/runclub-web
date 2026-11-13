@@ -58,15 +58,16 @@ export default function ClubStoryComposer({ onPosted }: { onPosted: () => Promis
     <form
       onSubmit={handleSubmit}
       style={{
-        padding: '22px',
-        marginBottom: '28px',
-        background: '#FFF7F2',
-        border: '1px solid #FED7C3',
-        borderRadius: '18px',
+        padding: '20px',
+        marginBottom: '32px',
+        background: 'linear-gradient(135deg, #FFF7F2 0%, #FFFBF8 100%)',
+        border: '2px solid #FED7C3',
+        borderRadius: '20px',
+        boxShadow: '0 4px 12px rgba(252, 76, 2, 0.08)',
       }}
     >
-      <label htmlFor="club-story-content" style={{ display: 'block', marginBottom: '9px', color: '#0F172A', fontSize: '14px', fontWeight: 800 }}>
-        Share a story with your club
+      <label htmlFor="club-story-content" style={{ display: 'block', marginBottom: '12px', color: '#0F172A', fontSize: '15px', fontWeight: 900, letterSpacing: '-0.3px' }}>
+        Share your story
       </label>
       <textarea
         id="club-story-content"
@@ -76,31 +77,33 @@ export default function ClubStoryComposer({ onPosted }: { onPosted: () => Promis
         maxLength={2000}
         required
         rows={4}
-        placeholder="A run you enjoyed, a race-day moment, or a small win..."
+        placeholder="A run you loved, a race moment, a personal win..."
+        className="club-story-textarea"
         style={{
           boxSizing: 'border-box',
           display: 'block',
           width: '100%',
-          minHeight: '116px',
+          minHeight: '120px',
           resize: 'vertical',
           padding: '14px 15px',
-          border: '1px solid #CBD5E1',
-          borderRadius: '12px',
+          border: '1.5px solid #E2E8F0',
+          borderRadius: '14px',
           background: '#FFFFFF',
           color: '#0F172A',
           font: 'inherit',
-          lineHeight: 1.55,
+          lineHeight: 1.6,
+          fontSize: '15px',
+          fontWeight: 400,
+          transition: 'all 0.2s ease',
         }}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '7px', color: '#64748B', fontSize: '12px' }}>
-        <span>Visible to connected RunClub runners</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '10px', color: '#94A3B8', fontSize: '12px', fontWeight: 500 }}>
+        <span>Shared with connected runners</span>
         <span>{content.length}/2000</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginTop: '18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <label htmlFor="club-story-photo" style={{ color: '#475569', fontSize: '13px', fontWeight: 700 }}>
-            Add a photo (optional)
-          </label>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '18px', borderTop: '1px solid #FED7C3', paddingTop: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <input
             ref={photoInput}
             id="club-story-photo"
@@ -108,41 +111,95 @@ export default function ClubStoryComposer({ onPosted }: { onPosted: () => Promis
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={event => setPhotoName(event.target.files?.[0]?.name || '')}
-            style={{ maxWidth: '100%', color: '#475569', fontSize: '12px' }}
+            className="club-story-photo-input"
           />
+          <label htmlFor="club-story-photo" className="club-story-photo-label">
+            {photoName ? 'Change photo' : 'Add photo (optional)'}
+          </label>
           {photoName && (
-            <button
-              type="button"
-              onClick={() => {
-                if (photoInput.current) photoInput.current.value = ''
-                setPhotoName('')
-              }}
-              style={{ padding: 0, border: 0, background: 'transparent', color: '#C2410C', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              Remove photo
-            </button>
+            <>
+              <span style={{ color: '#64748B', fontSize: '13px', fontWeight: 500 }}>{photoName.substring(0, 20)}{photoName.length > 20 ? '…' : ''}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (photoInput.current) photoInput.current.value = ''
+                  setPhotoName('')
+                }}
+                style={{
+                  padding: '0 8px',
+                  border: 0,
+                  background: 'transparent',
+                  color: '#C2410C',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Remove
+              </button>
+            </>
           )}
         </div>
+
         <button
           type="submit"
-          disabled={posting}
+          disabled={posting || !content.trim()}
           style={{
-            minHeight: '44px',
-            padding: '11px 20px',
+            width: '100%',
+            minHeight: '48px',
+            padding: '14px 20px',
             border: 0,
-            borderRadius: '999px',
-            background: posting ? '#FDBA98' : '#FC4C02',
+            borderRadius: '12px',
+            background: posting || !content.trim() ? '#FDBA98' : '#FC4C02',
             color: '#FFFFFF',
-            fontSize: '13px',
+            fontSize: '15px',
             fontWeight: 800,
-            cursor: posting ? 'wait' : 'pointer',
+            cursor: posting || !content.trim() ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: posting || !content.trim() ? 'none' : '0 4px 12px rgba(252, 76, 2, 0.2)',
+            opacity: posting || !content.trim() ? 0.7 : 1,
           }}
         >
           {posting ? 'Sharing…' : 'Share story'}
         </button>
       </div>
-      {error && <p role="alert" style={{ margin: '14px 0 0', color: '#B91C1C', fontSize: '13px' }}>{error}</p>}
-      {message && <p role="status" aria-live="polite" style={{ margin: '14px 0 0', color: '#166534', fontSize: '13px' }}>{message}</p>}
+
+      {error && (
+        <div
+          role="alert"
+          style={{
+            margin: '16px 0 0',
+            padding: '12px 14px',
+            background: '#FEE2E2',
+            border: '1px solid #FECACA',
+            borderRadius: '10px',
+            color: '#B91C1C',
+            fontSize: '13px',
+            fontWeight: 500,
+          }}
+        >
+          {error}
+        </div>
+      )}
+      {message && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            margin: '16px 0 0',
+            padding: '12px 14px',
+            background: '#DCFCE7',
+            border: '1px solid #BBFAB0',
+            borderRadius: '10px',
+            color: '#166534',
+            fontSize: '13px',
+            fontWeight: 500,
+          }}
+        >
+          {message}
+        </div>
+      )}
     </form>
   )
 }
