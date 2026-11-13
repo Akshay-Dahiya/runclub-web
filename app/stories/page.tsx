@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import ClubStories from '../../components/ClubStories'
 import Footer from '../../components/Footer'
 import Navbar from '../../components/Navbar'
@@ -23,6 +24,8 @@ export default async function StoriesPage() {
       viewerRunnerId = null
     }
   }
+
+  if (!viewerRunnerId) redirect('/login')
 
   return (
     <>

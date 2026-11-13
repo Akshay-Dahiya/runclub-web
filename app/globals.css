@@ -288,28 +288,6 @@ body {
   transition: background 0.18s ease, border-color 0.18s ease;
 }
 .club-story-photo-label:hover { border-color: var(--orange); background: #FFF7F2; }
-.club-stories__signin {
-  padding: 22px;
-  border: 1.5px solid #FED7C3;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #FFF7F2 0%, #FFFBF8 100%);
-}
-.club-stories__signin h3 { margin: 0 0 8px; color: var(--text); font-size: 16px; font-weight: 900; letter-spacing: -0.3px; }
-.club-stories__signin p { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.6; font-weight: 500; }
-.club-stories__signin-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: 12px;
-  background: var(--orange);
-  color: #FFFFFF;
-  font-size: 14px;
-  font-weight: 800;
-  text-decoration: none;
-  box-shadow: 0 4px 12px rgba(252, 76, 2, 0.2);
-}
 .club-stories__status { padding: 32px 12px; color: var(--muted); font-size: 14px; text-align: center; }
 .club-stories__error { padding: 16px; border: 1px solid #FECACA; border-radius: 12px; background: #FEF2F2; color: #991B1B; font-size: 14px; }
 .club-stories__empty {
