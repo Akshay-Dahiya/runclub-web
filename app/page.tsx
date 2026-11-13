@@ -1,39 +1,69 @@
 import React from 'react'
-import { prisma } from '../lib/prisma'
+import { prisma, hasDatabaseConfig } from '../lib/prisma'
 import RunClubApp from '../components/RunClubApp'
-import Navbar from '../components/Navbar'
+import { PARTICIPANTS } from '../lib/planData'
+import { getCurrentRunner } from '../lib/auth/runner'
 
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   let users: any[] = []
-  try {
-    const dbUsers = await prisma.user.findMany({
-      include: {
-        runs: {
-          orderBy: { date: 'desc' }
+  let viewerRunnerId: string | null = null
+
+  if (hasDatabaseConfig()) {
+    try {
+      const dbUsers = await prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          initials: true,
+          runningGoal: true,
+          runs: {
+            orderBy: { date: 'desc' },
+            select: {
+              id: true,
+              date: true,
+              distanceKm: true,
+              durationSec: true,
+              paceSecPerKm: true,
+            },
+          },
+        },
+      })
+
+      users = dbUsers.map((user: any) => {
+        const email = user.email.toLowerCase()
+        const participant = PARTICIPANTS.find(
+          (entry) => entry.email?.toLowerCase() === email || `placeholder_${entry.id}@runclub.local` === email,
+        )
+        const goal = String(user.runningGoal || '').toLowerCase()
+        const name = user.name || participant?.name || 'Runner'
+
+        return {
+          id: user.id,
+          name,
+          initials: user.initials || participant?.initials || name.split(' ').map((part: string) => part[0]).join('').toUpperCase(),
+          category: participant?.cat || (goal.includes('half') || goal.includes('21') ? 'HM' : '10K'),
+          runs: user.runs.map((run: any) => ({
+            id: run.id,
+            date: run.date.toISOString(),
+            distanceKm: run.distanceKm,
+            durationSec: run.durationSec,
+            paceSecPerKm: run.paceSecPerKm,
+          })),
         }
-      }
-    })
-    users = dbUsers.map((u: any) => ({
-      ...u,
-      strava_athlete_id: u.strava_athlete_id ? u.strava_athlete_id.toString() : null,
-      last_synced_at: u.last_synced_at ? u.last_synced_at.toISOString() : null,
-      strava_token_expires_at: u.strava_token_expires_at ? u.strava_token_expires_at.toISOString() : null,
-      createdAt: u.createdAt.toISOString(),
-      updatedAt: u.updatedAt.toISOString(),
-      runs: u.runs.map((r: any) => ({
-        ...r,
-        strava_activity_id: r.strava_activity_id ? r.strava_activity_id.toString() : null,
-        date: r.date.toISOString(),
-        createdAt: r.createdAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString(),
-      }))
-    }))
-  } catch (error) {
-    console.error('Prisma connection failed on homepage:', error)
-    // Fallback to empty users list if DB is not connected
+      })
+    } catch (error) {
+      console.error('Public runner data unavailable:', error)
+    }
+
+    try {
+      viewerRunnerId = (await getCurrentRunner())?.id ?? null
+    } catch (error) {
+      console.error('Runner session unavailable on homepage:', error)
+    }
   }
 
-  return <RunClubApp users={users} />
+  return <RunClubApp users={users} viewerRunnerId={viewerRunnerId} />
 }

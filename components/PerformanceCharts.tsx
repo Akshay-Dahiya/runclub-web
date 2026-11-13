@@ -1,6 +1,17 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 interface Run {
   id: string
@@ -15,284 +26,256 @@ interface PerformanceChartsProps {
   runs: Run[]
 }
 
-function fmtPace(sec: number) {
-  if (!sec || isNaN(sec)) return '—'
-  const m = Math.floor(sec / 60)
-  const s = String(Math.round(sec % 60)).padStart(2, '0')
-  return `${m}:${s}/km`
+function formatPace(seconds?: number) {
+  if (!seconds || !Number.isFinite(seconds)) return '—'
+  const roundedSeconds = Math.round(seconds)
+  const minutes = Math.floor(roundedSeconds / 60)
+  const remainder = String(roundedSeconds % 60).padStart(2, '0')
+  return `${minutes}:${remainder}/km`
+}
+
+function formatDistance(distance: number) {
+  return `${distance.toFixed(1)} km`
 }
 
 export default function PerformanceCharts({ runs = [] }: PerformanceChartsProps) {
   const [activeTab, setActiveTab] = useState<'volume' | 'pace'>('volume')
 
-  // Calculate Last 8 Weeks volume data
-  const weekData = useMemo(() => {
-    const now = new Date()
-    const weeks: Array<{
-      label: string
-      km: number
-      runCount: number
-      type: 'build' | 'maintain' | 'recovery'
-    }> = []
+  const { weeklyData, highlights, hasWeeklyRuns } = useMemo(() => {
+    const validRuns = runs
+      .map((run) => {
+        const date = new Date(run.date)
+        const distanceKm = Number(run.distanceKm)
+        const reportedPace = Number(run.paceSecPerKm)
+        const paceSecPerKm = reportedPace > 0
+          ? reportedPace
+          : Number(run.durationSec) / distanceKm
 
-    for (let i = 7; i >= 0; i--) {
-      const end = new Date(now.getTime() - i * 7 * 24 * 3600 * 1000)
-      const start = new Date(end.getTime() - 7 * 24 * 3600 * 1000)
-
-      const weekRuns = runs.filter(r => {
-        const d = new Date(r.date)
-        return d >= start && d < end
+        return { ...run, date, distanceKm, paceSecPerKm }
       })
+      .filter((run) => Number.isFinite(run.date.getTime()) && run.distanceKm > 0)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
 
-      const km = Math.round(weekRuns.reduce((sum, r) => sum + (r.distanceKm || 0), 0) * 10) / 10
-      const label = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-      weeks.push({ label, km, runCount: weekRuns.length, type: 'maintain' })
-    }
+    const today = new Date()
+    const currentWeekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    currentWeekStart.setDate(currentWeekStart.getDate() - ((currentWeekStart.getDay() + 6) % 7))
 
-    // Determine build / maintain / recovery based on comparison with previous week
-    return weeks.map((w, idx) => {
-      if (idx === 0) return { ...w, type: 'maintain' }
-      const prev = weeks[idx - 1].km
-      if (w.km > prev * 1.08 && w.km > 5) return { ...w, type: 'build' as const }
-      if (w.km < prev * 0.85 && prev > 10) return { ...w, type: 'recovery' as const }
-      return { ...w, type: 'maintain' as const }
+    const weeklyData = Array.from({ length: 8 }, (_, index) => {
+      const weekStart = new Date(currentWeekStart)
+      weekStart.setDate(currentWeekStart.getDate() - (7 - index) * 7)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 7)
+
+      const weekRuns = validRuns.filter((run) => run.date >= weekStart && run.date < weekEnd)
+      const distanceKm = weekRuns.reduce((total, run) => total + run.distanceKm, 0)
+      const pacedRuns = weekRuns.filter((run) => run.paceSecPerKm > 150 && run.paceSecPerKm < 900)
+      const pacedDistance = pacedRuns.reduce((total, run) => total + run.distanceKm, 0)
+      const avgPaceSecPerKm = pacedDistance > 0
+        ? pacedRuns.reduce((total, run) => total + run.paceSecPerKm * run.distanceKm, 0) / pacedDistance
+        : undefined
+
+      return {
+        label: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        distanceKm: Math.round(distanceKm * 10) / 10,
+        avgPaceSecPerKm,
+      }
     })
-  }, [runs])
 
-  // Calculate monthly highlights
-  const highlights = useMemo(() => {
-    const now = new Date()
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 3600 * 1000)
-    const recent = runs.filter(r => new Date(r.date) >= thirtyDaysAgo)
-
-    const longestRun = recent.length > 0 ? Math.max(...recent.map(r => r.distanceKm || 0)) : 0
-    const fastestPace = recent.length > 0 
-      ? Math.min(...recent.filter(r => r.paceSecPerKm > 120).map(r => r.paceSecPerKm))
-      : 0
-    const totalKm30 = recent.reduce((sum, r) => sum + (r.distanceKm || 0), 0)
-    const avgWeeklyKm = Math.round((totalKm30 / 4.28) * 10) / 10
+    const thirtyDaysAgo = new Date(today)
+    thirtyDaysAgo.setDate(today.getDate() - 30)
+    const recentRuns = validRuns.filter((run) => run.date >= thirtyDaysAgo)
+    const recentDistance = recentRuns.reduce((total, run) => total + run.distanceKm, 0)
+    const longestRun = recentRuns.reduce((longest, run) => Math.max(longest, run.distanceKm), 0)
+    const recentPacedRuns = recentRuns.filter((run) => run.paceSecPerKm > 150 && run.paceSecPerKm < 900)
+    const recentPacedDistance = recentPacedRuns.reduce((total, run) => total + run.distanceKm, 0)
+    const averagePace = recentPacedDistance > 0
+      ? recentPacedRuns.reduce((total, run) => total + run.paceSecPerKm * run.distanceKm, 0) / recentPacedDistance
+      : undefined
 
     return {
-      longestRun: longestRun.toFixed(1),
-      fastestPace: fastestPace > 0 ? fmtPace(fastestPace) : '—',
-      avgWeeklyKm: avgWeeklyKm.toFixed(1),
-      totalRunsMonth: recent.length,
-      totalAllTimeKm: Math.round(runs.reduce((sum, r) => sum + (r.distanceKm || 0), 0))
+      weeklyData,
+      hasWeeklyRuns: weeklyData.some((week) => week.distanceKm > 0),
+      highlights: [
+        {
+          label: 'DISTANCE · 30 DAYS',
+          value: recentRuns.length > 0 ? formatDistance(recentDistance) : '—',
+          detail: 'Recent training volume',
+        },
+        {
+          label: 'LONGEST · 30 DAYS',
+          value: longestRun > 0 ? formatDistance(longestRun) : '—',
+          detail: 'Longest activity',
+        },
+        {
+          label: 'AVERAGE PACE · 30 DAYS',
+          value: formatPace(averagePace),
+          detail: 'Distance-weighted pace',
+        },
+      ],
     }
   }, [runs])
 
-  // Max km for scaling bar chart
-  const maxKm = Math.max(15, ...weekData.map(w => w.km))
+  const chartCardStyle: React.CSSProperties = {
+    background: '#FFFFFF',
+    border: '1px solid #E2E8F0',
+    borderRadius: '20px',
+    padding: 'clamp(18px, 3.5vw, 32px)',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
+    marginBottom: '32px',
+  }
 
-  // Recent pace data for trend line
-  const paceHistory = useMemo(() => {
-    return runs
-      .filter(r => r.paceSecPerKm > 150 && r.paceSecPerKm < 900)
-      .slice(0, 16)
-      .reverse()
-      .map((r, i) => ({
-        index: i + 1,
-        date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        pace: r.paceSecPerKm,
-        paceFormatted: fmtPace(r.paceSecPerKm),
-        km: r.distanceKm
-      }))
-  }, [runs])
+  const chartColors = {
+    orange: '#FC4C02',
+    blue: '#0284C7',
+    grid: '#E2E8F0',
+    text: '#64748B',
+    dark: '#0F172A',
+  }
 
   return (
-    <div style={{
-      background: '#FFFFFF',
-      border: '1px solid #E2E8F0',
-      borderRadius: '20px',
-      padding: '32px',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
-      marginBottom: '32px'
-    }}>
-      {/* Highlights Bar */}
+    <section aria-labelledby="performance-title" style={chartCardStyle}>
+      <header style={{ marginBottom: '24px' }}>
+        <h3 id="performance-title" style={{ margin: 0, color: chartColors.dark, fontSize: '1.4rem', fontWeight: 800 }}>
+          Performance
+        </h3>
+        <p style={{ margin: '6px 0 0', color: chartColors.text, fontSize: '13px' }}>
+          Follow your training volume and pace over time.
+        </p>
+      </header>
+
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
         gap: '12px',
-        marginBottom: '28px'
+        marginBottom: '28px',
       }}>
-        {[
-          { label: 'LONGEST RUN (30D)', val: `${highlights.longestRun} km`, sub: 'Peak Endurance', color: '#FC4C02', icon: '🏔️' },
-          { label: 'AVG WEEKLY VOLUME', val: `${highlights.avgWeeklyKm} km`, sub: 'Current Baseline', color: '#0284C7', icon: '📈' },
-          { label: 'BEST TRAINING PACE', val: highlights.fastestPace, sub: 'Top Speed', color: '#16A34A', icon: '⚡' },
-          { label: 'RUNS THIS MONTH', val: `${highlights.totalRunsMonth}`, sub: 'Consistency', color: '#F59E0B', icon: '🔥' },
-        ].map((h, i) => (
-          <div key={i} style={{
+        {highlights.map((highlight) => (
+          <article key={highlight.label} style={{
             background: '#F8FAFC',
             border: '1px solid #E2E8F0',
             borderRadius: '14px',
             padding: '16px 18px',
-            transition: 'transform 0.15s, border-color 0.15s'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '1.1rem' }}>{h.icon}</span>
-              <span style={{ fontFamily: 'monospace', fontSize: '9px', fontWeight: 700, color: '#64748B', letterSpacing: '0.5px' }}>
-                {h.label}
-              </span>
-            </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>
-              {h.val}
-            </div>
-            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
-              {h.sub}
-            </div>
-          </div>
+            <p style={{ margin: 0, color: chartColors.text, fontFamily: 'monospace', fontSize: '10px', fontWeight: 700, letterSpacing: '0.4px' }}>
+              {highlight.label}
+            </p>
+            <p style={{ margin: '8px 0 2px', color: chartColors.dark, fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.15 }}>
+              {highlight.value}
+            </p>
+            <p style={{ margin: 0, color: chartColors.text, fontSize: '11px' }}>{highlight.detail}</p>
+          </article>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
         <div>
-          <h4 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-            {activeTab === 'volume' ? 'Weekly Volume Progression (Last 8 Weeks)' : 'Pace Consistency & Aerobic Engine'}
+          <h4 style={{ margin: 0, color: chartColors.dark, fontSize: '1.05rem', fontWeight: 750 }}>
+            {activeTab === 'volume' ? 'Weekly distance' : 'Weekly average pace'}
           </h4>
-          <p style={{ color: '#64748B', fontSize: '12px', margin: '4px 0 0 0' }}>
-            {activeTab === 'volume' 
-              ? 'Tracking weekly distance to safely build aerobic capacity.'
-              : 'Remember: Easy pace builds your engine — 80% of your runs should feel slow & conversational.'}
+          <p style={{ margin: '4px 0 0', color: chartColors.text, fontSize: '12px' }}>
+            Last 8 weeks · current week is still in progress
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', background: '#F1F5F9', padding: '4px', borderRadius: '10px' }}>
-          <button
-            onClick={() => setActiveTab('volume')}
-            style={{
-              background: activeTab === 'volume' ? '#FFFFFF' : 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 14px',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: activeTab === 'volume' ? '#FC4C02' : '#64748B',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'volume' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
-            }}
-          >
-            📊 Weekly Volume
-          </button>
-          <button
-            onClick={() => setActiveTab('pace')}
-            style={{
-              background: activeTab === 'pace' ? '#FFFFFF' : 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 14px',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: activeTab === 'pace' ? '#FC4C02' : '#64748B',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'pace' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
-            }}
-          >
-            ⚡ Pace Trend
-          </button>
+        <div role="group" aria-label="Performance chart view" style={{ display: 'flex', gap: '4px', background: '#F1F5F9', padding: '4px', borderRadius: '10px' }}>
+          {(['volume', 'pace'] as const).map((tab) => {
+            const selected = activeTab === tab
+            return (
+              <button
+                key={tab}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  border: 'none',
+                  borderRadius: '7px',
+                  padding: '8px 12px',
+                  background: selected ? '#FFFFFF' : 'transparent',
+                  color: selected ? chartColors.orange : chartColors.text,
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: selected ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                }}
+              >
+                {tab === 'volume' ? 'Distance' : 'Pace'}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* ── 1. Weekly Volume Bar Chart ── */}
-      {activeTab === 'volume' && (
-        <div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            gap: '12px',
-            height: '200px',
-            paddingTop: '20px',
-            borderBottom: '1px solid #E2E8F0',
-            marginBottom: '16px'
+      {!hasWeeklyRuns ? (
+        <div role="status" style={{
+          display: 'grid',
+          placeItems: 'center',
+          minHeight: '240px',
+          padding: '24px',
+          border: '1px dashed #CBD5E1',
+          borderRadius: '14px',
+          color: chartColors.text,
+          textAlign: 'center',
+          fontSize: '14px',
+        }}>
+          Sync recent Strava activities to see your performance trends.
+        </div>
+      ) : activeTab === 'volume' ? (
+        <div role="img" aria-label="Bar chart showing weekly running distance for the last eight weeks" style={{ width: '100%', height: '280px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={weeklyData} margin={{ top: 10, right: 8, left: 0, bottom: 12 }}>
+              <CartesianGrid stroke={chartColors.grid} strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: chartColors.text, fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={8} />
+              <YAxis tick={{ fill: chartColors.text, fontSize: 11 }} tickLine={false} axisLine={false} width={48} tickFormatter={(value) => `${value} km`} />
+              <Tooltip
+                formatter={(value) => [`${Number(value).toFixed(1)} km`, 'Distance']}
+                labelFormatter={(label) => `Week of ${label}`}
+                contentStyle={{ borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}
+              />
+              <Bar dataKey="distanceKm" name="Distance" fill={chartColors.orange} radius={[6, 6, 0, 0]} maxBarSize={42} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        weeklyData.some((week) => week.avgPaceSecPerKm !== undefined) ? (
+          <div role="img" aria-label="Line chart showing average running pace for the last eight weeks; a faster pace is higher on the chart" style={{ width: '100%', height: '280px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklyData} margin={{ top: 10, right: 16, left: 0, bottom: 12 }}>
+                <CartesianGrid stroke={chartColors.grid} strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: chartColors.text, fontSize: 11 }} tickLine={false} axisLine={false} minTickGap={8} />
+                <YAxis
+                  reversed
+                  domain={['dataMin - 15', 'dataMax + 15']}
+                  width={52}
+                  tick={{ fill: chartColors.text, fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => formatPace(Number(value))}
+                />
+                <Tooltip
+                  formatter={(value) => [formatPace(Number(value)), 'Average pace']}
+                  labelFormatter={(label) => `Week of ${label}`}
+                  contentStyle={{ borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}
+                />
+                <Line dataKey="avgPaceSecPerKm" name="Average pace" type="monotone" stroke={chartColors.blue} strokeWidth={3} connectNulls dot={{ r: 4, fill: chartColors.blue, strokeWidth: 2, stroke: '#FFFFFF' }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div role="status" style={{
+            display: 'grid',
+            placeItems: 'center',
+            minHeight: '240px',
+            padding: '24px',
+            border: '1px dashed #CBD5E1',
+            borderRadius: '14px',
+            color: chartColors.text,
+            textAlign: 'center',
+            fontSize: '14px',
           }}>
-            {weekData.map((w, idx) => {
-              const heightPct = Math.max(6, Math.min(100, Math.round((w.km / maxKm) * 100)))
-              const color = w.type === 'build' ? '#FC4C02' : w.type === 'recovery' ? '#0284C7' : '#16A34A'
-              return (
-                <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#0F172A', marginBottom: '6px' }}>
-                    {w.km > 0 ? `${w.km}k` : '—'}
-                  </div>
-                  <div style={{
-                    width: '100%',
-                    maxWidth: '38px',
-                    height: `${heightPct}%`,
-                    background: w.km > 0 ? color : '#E2E8F0',
-                    borderRadius: '8px 8px 3px 3px',
-                    transition: 'height 0.4s ease',
-                    boxShadow: w.km > 0 ? `0 4px 12px ${color}33` : 'none'
-                  }} />
-                  <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#64748B', marginTop: '8px', textAlign: 'center' }}>
-                    {w.label}
-                  </div>
-                </div>
-              )
-            })}
+            Sync a few recent runs with valid pace data to see your pace trend.
           </div>
-
-          {/* Legend */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '11px', color: '#64748B', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#FC4C02' }} />
-              <span>Build Week (+Volume)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#16A34A' }} />
-              <span>Maintain Week (Steady)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#0284C7' }} />
-              <span>Recovery Week (Absorb)</span>
-            </div>
-          </div>
-        </div>
+        )
       )}
-
-      {/* ── 2. Pace Trend Chart ── */}
-      {activeTab === 'pace' && (
-        <div>
-          {paceHistory.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#64748B', fontSize: '13px' }}>
-              Log or sync a few runs to see your pace progression trend line.
-            </div>
-          ) : (
-            <div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                gap: '8px',
-                marginBottom: '16px'
-              }}>
-                {paceHistory.slice(-8).map((p, idx) => (
-                  <div key={idx} style={{
-                    background: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '10px',
-                    padding: '10px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '10px', color: '#64748B', marginBottom: '2px' }}>{p.date} · {p.km}km</div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#FC4C02' }}>{p.paceFormatted}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Slow-to-Fast Coaching Callout */}
-              <div style={{
-                background: '#EFF6FF',
-                borderLeft: '4px solid #0284C7',
-                borderRadius: '0 10px 10px 0',
-                padding: '12px 16px',
-                fontSize: '12px',
-                color: '#1E3A8A',
-                lineHeight: 1.5
-              }}>
-                💡 <strong>The Golden Rule:</strong> Running slow is not a sign of weakness; it is the scientific trigger that grows mitochondria, heart stroke volume, and capillary density. Run 80% of your miles so easy that you can chat effortlessly.
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </section>
   )
 }

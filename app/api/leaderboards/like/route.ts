@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,11 +16,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
+  const runner = await getCurrentRunner()
+  if (!runner) {
+    return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
+  }
+
   const body = await req.json()
-  const { userId, leaderboardType, targetUserId } = body
-  
-  if (!userId || !leaderboardType || !targetUserId) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  const { userId: requestedUserId, leaderboardType, targetUserId } = body
+  if (requestedUserId && requestedUserId !== runner.id) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  }
+  const userId = runner.id
+
+  if (typeof leaderboardType !== 'string' || typeof targetUserId !== 'string' || !targetUserId || targetUserId.length > 30) {
+    return NextResponse.json({ error: 'Invalid fields' }, { status: 400 })
   }
 
   // Validate leaderboardType to prevent arbitrary data
@@ -29,11 +39,8 @@ export async function POST(req: Request) {
   }
 
   // Verify both users exist
-  const [user, target] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
-    prisma.user.findUnique({ where: { id: targetUserId } }),
-  ])
-  if (!user || !target) {
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } })
+  if (!target) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 

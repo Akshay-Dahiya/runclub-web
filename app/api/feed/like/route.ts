@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
+import { getCurrentRunner } from '../../../../lib/auth/runner'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +15,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too many likes. Please wait.' }, { status: 429 })
     }
 
-    const { runId, userId: passedUserId } = await req.json()
-    if (!runId) {
+    const runner = await getCurrentRunner()
+    if (!runner) {
+      return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
+    }
+
+    const { runId, userId: requestedUserId } = await req.json()
+    if (requestedUserId && requestedUserId !== runner.id) {
+      return NextResponse.json({ error: 'Run not found' }, { status: 404 })
+    }
+    if (typeof runId !== 'string') {
       return NextResponse.json({ error: 'Missing runId' }, { status: 400 })
     }
 
@@ -24,21 +33,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Run not found' }, { status: 404 })
     }
 
-    let userId = passedUserId
-    if (!userId) {
-      // Find or create guest liker profile
-      const email = `guest_hype_${ip.replace(/[^a-z0-9]/g, '_').slice(0, 15)}@runclub.local`
-      const guestUser = await prisma.user.upsert({
-        where: { email },
-        update: {},
-        create: {
-          email,
-          name: 'Cheering Teammate',
-          initials: 'CT'
-        }
-      })
-      userId = guestUser.id
-    }
+    const userId = runner.id
 
     // Check if already liked
     const existing = await prisma.like.findFirst({

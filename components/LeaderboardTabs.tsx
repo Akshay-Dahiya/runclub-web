@@ -26,7 +26,7 @@ export default function LeaderboardTabs(){
   async function toggleLike(targetUserId:string){
     const userId = (session as any)?.user?.id as string | undefined
     if (!userId) {
-      alert('Please sign in to give kudos')
+      alert('Connect Strava to give kudos')
       return
     }
     await fetch('/api/leaderboards/like', { method: 'POST', body: JSON.stringify({ leaderboardType: active, targetUserId }), headers: { 'Content-Type':'application/json' }, credentials: 'include' })

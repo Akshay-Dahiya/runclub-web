@@ -7,7 +7,6 @@ import Image from 'next/image'
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [connectedUser, setConnectedUser] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,17 +14,6 @@ export default function Navbar() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('runclub_active_user')
-      if (saved) {
-        try {
-          setConnectedUser(JSON.parse(saved))
-        } catch (e) {}
-      }
-    }
   }, [])
 
   return (
@@ -91,8 +79,8 @@ export default function Navbar() {
           <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Dashboard
           </Link>
-          <Link href="/#goals" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-            Goals
+          <Link href="/stories" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
+            Stories
           </Link>
           <Link href="/#feed" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Feed
@@ -100,58 +88,33 @@ export default function Navbar() {
           <Link href="/#leaderboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Leaderboard
           </Link>
-          {connectedUser ? (
-            <Link
-              href={`/dashboard/${connectedUser.id}`}
-              style={{
-                background: '#F8FAFC',
-                border: '1.5px solid #FC4C02',
-                color: '#FC4C02',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 700,
-                padding: '8px 18px',
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 8px rgba(252,76,2,0.1)'
-              }}
-            >
-              <span style={{
-                width: '8px', height: '8px', borderRadius: '50%', background: '#16A34A', display: 'inline-block'
-              }} />
-              <span>{connectedUser.name}</span>
-              <span style={{ fontSize: '11px', color: '#64748B' }}>⚡</span>
-            </Link>
-          ) : (
-            <a
-              href="/api/strava"
-              style={{
-                background: '#FC4C02',
-                color: '#FFFFFF',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 700,
-                padding: '10px 20px',
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 14px rgba(252,76,2,0.25)',
-                transition: 'transform 0.15s'
-              }}
-            >
-              <span>Connect Strava</span>
-              <span>⚡</span>
-            </a>
-          )}
+          <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
+            Join with Strava
+          </Link>
+          <Link href="/signup" style={{
+            background: '#FC4C02',
+            color: '#FFFFFF',
+            textDecoration: 'none',
+            fontSize: '13px',
+            fontWeight: 700,
+            padding: '10px 20px',
+            borderRadius: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 4px 14px rgba(252,76,2,0.25)',
+          }}>
+            Connect Strava
+          </Link>
         </nav>
 
         {/* Mobile Toggle Button */}
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="mobile-toggle"
+          aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isOpen}
+          aria-controls="mobile-navigation"
           style={{
             background: 'none',
             border: 'none',
@@ -161,13 +124,17 @@ export default function Navbar() {
             padding: '4px'
           }}
         >
-          {isOpen ? '✕' : '☰'}
+          <span aria-hidden="true" style={{ position: 'relative', display: 'block', width: '20px', height: '16px' }}>
+            <span style={{ position: 'absolute', top: '1px', left: 0, right: 0, height: '2px', borderRadius: '2px', background: '#0F172A', transform: isOpen ? 'translateY(6px) rotate(45deg)' : 'none', transition: 'transform 0.18s' }} />
+            <span style={{ position: 'absolute', top: '7px', left: 0, right: 0, height: '2px', borderRadius: '2px', background: '#0F172A', opacity: isOpen ? 0 : 1, transition: 'opacity 0.18s' }} />
+            <span style={{ position: 'absolute', top: '13px', left: 0, right: 0, height: '2px', borderRadius: '2px', background: '#0F172A', transform: isOpen ? 'translateY(-6px) rotate(-45deg)' : 'none', transition: 'transform 0.18s' }} />
+          </span>
         </button>
       </div>
 
       {/* Mobile Menu Dropdown */}
       {isOpen && (
-        <div style={{
+        <div id="mobile-navigation" style={{
           background: '#FFFFFF',
           borderTop: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -175,8 +142,8 @@ export default function Navbar() {
           flexDirection: 'column',
           gap: '16px'
         }}>
-          <Link href="/#goals" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
-            Goals
+          <Link href="/stories" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
+            Stories
           </Link>
           <Link href="/#feed" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
             Activity Feed
@@ -184,24 +151,21 @@ export default function Navbar() {
           <Link href="/#leaderboard" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
             Leaderboard
           </Link>
-          <Link href="/#dashboard" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
-            My Dashboard
+          <Link href="/login" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
+            Join with Strava
           </Link>
-          <a
-            href="/api/strava"
-            style={{
-              background: '#FC4C02',
-              color: '#FFFFFF',
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: 700,
-              padding: '12px 20px',
-              borderRadius: '12px',
-              textAlign: 'center'
-            }}
-          >
-            Connect with Strava ⚡
-          </a>
+          <Link href="/signup" onClick={() => setIsOpen(false)} style={{
+            background: '#FC4C02',
+            color: '#FFFFFF',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: 700,
+            padding: '12px 20px',
+            borderRadius: '12px',
+            textAlign: 'center'
+          }}>
+            Connect Strava
+          </Link>
         </div>
       )}
 

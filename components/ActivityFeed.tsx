@@ -17,11 +17,8 @@ interface Run {
   distanceKm: number
   durationSec: number
   paceSecPerKm: number
-  avgHeartRate: number | null
   date: string
-  notes: string | null
   source: string
-  strava_activity_id?: string | null
   likesCount?: number
   comments?: Comment[]
   user: {
@@ -72,12 +69,14 @@ function RunCard({
   run,
   index,
   onLike,
-  isLiked
+  isLiked,
+  isSignedIn,
 }: {
   run: Run
   index: number
   onLike: (id: string) => void
   isLiked: boolean
+  isSignedIn: boolean
 }) {
   const color = AVATAR_COLORS[index % AVATAR_COLORS.length]
   const [likes, setLikes] = useState(run.likesCount || 0)
@@ -89,6 +88,7 @@ function RunCard({
   const isStravaRun = run.source === 'strava'
 
   const handleLikeClick = () => {
+    if (!isSignedIn) return
     onLike(run.id)
     setLikes(l => (isLiked ? Math.max(0, l - 1) : l + 1))
   }
@@ -99,21 +99,10 @@ function RunCard({
 
     setSubmittingComment(true)
     try {
-      let activeUser: any = null
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('runclub_active_user')
-        if (saved) activeUser = JSON.parse(saved)
-      }
-
       const res = await fetch('/api/feed/comment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          runId: run.id,
-          text: newComment,
-          authorName: activeUser?.name || 'Teammate',
-          authorUserId: activeUser?.id
-        })
+        body: JSON.stringify({ runId: run.id, text: newComment }),
       })
 
       const data = await res.json()
@@ -213,11 +202,10 @@ function RunCard({
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
         {[
           { label: 'PACE', value: fmtPace(run.paceSecPerKm) },
           { label: 'TIME', value: fmtDuration(run.durationSec) },
-          { label: 'HEART RATE', value: run.avgHeartRate ? `${run.avgHeartRate} bpm` : '—' },
         ].map(stat => (
           <div
             key={stat.label}
@@ -239,70 +227,44 @@ function RunCard({
         ))}
       </div>
 
-      {run.notes && (
-        <div style={{ fontSize: '13px', color: '#475569', fontStyle: 'italic', borderLeft: '3px solid #CBD5E1', paddingLeft: '10px' }}>
-          &ldquo;{run.notes}&rdquo;
-        </div>
-      )}
-
-      {/* Like & Comments Action Row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={handleLikeClick}
-            style={{
-              background: isLiked ? '#FFF7ED' : '#F8FAFC',
-              border: `1.5px solid ${isLiked ? '#FC4C02' : '#E2E8F0'}`,
-              borderRadius: '20px',
-              padding: '6px 14px',
-              color: isLiked ? '#FC4C02' : '#64748B',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.15s',
-            }}
-          >
-            🔥 {isLiked ? 'Hyped' : 'Hype'} {likes > 0 ? `(${likes})` : ''}
-          </button>
-
-          <button
-            onClick={() => setShowCommentBox(prev => !prev)}
-            style={{
-              background: '#F8FAFC',
-              border: '1.5px solid #E2E8F0',
-              borderRadius: '20px',
-              padding: '6px 14px',
-              color: '#64748B',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            💬 {comments.length > 0 ? `${comments.length}` : 'Comment'}
-          </button>
-        </div>
-
-        {run.strava_activity_id && (
-          <a
-            href={`https://www.strava.com/activities/${run.strava_activity_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: '11px',
-              fontFamily: 'monospace',
-              color: '#FC4C02',
-              fontWeight: 700,
-              textDecoration: 'none',
-            }}
-          >
-            View on Strava ↗
-          </a>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderTop: '1px solid #F1F5F9', paddingTop: '14px' }}>
+        {isSignedIn ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={handleLikeClick}
+              style={{
+                background: isLiked ? '#FFF7ED' : '#F8FAFC',
+                border: `1.5px solid ${isLiked ? '#FC4C02' : '#E2E8F0'}`,
+                borderRadius: '20px',
+                padding: '6px 14px',
+                color: isLiked ? '#FC4C02' : '#64748B',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {isLiked ? 'Hyped' : 'Hype'} {likes > 0 ? `(${likes})` : ''}
+            </button>
+            <button
+              onClick={() => setShowCommentBox((previous) => !previous)}
+              style={{
+                background: '#F8FAFC',
+                border: '1.5px solid #E2E8F0',
+                borderRadius: '20px',
+                padding: '6px 14px',
+                color: '#64748B',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {comments.length > 0 ? `${comments.length} comments` : 'Comment'}
+            </button>
+          </div>
+        ) : (
+          <Link href="/login" style={{ color: '#FC4C02', fontSize: '12px', fontWeight: 700 }}>
+            Connect Strava to react or comment
+          </Link>
         )}
       </div>
 
@@ -322,47 +284,54 @@ function RunCard({
             </div>
           )}
 
-          <form onSubmit={handleCommentSubmit} style={{ display: 'flex', gap: '6px' }}>
-            <input
-              type="text"
-              placeholder="Drop some hype or encouragement..."
-              value={newComment}
-              onChange={e => setNewComment(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                fontSize: '12px',
-                outline: 'none',
-                background: '#FFFFFF',
-              }}
-            />
-            <button
-              type="submit"
-              disabled={submittingComment || !newComment.trim()}
-              style={{
-                background: '#FC4C02',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: newComment.trim() ? 'pointer' : 'default',
-                opacity: newComment.trim() ? 1 : 0.6,
-              }}
-            >
-              Post
-            </button>
-          </form>
+          {isSignedIn ? (
+            <form onSubmit={handleCommentSubmit} style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="text"
+                aria-label="Write a comment"
+                placeholder="Drop some hype or encouragement..."
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '12px',
+                  outline: 'none',
+                  background: '#FFFFFF',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={submittingComment || !newComment.trim()}
+                style={{
+                  background: '#FC4C02',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: newComment.trim() ? 'pointer' : 'default',
+                  opacity: newComment.trim() ? 1 : 0.6,
+                }}
+              >
+                Post
+              </button>
+            </form>
+          ) : (
+            <Link href="/login" style={{ color: '#FC4C02', fontSize: '12px', fontWeight: 700 }}>
+              Connect Strava to join the conversation
+            </Link>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-export default function ActivityFeed() {
+export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: boolean }) {
   const [runs, setRuns] = useState<Run[]>([])
   const [mostImproved, setMostImproved] = useState<MostImprovedRunner[]>([])
   const [loading, setLoading] = useState(true)
@@ -395,6 +364,8 @@ export default function ActivityFeed() {
   })
 
   const handleLike = async (runId: string) => {
+    if (!isSignedIn) return
+
     setLikedIds(prev => {
       const next = new Set(prev)
       if (next.has(runId)) next.delete(runId)
@@ -403,16 +374,10 @@ export default function ActivityFeed() {
     })
 
     try {
-      let activeUser: any = null
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('runclub_active_user')
-        if (saved) activeUser = JSON.parse(saved)
-      }
-
       await fetch('/api/feed/like', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ runId, userId: activeUser?.id })
+        body: JSON.stringify({ runId }),
       })
     } catch (e) {
       console.warn('Like sync failed:', e)
@@ -568,6 +533,7 @@ export default function ActivityFeed() {
               index={i}
               onLike={handleLike}
               isLiked={likedIds.has(run.id)}
+              isSignedIn={isSignedIn}
             />
           ))}
         </div>

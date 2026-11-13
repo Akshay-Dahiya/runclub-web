@@ -4,7 +4,7 @@ import { Providers } from './providers'
 
 export const metadata = {
   title: 'Joyville Road Runners',
-  description: 'A social platform for runners to share their runs, compete on leaderboards, and connect with fellow athletes.',
+  description: 'Run together, follow club activities, and share stories with the Joyville Road Runners community.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

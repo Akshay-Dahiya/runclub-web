@@ -169,7 +169,7 @@ export default function TrainingPlanView({ plan, onWorkoutUpdated }: TrainingPla
       </div>
 
       {/* Workouts Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '16px' }}>
         {selectedWeek.workouts.map((wo: any, idx: number) => {
           const badgeColor = getBadgeColor(wo.type)
           const isDone = wo.status === 'done'

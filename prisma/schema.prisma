@@ -28,6 +28,7 @@ model User {
   checklistItems  ChecklistItem[]
   coachProfile    CoachProfile?
   trainingPlans   TrainingPlan[]
+  stories         ClubStory[]
 
   // Strava integration columns
   strava_athlete_id       BigInt?
@@ -249,4 +250,16 @@ model PlanOverride {
   km    Float
 
   @@unique([plan, week, day])
+}
+
+model ClubStory {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String   @db.VarChar(2000)
+  imagePath String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([authorId, createdAt])
 }

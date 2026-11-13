@@ -100,7 +100,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
         margin: '0 auto 36px auto',
         fontWeight: 400
       }}>
-        Connect Strava, see your progress, and pick small goals you can actually hit. <strong>No event needed.</strong>
+        Connect Strava, follow your runs, and share stories with the group. <strong>No event needed.</strong>
       </p>
 
       {/* Big Orange 1-Click Strava Button */}
@@ -156,7 +156,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
           <span>📊</span> Weekly Mileage Charts
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '8px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-          <span>🎯</span> Achievable Micro-Goals
+          <span aria-hidden="true" style={{ color: '#FC4C02', fontSize: '11px', fontWeight: 900 }}>ST</span> Club Stories
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '8px 16px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <span>🐢</span> Zero Pace Shaming

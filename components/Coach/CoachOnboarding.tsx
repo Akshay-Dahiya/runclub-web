@@ -134,7 +134,7 @@ export default function CoachOnboarding({
       background: 'var(--surface)',
       border: '1px solid var(--border)',
       borderRadius: '16px',
-      padding: '36px',
+      padding: 'clamp(16px, 5vw, 36px)',
       maxWidth: '800px',
       margin: '0 auto',
       boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
@@ -165,7 +165,7 @@ export default function CoachOnboarding({
       {/* Step Stepper */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
         gap: '8px',
         marginBottom: '32px',
         borderBottom: '1px solid var(--border)',
@@ -201,7 +201,7 @@ export default function CoachOnboarding({
               }}>
                 {isDone ? '✓' : s.num}
               </div>
-              <div style={{ fontSize: '10px', fontFamily: 'monospace', color: isActive ? 'var(--text)' : 'var(--muted)', fontWeight: isActive ? 700 : 400 }}>
+              <div style={{ fontSize: 'clamp(7px, 2.4vw, 10px)', fontFamily: 'monospace', color: isActive ? 'var(--text)' : 'var(--muted)', fontWeight: isActive ? 700 : 400 }}>
                 {s.label}
               </div>
             </div>
@@ -270,7 +270,7 @@ export default function CoachOnboarding({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px', marginBottom: '24px' }}>
             <div>
               <label style={{ display: 'block', fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '6px' }}>
                 CURRENT WEEKLY MILEAGE (KM / WEEK)
@@ -404,7 +404,7 @@ export default function CoachOnboarding({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px', marginBottom: '24px' }}>
             <div>
               <label style={{ display: 'block', fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '6px' }}>
                 WHERE DO YOU RUN?
@@ -500,7 +500,7 @@ export default function CoachOnboarding({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px', marginBottom: '24px' }}>
             <div>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px' }}>
                 <input
@@ -568,7 +568,7 @@ export default function CoachOnboarding({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px', marginBottom: '24px' }}>
             <div>
               <label style={{ display: 'block', fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '6px' }}>
                 AVERAGE SLEEP PER NIGHT (HOURS)
@@ -614,7 +614,7 @@ export default function CoachOnboarding({
             <label style={{ display: 'block', fontFamily: 'monospace', fontSize: '11px', color: 'var(--muted)', marginBottom: '10px' }}>
               TARGET RACE DISTANCE
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
               {[
                 { id: '5K', label: '5K', dist: '5 km' },
                 { id: '10K', label: '10K', dist: '10.5 km' },

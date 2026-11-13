@@ -1,17 +1,18 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import RunnerSignOutButton from '../Auth/RunnerSignOutButton'
 import AICoachWidget from '../AICoach/AICoachWidget'
 import CoachDashboard from '../Coach/CoachDashboard'
 import PerformanceCharts from '../PerformanceCharts'
-import MicroGoalsWidget from '../MicroGoalsWidget'
 type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
   strava: {
     name: 'Strava',
     color: '#FC4C02',
-    blurb: 'Work in progress to link with Strava. Will automatically sync your runs soon.',
+    blurb: 'Import runs from your Strava account and keep your training history in sync.',
   }
 }
 
@@ -93,7 +94,9 @@ export default function DashboardClient({
   plannedKm,
   status,
   pct,
-  totalTarget
+  totalTarget,
+  isOwner = false,
+  viewerRunnerName = null,
 }: any) {
   const uniqueRunsMap = new Map()
   if (initialDbUser?.runs) {
@@ -119,7 +122,7 @@ export default function DashboardClient({
 
   // Auto sync logic on dashboard load
   useEffect(() => {
-    if (dbUser.strava_connected && dbUser.id) {
+    if (isOwner && dbUser.strava_connected && dbUser.id) {
       const lastSynced = dbUser.last_synced_at ? new Date(dbUser.last_synced_at) : null
       const now = new Date()
       const thirtyMins = 30 * 60 * 1000
@@ -127,7 +130,7 @@ export default function DashboardClient({
       
       if (shouldAutoSync) {
         console.log('[Strava] Triggering background auto-sync...')
-        fetch(`/api/strava/sync/${dbUser.id}`)
+        fetch(`/api/strava/sync/${dbUser.id}`, { method: 'POST' })
           .then(res => res.json())
           .then(data => {
             console.log('[Strava] Background auto-sync finished:', data)
@@ -138,10 +141,11 @@ export default function DashboardClient({
           .catch(err => console.error('[Strava] Background auto-sync failed:', err))
       }
     }
-  }, [dbUser])
+  }, [dbUser, isOwner])
 
   // Disconnect handler
   const handleDisconnect = async () => {
+    if (!isOwner) return
     if (!confirm("Disconnect Strava? Your already-logged runs will be kept. New runs won't sync automatically.")) return
     setLoading(true)
     try {
@@ -173,6 +177,7 @@ export default function DashboardClient({
 
   const handleLogRun = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isOwner) return
     setLoading(true)
     try {
       const distKm = parseFloat(distance)
@@ -258,7 +263,7 @@ export default function DashboardClient({
   }
 
   const handleDeleteRun = async (runId: string) => {
-    if (!confirm('Delete this run?')) return
+    if (!isOwner || !confirm('Delete this run?')) return
     await fetch(`/api/runs?id=${runId}`, { method: 'DELETE' })
     window.location.reload()
   }
@@ -304,10 +309,30 @@ export default function DashboardClient({
           ▶ Personal dashboard
         </p>
         <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
-          Welcome back, {dbUser.name.split(' ')[0]} 👋
+          {isOwner ? `Welcome back, ${dbUser.name.split(' ')[0]}` : `${dbUser.name}'s running profile`}
         </h1>
+        {isOwner ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+            <span style={{ color: 'var(--muted)', fontSize: '13px' }}>Connected as {viewerRunnerName}</span>
+            <RunnerSignOutButton />
+          </div>
+        ) : (
+          <div role="status" style={{ maxWidth: '680px', border: '1px solid var(--border)', borderRadius: '8px', padding: '18px 20px', marginBottom: '28px', background: 'var(--surface)' }}>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: '0 0 14px' }}>
+              {viewerRunnerName
+                ? `You are connected as ${viewerRunnerName}. Open your own profile to manage your training.`
+                : 'This profile is public. Connect Strava to create your profile, log runs, and open private coaching.'}
+            </p>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {viewerRunnerName && <RunnerSignOutButton />}
+              <Link href="/api/strava" style={{ color: 'var(--orange)', fontWeight: 700, textDecoration: 'none' }}>Connect Strava</Link>
+            </div>
+          </div>
+        )}
         <p style={{ maxWidth: '580px', fontSize: '1rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '32px' }}>
-          Your personal performance hub. Connect Strava to track weekly mileage, view pace progression, and tackle small achievable goals.
+          {isOwner
+            ? 'Your private performance hub. Connect Strava to sync runs, review your training plan, and work with your coach.'
+            : 'Training totals and run history are public. Heart-rate details, notes, coaching, and device controls are private to the runner.'}
         </p>
 
         {/* ── 01. PERFORMANCE CHARTS ── */}
@@ -315,15 +340,10 @@ export default function DashboardClient({
           <PerformanceCharts runs={dbUser.runs || []} />
         </div>
 
-        {/* ── 02. ACHIEVABLE MICRO-GOALS ── */}
-        <div style={{ marginBottom: '48px' }}>
-          <MicroGoalsWidget runs={dbUser.runs || []} userId={dbUser.id} />
-        </div>
-
       </section>
 
       {/* ── MISSED RUN ALERT ─────────────────────────────── */}
-      <MissedRunAlert runs={dbUser.runs} participantDef={participantDef} userId={dbUser?.id} />
+      {isOwner && <MissedRunAlert runs={dbUser.runs} participantDef={participantDef} userId={dbUser?.id} />}
 
       {/* ── ACHIEVEMENTS / BADGES ───────────────────────── */}
       <section style={{ marginBottom: '80px' }}>
@@ -331,9 +351,15 @@ export default function DashboardClient({
         <AchievementsBadges runs={dbUser.runs} />
       </section>
 
-      {/* ── RACE DAY CHECKLIST ──────────────────────────── */}
-      <RaceDayChecklist userId={dbUser?.id} />
+      {isOwner && (
+        <>
+          {/* ── RACE DAY CHECKLIST ──────────────────────────── */}
+          <RaceDayChecklist userId={dbUser?.id} />
+        </>
+      )}
 
+      {isOwner && (
+      <>
       {/* 01 — LOG A RUN */}
       <section style={{ marginBottom: '80px' }}>
         <SectionHead label="01 / Log Run" title="ADD YOUR SESSION" />
@@ -345,50 +371,50 @@ export default function DashboardClient({
           )}
           <form onSubmit={handleLogRun} className="form-row">
             <div className="form-group">
-              <label className="form-label">Distance (km)</label>
+              <label className="form-label" htmlFor="run-distance">Distance (km)</label>
               <input
-                type="number" step="0.01" min="0.01" required
+                id="run-distance" type="number" step="0.01" min="0.01" required
                 value={distance} onChange={e => setDistance(e.target.value)}
                 placeholder="5.00" className="form-input"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Date</label>
+              <label className="form-label" htmlFor="run-date">Date</label>
               <input
-                type="date" required
+                id="run-date" type="date" required
                 value={date} onChange={e => setDate(e.target.value)}
                 className="form-input"
               />
             </div>
             <div style={{ width: '100%', fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.8, color: 'var(--accent)', marginTop: '4px', marginBottom: '-4px' }}>Enter Pace OR Duration (optional)</div>
             <div className="form-group">
-              <label className="form-label">Pace (MM:SS)</label>
+              <label className="form-label" htmlFor="run-pace">Pace (MM:SS)</label>
               <input
-                type="text" placeholder="5:30"
+                id="run-pace" type="text" placeholder="5:30"
                 value={pace} onChange={e => setPace(e.target.value)}
                 className="form-input"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Duration (HH:MM) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
+              <label className="form-label" htmlFor="run-duration">Duration (HH:MM) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
               <input
-                type="text" placeholder="0:45"
+                id="run-duration" type="text" placeholder="0:45"
                 value={duration} onChange={e => setDuration(e.target.value)}
                 className="form-input"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Avg Heart Rate (bpm) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
+              <label className="form-label" htmlFor="run-heart-rate">Avg Heart Rate (bpm) <span style={{ opacity: 0.5, fontWeight: 'normal' }}>(optional)</span></label>
               <input
-                type="number" placeholder="e.g. 152" min="40" max="220"
+                id="run-heart-rate" type="number" placeholder="e.g. 152" min="40" max="220"
                 value={heartRate} onChange={e => setHeartRate(e.target.value)}
                 className="form-input"
               />
             </div>
             <div className="form-group" style={{ width: '100%' }}>
-              <label className="form-label">Notes</label>
+              <label className="form-label" htmlFor="run-notes">Notes</label>
               <input
-                type="text" placeholder="Felt great!"
+                id="run-notes" type="text" placeholder="Felt great!"
                 value={notes} onChange={e => setNotes(e.target.value)}
                 className="form-input"
               />
@@ -404,6 +430,8 @@ export default function DashboardClient({
           </form>
         </div>
       </section>
+      </>
+      )}
 
       {/* 02 — SNAPSHOT */}
       <section style={{ marginBottom: '80px' }}>
@@ -573,28 +601,30 @@ export default function DashboardClient({
                     )}
                   </div>
 
-                  {/* Delete button */}
-                  <div style={{
-                    width: '52px', flexShrink: 0,
-                    background: 'var(--surface)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    borderLeft: '1px solid var(--border)',
-                  }}>
-                    <button
-                      onClick={() => handleDeleteRun(r.id)}
-                      title="Delete run"
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--muted)', fontSize: '16px', padding: '8px',
-                        borderRadius: '4px', transition: 'color 0.2s, background 0.2s',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px'
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
-                    >
-                      ✕
-                    </button>
-                  </div>
+                  {isOwner && (
+                    <div style={{
+                      width: '52px', flexShrink: 0,
+                      background: 'var(--surface)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      borderLeft: '1px solid var(--border)',
+                    }}>
+                      <button
+                        onClick={() => handleDeleteRun(r.id)}
+                        title="Delete run"
+                        aria-label={`Delete run from ${dateStr}`}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--muted)', fontSize: '16px', padding: '8px',
+                          borderRadius: '4px', transition: 'color 0.2s, background 0.2s',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px'
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+                      >
+                        {'×'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -602,33 +632,32 @@ export default function DashboardClient({
         </section>
       )}
 
-      {/* 04 — INTEGRATIONS */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="04 / Integrations" title="CONNECT YOUR DEVICES" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-          {(Object.keys(providerMeta) as Provider[]).map(p => (
-            <ProviderCard
-              key={p}
-              provider={p}
-              dbUser={dbUser}
-              onDisconnect={handleDisconnect}
+      {isOwner && (
+        <>
+          {/* 04 — INTEGRATIONS */}
+          <section style={{ marginBottom: '80px' }}>
+            <SectionHead label="04 / Integrations" title="CONNECT YOUR DEVICES" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+              {(Object.keys(providerMeta) as Provider[]).map(p => (
+                <ProviderCard key={p} provider={p} dbUser={dbUser} onDisconnect={handleDisconnect} />
+              ))}
+              <GarminHealthStatusCard />
+            </div>
+          </section>
+
+          {/* 05 — RUNCLUB AI COACH */}
+          <section style={{ marginBottom: '80px' }}>
+            <SectionHead label="05 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
+            <CoachDashboard
+              userId={dbUser.id}
+              userName={dbUser.name || participantDef?.name || 'Runner'}
+              runs={dbUser.runs || []}
             />
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* 05 — RUNCLUB AI COACH */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="05 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
-        <CoachDashboard
-          userId={dbUser.id}
-          userName={dbUser.name || participantDef?.name || 'Runner'}
-          runs={dbUser.runs || []}
-        />
-      </section>
-
-      {/* AI COACH WIDGET */}
-      <AICoachWidget userId={dbUser.id} />
+          <AICoachWidget userId={dbUser.id} />
+        </>
+      )}
 
     </div>
   )
@@ -1032,6 +1061,27 @@ function LastSyncedLabel({ lastSyncedAt }: { lastSyncedAt: string | null }) {
   return <span>Last synced: {diffHrs} hour{diffHrs > 1 ? 's' : ''} ago</span>
 }
 
+function GarminHealthStatusCard() {
+  return (
+    <section
+      aria-labelledby="garmin-health-title"
+      style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: '4px', padding: '24px', background: 'var(--surface)' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, letterSpacing: '0.08em' }}>GARMIN</span>
+        <span role="status" style={{ fontFamily: 'monospace', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--muted)' }}>Setup pending</span>
+      </div>
+      <h3 id="garmin-health-title" style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 8px' }}>Garmin Health API</h3>
+      <p style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.6, flex: 1, margin: '0 0 16px' }}>
+        Garmin data sync is not enabled in this app yet. No health data is being requested or imported.
+      </p>
+      <button type="button" disabled aria-describedby="garmin-health-title" style={{ minHeight: '42px', border: '1px solid var(--border)', borderRadius: '4px', background: 'transparent', color: 'var(--muted)', fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'not-allowed' }}>
+        Connect unavailable
+      </button>
+    </section>
+  )
+}
+
 function ProviderCard({
   provider,
   dbUser,
@@ -1052,7 +1102,7 @@ function ProviderCard({
   const handleManualSync = async () => {
     setSyncing(true)
     try {
-      const res = await fetch(`/api/strava/sync/${dbUser.id}`)
+      const res = await fetch(`/api/strava/sync/${dbUser.id}`, { method: 'POST' })
       if (!res.ok) throw new Error('Sync failed')
       const data = await res.json()
       alert(`Sync complete! Synced: ${data.synced}, Skipped: ${data.skipped}`)

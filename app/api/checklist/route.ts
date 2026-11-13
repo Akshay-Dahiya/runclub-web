@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getCurrentRunner } from '../../../lib/auth/runner'
 import { prisma } from '../../../lib/prisma'
 import { createRateLimiter, getIP } from '../../../lib/rateLimit'
 
@@ -15,9 +16,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
-  const { userId, itemKey, checked } = await req.json()
-  if (!userId || !itemKey) {
-    return NextResponse.json({ error: 'Missing userId or itemKey' }, { status: 400 })
+  const runner = await getCurrentRunner()
+  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
+
+  const { userId: requestedUserId, itemKey, checked } = await req.json()
+  if (requestedUserId && requestedUserId !== runner.id) {
+    return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
+  }
+  const userId = runner.id
+  if (!itemKey) {
+    return NextResponse.json({ error: 'Missing itemKey' }, { status: 400 })
   }
 
   // Validate checked is a boolean
@@ -40,14 +48,23 @@ export async function POST(req: Request) {
     where: { userId_itemKey: { userId, itemKey } },
     update: { checked },
     create: { userId, itemKey, checked },
+    select: { itemKey: true, checked: true },
   })
   return NextResponse.json(item)
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const userId = searchParams.get('userId')
-  if (!userId) return NextResponse.json([], { status: 400 })
-  const items = await prisma.checklistItem.findMany({ where: { userId } })
+  const runner = await getCurrentRunner()
+  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
+
+  const requestedUserId = new URL(req.url).searchParams.get('userId')
+  if (requestedUserId && requestedUserId !== runner.id) {
+    return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
+  }
+
+  const items = await prisma.checklistItem.findMany({
+    where: { userId: runner.id },
+    select: { itemKey: true, checked: true },
+  })
   return NextResponse.json(items)
 }
