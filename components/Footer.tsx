@@ -47,7 +47,7 @@ export default function Footer() {
       </div>
 
       <div style={{ fontSize: '14px', color: '#64748B', maxWidth: '480px', lineHeight: 1.5 }}>
-        An open running community where anyone can track progress, hit micro-goals, and celebrate every mile.
+        An open running community where everyone can track progress, share stories, and celebrate every mile.
       </div>
 
       <div style={{
@@ -61,7 +61,7 @@ export default function Footer() {
         fontWeight: 600,
         fontFamily: 'monospace'
       }}>
-        ✨ &ldquo;{messages[msgIdx]}&rdquo;
+        &ldquo;{messages[msgIdx]}&rdquo;
       </div>
 
       <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '16px' }}>

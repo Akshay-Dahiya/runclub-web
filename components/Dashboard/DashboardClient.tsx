@@ -6,7 +6,6 @@ import RunnerSignOutButton from '../Auth/RunnerSignOutButton'
 import AICoachWidget from '../AICoach/AICoachWidget'
 import CoachDashboard from '../Coach/CoachDashboard'
 import PerformanceCharts from '../PerformanceCharts'
-import MicroGoalsWidget from '../MicroGoalsWidget'
 type Provider = 'strava'
 
 const providerMeta: Record<Provider, { name: string; color: string; blurb: string }> = {
@@ -340,13 +339,6 @@ export default function DashboardClient({
         <div style={{ marginBottom: '40px' }}>
           <PerformanceCharts runs={dbUser.runs || []} />
         </div>
-
-        {/* ── 02. ACHIEVABLE MICRO-GOALS ── */}
-        {isOwner && (
-          <div style={{ marginBottom: '48px' }}>
-            <MicroGoalsWidget runs={dbUser.runs || []} userId={dbUser.id} />
-          </div>
-        )}
 
       </section>
 

@@ -7,11 +7,10 @@ import Navbar from './Navbar'
 import Hero from './Hero'
 import Footer from './Footer'
 import ActivityFeed from './ActivityFeed'
+import ClubStories from './ClubStories'
 import ClubProgressBar from './ClubProgressBar'
-import InteractiveGoalPicker from './InteractiveGoalPicker'
 import InclusiveSection from './InclusiveSection'
 import PerformanceCharts from './PerformanceCharts'
-import MicroGoalsWidget from './MicroGoalsWidget'
 import { getStatus, grandTotal } from '../lib/planData'
 
 function DashboardPicker({ runners }: { runners: any[] }) {
@@ -169,10 +168,10 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
             <div>
               <span className="section-tag">// Runner Hub</span>
               <h2 className="section-title" style={{ marginBottom: '4px' }}>
-                Performance & Micro-Goals
+                Runner Performance
               </h2>
               <p className="section-sub" style={{ margin: 0 }}>
-                Live metrics, 8-week volume trends, and achievable weekly targets.
+                Weekly mileage and training trends at a glance.
               </p>
             </div>
 
@@ -298,41 +297,11 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
                 </div>
               </div>
 
-              {/* Performance Charts & Micro-Goals */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                <PerformanceCharts runs={currentDashboardRunner.runs || []} />
-                {viewerRunnerId === currentDashboardRunner.id ? (
-                  <MicroGoalsWidget runs={currentDashboardRunner.runs || []} userId={currentDashboardRunner.id} />
-                ) : (
-                  <div role="status" style={{ padding: '20px 22px', border: '1px solid #E2E8F0', borderRadius: '14px', background: '#FFFFFF' }}>
-                    <p style={{ margin: '0 0 12px', color: '#475569' }}>
-                      Weekly goals and coaching are private to the signed-in runner.
-                    </p>
-                    <Link href={viewerRunnerId ? `/dashboard/${viewerRunnerId}/coach` : '/login'} style={{ color: '#FC4C02', fontWeight: 700 }}>
-                      {viewerRunnerId ? 'Open my coaching' : 'Join with Strava to access coaching'}
-                    </Link>
-                  </div>
-                )}
-              </div>
+              <PerformanceCharts runs={currentDashboardRunner.runs || []} />
             </div>
           )}
         </div>
       </div>
-
-      {/* ── 01. INTERACTIVE GOAL PICKER (BITE-SIZED ACHIEVABLE GOALS) ── */}
-      <div className="section" id="goals" style={{ paddingTop: '60px', paddingBottom: '40px' }}>
-        <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 32px auto' }}>
-          <span className="section-tag">// Step 1 · Set Your Focus</span>
-          <h2 className="section-title">What Kind of Runner Are You Today?</h2>
-          <p className="section-sub" style={{ margin: '0 auto' }}>
-            Pick a focus below. RunClub will build 3 small, achievable weekly goals around your actual Strava miles.
-          </p>
-        </div>
-
-        <InteractiveGoalPicker />
-      </div>
-
-      <hr className="divider" />
 
       {/* ── 02. INCLUSIVE PHILOSOPHY (SLOW TO GET FAST) ── */}
       <div className="section" style={{ paddingTop: '40px', paddingBottom: '40px' }}>
@@ -478,7 +447,7 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
           <span className="section-tag">// Your Private Hub</span>
           <h2 className="section-title">Open Your Personal Dashboard</h2>
           <p className="section-sub" style={{ margin: '0 auto 32px auto' }}>
-            Connect Strava, track your performance charts, and review your weekly micro-goals.
+            Connect Strava and review your training history and performance charts.
           </p>
 
           <DashboardPicker runners={mappedUsers} />
@@ -488,6 +457,8 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
           </div>
         </div>
       </div>
+
+      <ClubStories viewerRunnerId={viewerRunnerId} variant="preview" />
 
       <Footer />
     </>
