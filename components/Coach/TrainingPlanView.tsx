@@ -87,6 +87,11 @@ export default function TrainingPlanView({ plan, onWorkoutUpdated }: TrainingPla
           <p style={{ color: 'var(--muted)', fontSize: '12px', margin: '4px 0 0 0' }}>
             Target: <strong style={{ color: 'var(--text)' }}>{fmtTime(plan.goalTimeSec)}</strong> · Peak Weekly Volume: {planData.peakWeeklyKm} km
           </p>
+          <p role="status" style={{ color: planData.aiPersonalized ? 'var(--accent)' : 'var(--muted)', fontSize: '11px', margin: '8px 0 0 0' }}>
+            {planData.aiPersonalized
+              ? 'Gemini-personalized coaching notes · workout structure remains safety-checked'
+              : 'AI notes unavailable · safety-checked training schedule active'}
+          </p>
         </div>
 
         {/* Pace Zones Quick Reference Pill */}

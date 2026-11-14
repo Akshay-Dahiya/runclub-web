@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { generateTrainingPlan } from '../../../../lib/training-engine'
+import { personalizeTrainingPlan } from '../../../../lib/ai-training-plan'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
       where: { userId },
     })
 
-    const generated = generateTrainingPlan({
+    const runnerProfile = {
       goalRace,
       goalTimeSec,
       goalRaceDate: goalRaceDate ? new Date(goalRaceDate) : (profile?.goalRaceDate || null),
@@ -71,7 +72,8 @@ export async function POST(req: Request) {
       currentInjury: Boolean(profile?.currentInjury),
       yearsRunning: profile?.yearsRunning || 1,
       longestRecentKm: profile?.longestLast30 || 10,
-    })
+    }
+    const generated = await personalizeTrainingPlan(generateTrainingPlan(runnerProfile), runnerProfile)
 
     // Archive old active plans
     await prisma.trainingPlan.updateMany({

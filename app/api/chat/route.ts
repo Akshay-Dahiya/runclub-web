@@ -125,7 +125,7 @@ Keep answers concise and specific. If the available history is insufficient, say
 
     const apiKey = getGeminiApiKey()
     if (!apiKey) {
-      return NextResponse.json({ error: 'AI coach is not configured with an API key.' }, { status: 500 })
+      return NextResponse.json({ error: 'AI coach needs GEMINI_API_KEY configured for this environment.' }, { status: 503 })
     }
 
     const gemini = createOpenAI({
