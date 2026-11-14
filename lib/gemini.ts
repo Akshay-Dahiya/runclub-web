@@ -9,11 +9,13 @@ export async function generateGeminiText({
   systemInstruction,
   temperature = 0.4,
   maxOutputTokens = 800,
+  responseMimeType,
 }: {
   prompt: string
   systemInstruction?: string
   temperature?: number
   maxOutputTokens?: number
+  responseMimeType?: 'application/json'
 }): Promise<string> {
   const apiKey = getGeminiApiKey()
   if (!apiKey) throw new Error('Missing GEMINI_API_KEY')
@@ -25,6 +27,7 @@ export async function generateGeminiText({
     generationConfig: {
       temperature,
       maxOutputTokens,
+      ...(responseMimeType ? { responseMimeType } : {}),
     },
   }
 
@@ -36,6 +39,7 @@ export async function generateGeminiText({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45_000),
   })
 
   if (!res.ok) {

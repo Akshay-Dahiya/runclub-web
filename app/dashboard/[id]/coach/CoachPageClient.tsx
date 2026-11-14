@@ -131,7 +131,11 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
           })}
 
           {isLoading && <p role="status" className="coach-chat-status">Your coach is thinking…</p>}
-          {error && <p role="alert" className="coach-chat-error">The coach could not respond. Please try again, or reconnect Strava if your session expired.</p>}
+          {error && <p role="alert" className="coach-chat-error">
+            {error.message.includes('503')
+              ? 'The coach is not configured for this environment. Confirm GEMINI_API_KEY is enabled for Development, then restart the preview.'
+              : 'The coach could not respond. Please try again, or reconnect Strava if your session expired.'}
+          </p>}
           <div ref={messagesEndRef} />
         </div>
 

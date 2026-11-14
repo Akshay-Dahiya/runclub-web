@@ -119,7 +119,9 @@ export default function AICoachWidget({ userId }: { userId: string }) {
             })}
             {error && (
               <p role="alert" style={{ color: '#fb7185', fontSize: '13px' }}>
-                The coach could not respond. Please try again, or reconnect Strava if your session expired.
+                {error.message.includes('503')
+                  ? 'The coach is not configured for this environment. Confirm GEMINI_API_KEY is enabled for Development, then restart the preview.'
+                  : 'The coach could not respond. Please try again, or reconnect Strava if your session expired.'}
               </p>
             )}
             {isLoading && (
