@@ -18,5 +18,5 @@ export async function POST(request: Request) {
     session.destroy()
   }
 
-  return NextResponse.redirect(new URL('/api/strava', request.url), 303)
+  return NextResponse.redirect(new URL('/api/strava?flow=signup', request.url), 303)
 }

@@ -21,11 +21,12 @@ export async function GET(req: Request) {
   }
 
   const state = randomBytes(32).toString('hex')
+  const isSignupFlow = url.searchParams.get('flow') === 'signup'
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: 'code',
     redirect_uri: new URL('/api/strava/callback', url.origin).toString(),
-    approval_prompt: 'auto',
+    approval_prompt: isSignupFlow ? 'force' : 'auto',
     scope: 'read,activity:read,activity:read_all',
     state,
   })
