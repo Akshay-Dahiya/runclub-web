@@ -268,12 +268,16 @@ export default function DashboardClient({
     window.location.reload()
   }
 
-  // Week stats
+  // Week stats use a Monday-to-Sunday calendar week.
+  const now = new Date()
+  const weekStart = new Date(now)
+  weekStart.setHours(0, 0, 0, 0)
+  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 7)
   const weekRuns = dbUser.runs.filter((r: any) => {
-    const d = new Date(r.date)
-    const now = new Date()
-    const start = new Date(now); start.setDate(now.getDate() - now.getDay())
-    return d >= start
+    const runDate = new Date(r.date)
+    return runDate >= weekStart && runDate < weekEnd
   })
   const weekKm = weekRuns.reduce((s: number, r: any) => s + r.distanceKm, 0)
   const avgPace = dbUser.runs.length > 0

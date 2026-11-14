@@ -110,8 +110,8 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
 
     const now = new Date()
     const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay())
     startOfWeek.setHours(0, 0, 0, 0)
+    startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7))
 
     const weekRuns = runs.filter((run: any) => new Date(run.date) >= startOfWeek)
     const weekKm = weekRuns.reduce((sum: number, run: any) => sum + (run.distanceKm || 0), 0)
@@ -330,7 +330,6 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
       <div className="section" id="leaderboard" style={{ paddingTop: '80px' }}>
         <ClubProgressBar
           totalKm={totalKm}
-          totalTarget={3000}
           totalRuns={totalRuns}
           activeRunners={mappedUsers.length}
         />
