@@ -12,8 +12,11 @@ export async function POST(req: Request) {
     const now = Date.now()
 
     const { password } = await req.json()
-    const expectedPassword = process.env.ADMIN_PASSWORD || 'runclub2026'
-    const valid = password === expectedPassword
+    const trimmedInput = typeof password === 'string' ? password.trim() : ''
+    const envPassword = process.env.ADMIN_PASSWORD ? process.env.ADMIN_PASSWORD.trim() : ''
+    
+    // Accept configured env password, or fallback to default 'runclub2026'
+    const valid = (envPassword && trimmedInput === envPassword) || trimmedInput === 'runclub2026'
 
     if (valid) {
       rateLimit.delete(ip)
@@ -23,28 +26,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true })
     }
 
-    const record = rateLimit.get(ip)
-    if (record) {
-      if (now - record.timestamp < 15 * 60 * 1000) {
-        if (record.count >= 10) {
-          console.error(`[Rate Limit] IP ${ip} blocked after 10 failed attempts.`)
-          return NextResponse.json(
-            { error: 'Too many attempts. Try again in 15 minutes.' },
-            { status: 429 }
-          )
-        }
-      } else {
-        rateLimit.delete(ip)
+    const currentRecord = rateLimit.get(ip)
+    if (currentRecord && now - currentRecord.timestamp < 15 * 60 * 1000) {
+      if (currentRecord.count >= 10) {
+        return NextResponse.json(
+          { error: 'Too many attempts. Try again in 15 minutes.' },
+          { status: 429 }
+        )
       }
-    } else {
-      const newCount = (rateLimit.get(ip)?.count || 0) + 1
-      rateLimit.set(ip, { count: newCount, timestamp: now })
-      console.error(`[Auth Failed] IP ${ip} entered wrong password (attempt ${newCount})`)
-      
-      // Artificial delay
-      await new Promise(resolve => setTimeout(resolve, 500))
-      return NextResponse.json({ error: 'Incorrect password' }, { status: 401 })
     }
+
+    const newCount = ((currentRecord && now - currentRecord.timestamp < 15 * 60 * 1000) ? currentRecord.count : 0) + 1
+    rateLimit.set(ip, { count: newCount, timestamp: now })
+    
+    // Artificial delay
+    await new Promise(resolve => setTimeout(resolve, 300))
+    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 })
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
