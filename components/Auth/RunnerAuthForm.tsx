@@ -28,7 +28,7 @@ export default function RunnerAuthForm() {
           Runner profile
         </p>
         <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3.25rem)', lineHeight: 1, letterSpacing: '-0.04em', margin: 0, textTransform: 'uppercase' }}>
-          Continue with Strava
+          Connect Strava
         </h1>
         <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: '14px 0 0' }}>
           Connect your Strava athlete account and RunClub will create or reopen your runner profile automatically.

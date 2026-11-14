@@ -452,7 +452,7 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
           <DashboardPicker runners={mappedUsers} />
 
           <div style={{ marginTop: '36px', fontSize: '13px', color: '#64748B' }}>
-            New to RunClub? <Link href="/signup" style={{ color: '#FC4C02', fontWeight: 700, textDecoration: 'none' }}>Join with Strava</Link> and your runner profile will be created automatically.
+            New to RunClub? <Link href="/api/strava" style={{ color: '#FC4C02', fontWeight: 700, textDecoration: 'none' }}>Connect Strava</Link> and your runner profile will be created automatically.
           </div>
         </div>
       </div>
