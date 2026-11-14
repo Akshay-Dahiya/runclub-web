@@ -421,7 +421,7 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
                       {u.name}
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748B' }}>
-                      {u.runs.length} runs recorded
+                      {u.weekKm > 0 ? `${u.weekKm.toFixed(1)} km this week` : 'No runs yet'}
                     </div>
                   </div>
                 </Link>

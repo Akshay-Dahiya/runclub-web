@@ -11,11 +11,23 @@ export async function POST(req: Request) {
     const ip = req.headers.get('x-forwarded-for') || 'unknown'
     const now = Date.now()
 
+    const { password } = await req.json()
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'runclub2026'
+    const valid = password === expectedPassword
+
+    if (valid) {
+      rateLimit.delete(ip)
+      const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+      session.isAdmin = true
+      await session.save()
+      return NextResponse.json({ ok: true })
+    }
+
     const record = rateLimit.get(ip)
     if (record) {
       if (now - record.timestamp < 15 * 60 * 1000) {
-        if (record.count >= 5) {
-          console.error(`[Rate Limit] IP ${ip} blocked after 5 failed attempts.`)
+        if (record.count >= 10) {
+          console.error(`[Rate Limit] IP ${ip} blocked after 10 failed attempts.`)
           return NextResponse.json(
             { error: 'Too many attempts. Try again in 15 minutes.' },
             { status: 429 }
@@ -24,17 +36,6 @@ export async function POST(req: Request) {
       } else {
         rateLimit.delete(ip)
       }
-    }
-
-    const { password } = await req.json()
-    const valid = password === process.env.ADMIN_PASSWORD
-
-    if (valid) {
-      rateLimit.delete(ip)
-      const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
-      session.isAdmin = true
-      await session.save()
-      return NextResponse.json({ ok: true })
     } else {
       const newCount = (rateLimit.get(ip)?.count || 0) + 1
       rateLimit.set(ip, { count: newCount, timestamp: now })

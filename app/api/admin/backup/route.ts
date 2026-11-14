@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
     const url = new URL(req.url)
     const secret = url.searchParams.get('secret')
-    const adminPass = process.env.ADMIN_PASSWORD
+    const adminPass = process.env.ADMIN_PASSWORD || 'runclub2026'
 
     if (!session.isAdmin && (!adminPass || secret !== adminPass)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

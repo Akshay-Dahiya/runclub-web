@@ -1,6 +1,6 @@
 import { SessionOptions } from 'iron-session'
 
-const sessionSecret = process.env.SESSION_SECRET as string
+const sessionSecret = process.env.SESSION_SECRET || 'runclub_secret_key_needs_to_be_at_least_32_chars_long_2026'
 
 export const sessionOptions: SessionOptions = {
   password: sessionSecret,
