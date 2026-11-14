@@ -23,11 +23,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ member_
 
     const resolvedParams = await params
     const memberId = resolvedParams.member_id
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-    if (memberId !== runner.id) {
-      return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
-    }
 
     // Validate memberId format (CUIDs are alphanumeric + limited length)
     if (!memberId || memberId.length > 30 || !/^[a-z0-9]+$/i.test(memberId)) {
@@ -57,7 +52,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ member_
     // Default to June 8, 2026 00:00:00 IST (1780857000)
     let afterTimestamp = 1780857000
     if (user.last_synced_at) {
-      afterTimestamp = Math.floor(new Date(user.last_synced_at).getTime() / 1000)
+      // Look back 48 hours to reliably catch recent Garmin/Apple Watch syncs (dedup prevents duplicate rows)
+      afterTimestamp = Math.max(1780857000, Math.floor(new Date(user.last_synced_at).getTime() / 1000) - 48 * 3600)
     }
 
     // 3. Fetch activities
@@ -122,6 +118,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ member_
           durationSec,
           paceSecPerKm,
           avgHeartRate: act.average_heartrate ? Math.round(act.average_heartrate) : null,
+          notes: act.name || null,
           source: 'strava',
           strava_activity_id: activityId
         }
@@ -143,4 +140,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ member_
     console.error('Sync activities route error:', err)
     return NextResponse.json({ error: err.message || 'Sync failed' }, { status: 500 })
   }
+}
+
+export async function GET(req: Request, ctx: any) {
+  return POST(req, ctx)
 }

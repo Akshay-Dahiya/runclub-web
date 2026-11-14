@@ -40,11 +40,15 @@ export async function GET() {
       },
     })
 
-    // Calculate "Most Improved" runners over the last 14 days
-    // (Comparing this week vs previous week)
+    // Calculate "Most Improved" runners (Comparing this week [Mon-Sun] vs previous week [Mon-Sun])
     const now = new Date()
-    const thisWeekStart = new Date(now.getTime() - 7 * 24 * 3600 * 1000)
-    const prevWeekStart = new Date(now.getTime() - 14 * 24 * 3600 * 1000)
+    const dayOfWeek = (now.getDay() + 6) % 7 // Monday = 0, Sunday = 6
+    const thisWeekStart = new Date(now)
+    thisWeekStart.setDate(now.getDate() - dayOfWeek)
+    thisWeekStart.setHours(0, 0, 0, 0)
+
+    const prevWeekStart = new Date(thisWeekStart)
+    prevWeekStart.setDate(thisWeekStart.getDate() - 7)
 
     const allUsers = await prisma.user.findMany({
       select: {

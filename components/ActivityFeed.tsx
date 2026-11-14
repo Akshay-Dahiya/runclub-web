@@ -353,8 +353,10 @@ export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: bool
   const now = new Date()
   const todayStart = new Date(now)
   todayStart.setHours(0, 0, 0, 0)
+  const dayOfWeek = (now.getDay() + 6) % 7 // Monday = 0, Sunday = 6
   const weekStart = new Date(now)
-  weekStart.setDate(now.getDate() - 7)
+  weekStart.setDate(now.getDate() - dayOfWeek)
+  weekStart.setHours(0, 0, 0, 0)
 
   const filteredRuns = runs.filter(r => {
     const d = new Date(r.date)

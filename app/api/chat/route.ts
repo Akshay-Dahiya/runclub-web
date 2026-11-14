@@ -1,24 +1,20 @@
-import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
+import { streamText, type ModelMessage } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
 import { NextResponse } from 'next/server'
 import { getCurrentRunner } from '../../../lib/auth/runner'
 import { prisma } from '../../../lib/prisma'
 import { PARTICIPANTS, grandTotal } from '../../../lib/planData'
 import { createRateLimiter, getIP } from '../../../lib/rateLimit'
-import { getGeminiApiKey, DEFAULT_GEMINI_MODEL } from '../../../lib/gemini'
+import { getGeminiApiKey } from '../../../lib/gemini'
 
 export const dynamic = 'force-dynamic'
 
 const chatLimiter = createRateLimiter(15 * 60 * 1000, 20)
 
-interface ChatMessageInput {
-  role: 'user' | 'assistant'
-  content: string
-}
-
-function readMessages(value: unknown): ChatMessageInput[] | null {
+function readMessages(value: unknown): ModelMessage[] | null {
   if (!Array.isArray(value) || value.length === 0 || value.length > 40) return null
 
-  const messages: ChatMessageInput[] = []
+  const messages: ModelMessage[] = []
   let totalCharacters = 0
 
   for (const item of value) {
@@ -132,75 +128,21 @@ Keep answers concise and specific. If the available history is insufficient, say
       return NextResponse.json({ error: 'AI coach is not configured with an API key.' }, { status: 500 })
     }
 
-    const contents = messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }))
-
-    const stream = createUIMessageStream({
-      execute: async ({ writer }) => {
-        const messageId = `msg-${Date.now()}`
-        try {
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${apiKey}`
-          const geminiRes = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: instructions }] },
-              contents,
-              generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 800,
-              },
-            }),
-          })
-
-          if (!geminiRes.ok) {
-            const errText = await geminiRes.text()
-            console.error('[Gemini error]:', geminiRes.status, errText)
-            writer.write({ type: 'text-delta', id: messageId, delta: 'Sorry, the coach encountered an issue connecting to Gemini.' })
-            return
-          }
-
-          if (!geminiRes.body) {
-            writer.write({ type: 'text-delta', id: messageId, delta: 'No response received from coach.' })
-            return
-          }
-
-          const reader = geminiRes.body.getReader()
-          const decoder = new TextDecoder()
-          let buffer = ''
-
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ''
-
-            for (const line of lines) {
-              const trimmed = line.trim()
-              if (!trimmed.startsWith('data: ')) continue
-              try {
-                const data = JSON.parse(trimmed.slice(6))
-                const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text
-                if (textChunk) {
-                  writer.write({ type: 'text-delta', id: messageId, delta: textChunk })
-                }
-              } catch {
-                // Ignore parse errors on SSE ping/delimiters
-              }
-            }
-          }
-        } catch (err: any) {
-          console.error('[Gemini stream exception]:', err)
-          writer.write({ type: 'text-delta', id: messageId, delta: '\n\n[Coach session interrupted. Please try again.]' })
-        }
-      },
+    const gemini = createOpenAI({
+      baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+      apiKey,
     })
 
-    return createUIMessageStreamResponse({ stream })
+    const result = streamText({
+      model: gemini.chat('gemini-3.8-flash'),
+      system: instructions,
+      messages,
+      maxOutputTokens: 800,
+      temperature: 0.4,
+      timeout: { totalMs: 45_000 },
+    })
+
+    return result.toUIMessageStreamResponse()
   } catch (error) {
     console.error('[AI coach] request failed:', error)
     return NextResponse.json({ error: 'The coach is temporarily unavailable.' }, { status: 500 })

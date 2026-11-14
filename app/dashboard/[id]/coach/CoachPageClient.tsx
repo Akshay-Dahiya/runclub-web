@@ -29,9 +29,11 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
   const isLoading = status === 'submitted' || status === 'streaming'
 
   const summary = useMemo(() => {
-    const weekStart = new Date()
+    const now = new Date()
+    const dayOfWeek = (now.getDay() + 6) % 7 // Monday = 0, Sunday = 6
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - dayOfWeek)
     weekStart.setHours(0, 0, 0, 0)
-    weekStart.setDate(weekStart.getDate() - 6)
     const recentRuns = runs.filter((run) => new Date(run.date) >= weekStart)
     const weeklyDistance = recentRuns.reduce((total, run) => total + run.distanceKm, 0)
     const longestRun = runs.reduce((longest, run) => Math.max(longest, run.distanceKm), 0)

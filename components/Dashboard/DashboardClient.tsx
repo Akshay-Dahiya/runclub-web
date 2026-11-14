@@ -122,7 +122,7 @@ export default function DashboardClient({
 
   // Auto sync logic on dashboard load
   useEffect(() => {
-    if (isOwner && dbUser.strava_connected && dbUser.id) {
+    if (dbUser.strava_connected && dbUser.id) {
       const lastSynced = dbUser.last_synced_at ? new Date(dbUser.last_synced_at) : null
       const now = new Date()
       const thirtyMins = 30 * 60 * 1000
@@ -141,7 +141,7 @@ export default function DashboardClient({
           .catch(err => console.error('[Strava] Background auto-sync failed:', err))
       }
     }
-  }, [dbUser, isOwner])
+  }, [dbUser])
 
   // Disconnect handler
   const handleDisconnect = async () => {
