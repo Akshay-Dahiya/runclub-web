@@ -19,7 +19,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
   }, [])
 
   return (
-    <div style={{
+    <div className="home-hero" style={{
       position: 'relative',
       minHeight: '92vh',
       width: '100%',
@@ -45,7 +45,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
       }} />
 
       {/* Live Community Mileage Ticker Pill */}
-      <div style={{
+      <div className="home-hero__ticker" style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: '10px',
@@ -73,7 +73,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
       </div>
 
       {/* Main Tagline Headline */}
-      <div style={{ maxWidth: '920px', margin: '0 auto', marginBottom: '24px' }}>
+      <div className="home-hero__headline" style={{ maxWidth: '920px', margin: '0 auto', marginBottom: '24px' }}>
         <h1 style={{
           fontSize: 'clamp(2.8rem, 7.5vw, 6rem)',
           fontWeight: 900,
@@ -92,7 +92,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
       </div>
 
       {/* Subheadline */}
-      <p style={{
+      <p className="home-hero__subtitle" style={{
         fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)',
         color: '#475569',
         maxWidth: '680px',
@@ -104,7 +104,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
       </p>
 
       {/* Big Orange 1-Click Strava Button */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
+      <div className="home-hero__actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
         <a
           href="/api/strava"
           style={{
@@ -144,7 +144,7 @@ export default function Hero({ thisWeekKm = 142, activeRunnersCount = 16 }: Hero
       </div>
 
       {/* Quick Community Feature Badges */}
-      <div style={{
+      <div className="home-hero__features" style={{
         display: 'flex',
         gap: '16px',
         flexWrap: 'wrap',

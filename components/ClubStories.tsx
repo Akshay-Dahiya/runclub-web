@@ -29,6 +29,8 @@ export default function ClubStories({ viewerRunnerId, variant = 'preview' }: Clu
   const { data, error, isLoading, mutate } = useSWR<ClubStoriesResponse>(storiesKey, fetchStories)
   const stories = data?.stories ?? []
 
+  if (!viewerRunnerId) return null
+
   return (
     <section
       id={isFullPage ? 'club-stories-feed' : undefined}
@@ -63,37 +65,25 @@ export default function ClubStories({ viewerRunnerId, variant = 'preview' }: Clu
           <ClubStoryComposer onPosted={() => mutate()} />
         )}
 
-        {!viewerRunnerId ? (
-          <div className="club-stories__signin">
-            <h3>Stories are better together</h3>
-            <p>Connect with Strava to read and share moments with your running crew.</p>
-            <Link href="/login" className="club-stories__signin-link">
-              Connect with Strava
-            </Link>
+        {isLoading && <p role="status" className="club-stories__status">Loading club stories…</p>}
+        {error && (
+          <div role="alert" className="club-stories__error">
+            The story board is unavailable. Please try again later.
           </div>
-        ) : (
-          <>
-            {isLoading && <p role="status" className="club-stories__status">Loading club stories…</p>}
-            {error && (
-              <div role="alert" className="club-stories__error">
-                The story board is unavailable. Please try again later.
-              </div>
-            )}
-            {!isLoading && !error && stories.length === 0 && (
-              <div className="club-stories__empty">
-                <strong>No stories yet</strong>
-                <span>Share a run moment or race memory to get the journal started.</span>
-              </div>
-            )}
-            {stories.length > 0 && (
-              <div className="club-stories__grid">
-                {stories.map(story => <ClubStoryCard key={story.id} story={story} />)}
-              </div>
-            )}
-            {isFullPage && stories.length >= storyLimit && (
-              <p className="club-stories__limit">Showing the latest {storyLimit} stories</p>
-            )}
-          </>
+        )}
+        {!isLoading && !error && stories.length === 0 && (
+          <div className="club-stories__empty">
+            <strong>No stories yet</strong>
+            <span>Share a run moment or race memory to get the journal started.</span>
+          </div>
+        )}
+        {stories.length > 0 && (
+          <div className="club-stories__grid">
+            {stories.map(story => <ClubStoryCard key={story.id} story={story} />)}
+          </div>
+        )}
+        {isFullPage && stories.length >= storyLimit && (
+          <p className="club-stories__limit">Showing the latest {storyLimit} stories</p>
         )}
       </div>
     </section>

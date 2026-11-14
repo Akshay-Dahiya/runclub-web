@@ -268,12 +268,16 @@ export default function DashboardClient({
     window.location.reload()
   }
 
-  // Week stats
+  // Week stats use a Monday-to-Sunday calendar week.
+  const now = new Date()
+  const weekStart = new Date(now)
+  weekStart.setHours(0, 0, 0, 0)
+  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 7)
   const weekRuns = dbUser.runs.filter((r: any) => {
-    const d = new Date(r.date)
-    const now = new Date()
-    const start = new Date(now); start.setDate(now.getDate() - now.getDay())
-    return d >= start
+    const runDate = new Date(r.date)
+    return runDate >= weekStart && runDate < weekEnd
   })
   const weekKm = weekRuns.reduce((s: number, r: any) => s + r.distanceKm, 0)
   const avgPace = dbUser.runs.length > 0
@@ -350,13 +354,6 @@ export default function DashboardClient({
         <SectionHead label="🏆 Achievements" title="YOUR BADGES" />
         <AchievementsBadges runs={dbUser.runs} />
       </section>
-
-      {isOwner && (
-        <>
-          {/* ── RACE DAY CHECKLIST ──────────────────────────── */}
-          <RaceDayChecklist userId={dbUser?.id} />
-        </>
-      )}
 
       {isOwner && (
       <>
@@ -868,164 +865,6 @@ function AchievementsBadges({ runs }: { runs: any[] }) {
         </div>
       ))}
     </div>
-  )
-}
-
-// ─── RACE DAY CHECKLIST ───────────────────────────────────────────────────────
-const CHECKLIST_SECTIONS = [
-  {
-    id: 'week_before',
-    title: 'Week Before Race',
-    opens: new Date('2026-08-16T00:00:00+05:30'),
-    items: [
-      'Confirm race registration and bib collection details',
-      'Lay out race kit — shoes, socks, shorts, shirt, watch',
-      'Do a short 20–30 min shakeout run to stay loose',
-      'Cut back on new foods — stick to what you know',
-      'Sleep 8+ hours every night this week',
-      'Hydrate well — urine should be pale yellow',
-      'Avoid alcohol the week before',
-      'Charge your GPS watch fully',
-    ],
-  },
-  {
-    id: 'night_before',
-    title: 'Night Before',
-    opens: new Date('2026-08-22T00:00:00+05:30'),
-    items: [
-      'Prepare race kit and pin bib to shirt',
-      'Set two alarms — one backup',
-      'Prep your race morning breakfast (carbs you\'ve tested before)',
-      'Fill water bottle / hydration pack',
-      'Check the race venue location and parking',
-      'Sleep by 10pm — nerves are normal, don\'t fight them',
-      'No new shoes, no new gear tomorrow',
-    ],
-  },
-  {
-    id: 'race_morning',
-    title: 'Race Morning',
-    opens: new Date('2027-02-07T00:00:00+05:30'),
-    items: [
-      'Wake up 2.5–3 hours before race start',
-      'Eat your practiced breakfast (rice/banana/toast + electrolytes)',
-      'Dynamic warmup — leg swings, high knees, easy jog 5 min',
-      'Arrive at venue 45 min before gun time',
-      'Find your pace group / corral',
-      'Start SLOWER than you think — the first 5km decides your race',
-      'Enjoy it — you trained for this 🏁',
-    ],
-  },
-]
-
-const RACE_DAY_OPENS = new Date('2026-08-02T00:00:00+05:30')
-
-function RaceDayChecklist({ userId }: { userId: string }) {
-  const [checked, setChecked] = useState<Record<string, boolean>>({})
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [loading, setLoading] = useState<string | null>(null)
-  const now = new Date()
-  const daysUntilOpen = Math.ceil((RACE_DAY_OPENS.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  const isOpen = now >= RACE_DAY_OPENS
-
-  useEffect(() => {
-    if (!userId) return
-    fetch(`/api/checklist?userId=${userId}`)
-      .then(r => r.json())
-      .then((items: any[]) => {
-        const map: Record<string, boolean> = {}
-        items.forEach(item => { map[item.itemKey] = item.checked })
-        setChecked(map)
-      })
-  }, [userId])
-
-  const toggle = async (sectionId: string, itemIdx: number, current: boolean) => {
-    if (!userId) return
-    const key = `${sectionId}_${itemIdx}`
-    const newVal = !current
-    setChecked(c => ({ ...c, [key]: newVal }))
-    setLoading(key)
-    await fetch('/api/checklist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, itemKey: key, checked: newVal })
-    })
-    setLoading(null)
-  }
-
-  const toggleSection = (id: string) => setExpanded(e => ({ ...e, [id]: !e[id] }))
-
-  return (
-    <section style={{ marginBottom: '80px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <p style={{ fontFamily: 'monospace', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--orange)', margin: '0 0 8px 0' }}>Race Day Prep</p>
-        <h2 style={{ fontSize: 'clamp(1.4rem, 4vw, 2rem)', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>🏁 RACE DAY CHECKLIST</h2>
-      </div>
-
-      {!isOpen ? (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '2rem' }}>🔒</span>
-          <div>
-            <div style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>Opens in {daysUntilOpen} days</div>
-            <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#555' }}>Race day prep checklist unlocks Aug 2, 2026</div>
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {CHECKLIST_SECTIONS.map(section => {
-            const isAvailable = now >= section.opens
-            const doneCount = section.items.filter((_, i) => checked[`${section.id}_${i}`]).length
-            const allDone = doneCount === section.items.length
-            const isExpanded = expanded[section.id] !== false // default open
-
-            return (
-              <div key={section.id} style={{ background: 'var(--surface)', border: `1px solid ${allDone ? '#4ade8066' : 'var(--border)'}`, borderRadius: '10px', overflow: 'hidden' }}>
-                <button
-                  onClick={() => toggleSection(section.id)}
-                  style={{ width: '100%', background: 'none', border: 'none', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', color: 'inherit' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: 700 }}>{section.title}</span>
-                    {!isAvailable && <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#555', background: '#1a1a1a', padding: '2px 8px', borderRadius: '4px' }}>opens {section.opens.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {allDone ? (
-                      <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#4ade80' }}>✅ All done!</span>
-                    ) : (
-                      <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#555' }}>{doneCount} / {section.items.length}</span>
-                    )}
-                    <span style={{ color: '#555', fontSize: '12px' }}>{isExpanded === false ? '▶' : '▼'}</span>
-                  </div>
-                </button>
-
-                {isExpanded !== false && (
-                  <div style={{ padding: '0 20px 16px 20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {section.items.map((item, i) => {
-                      const key = `${section.id}_${i}`
-                      const isChecked = !!checked[key]
-                      return (
-                        <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < section.items.length - 1 ? '1px solid var(--border)' : 'none', cursor: isAvailable ? 'pointer' : 'default', minHeight: '44px' }}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            disabled={!isAvailable || loading === key}
-                            onChange={() => toggle(section.id, i, isChecked)}
-                            style={{ width: '18px', height: '18px', accentColor: '#4ade80', cursor: isAvailable ? 'pointer' : 'not-allowed', flexShrink: 0 }}
-                          />
-                          <span style={{ fontSize: '14px', color: isChecked ? '#4ade80' : isAvailable ? '#e8e8e8' : '#444', textDecoration: isChecked ? 'line-through' : 'none', lineHeight: 1.5 }}>
-                            {isChecked && '✓ '}{item}
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </section>
   )
 }
 

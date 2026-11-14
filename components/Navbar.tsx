@@ -88,10 +88,7 @@ export default function Navbar() {
           <Link href="/#leaderboard" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Leaderboard
           </Link>
-          <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
-            Join with Strava
-          </Link>
-          <Link href="/signup" style={{
+          <Link href="/api/strava" style={{
             background: '#FC4C02',
             color: '#FFFFFF',
             textDecoration: 'none',
@@ -151,10 +148,7 @@ export default function Navbar() {
           <Link href="/#leaderboard" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
             Leaderboard
           </Link>
-          <Link href="/login" onClick={() => setIsOpen(false)} style={{ color: '#0F172A', textDecoration: 'none', fontSize: '16px', fontWeight: 600 }}>
-            Join with Strava
-          </Link>
-          <Link href="/signup" onClick={() => setIsOpen(false)} style={{
+          <Link href="/api/strava" onClick={() => setIsOpen(false)} style={{
             background: '#FC4C02',
             color: '#FFFFFF',
             textDecoration: 'none',

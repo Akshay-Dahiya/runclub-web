@@ -3,10 +3,6 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-type RunnerAuthFormProps = {
-  mode: 'login' | 'signup'
-}
-
 const errorMessages: Record<string, string> = {
   strava_config: 'Strava connection is not configured for this preview. Please try again from the RunClub deployment.',
   strava_state: 'That secure Strava link expired. Start the connection again.',
@@ -17,9 +13,8 @@ const errorMessages: Record<string, string> = {
   strava_failed: 'We could not finish creating your profile. Please try connecting again.',
 }
 
-export default function RunnerAuthForm({ mode }: RunnerAuthFormProps) {
+export default function RunnerAuthForm() {
   const [error, setError] = useState('')
-  const isJoining = mode === 'signup'
 
   useEffect(() => {
     const errorCode = new URLSearchParams(window.location.search).get('error')
@@ -33,7 +28,7 @@ export default function RunnerAuthForm({ mode }: RunnerAuthFormProps) {
           Runner profile
         </p>
         <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3.25rem)', lineHeight: 1, letterSpacing: '-0.04em', margin: 0, textTransform: 'uppercase' }}>
-          {isJoining ? 'Join RunClub' : 'Continue with Strava'}
+          Connect Strava
         </h1>
         <p style={{ color: 'var(--muted)', lineHeight: 1.6, margin: '14px 0 0' }}>
           Connect your Strava athlete account and RunClub will create or reopen your runner profile automatically.

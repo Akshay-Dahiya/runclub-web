@@ -6,7 +6,7 @@ export default function AuthHeader() {
       href="/api/strava"
       className="rounded-full bg-orange-600 px-4 py-2 text-white hover:bg-orange-700"
     >
-      Join with Strava
+      Connect Strava
     </Link>
   )
 }
