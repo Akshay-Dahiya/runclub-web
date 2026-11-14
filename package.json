@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run prisma:ensure-coach-tables && next build",
+    "prisma:ensure-coach-tables": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/20261114000000_add_coach_tables/migration.sql",
     "start": "next start",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
