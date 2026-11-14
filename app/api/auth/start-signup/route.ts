@@ -5,7 +5,12 @@ import { runnerSessionOptions, type RunnerSessionData } from '../../../../lib/se
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
+  const origin = request.headers.get('origin')
+  if (!origin || origin !== new URL(request.url).origin) {
+    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
+  }
+
   const secret = process.env.SESSION_SECRET
 
   if (secret && secret.length >= 32) {
@@ -13,5 +18,5 @@ export async function GET(request: Request) {
     session.destroy()
   }
 
-  return NextResponse.redirect(new URL('/api/strava', request.url))
+  return NextResponse.redirect(new URL('/api/strava', request.url), 303)
 }
