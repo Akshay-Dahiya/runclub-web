@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
-import { createOpenAI } from '@ai-sdk/openai'
-import { generateText } from 'ai'
+import { generateGeminiText } from '../../../../lib/gemini'
 import { fmtTime, fmtPace } from '../../../../lib/race-predictor'
 
 export const dynamic = 'force-dynamic'
@@ -48,7 +47,6 @@ export async function GET(req: Request) {
     const workoutsPlanned = weekObj?.workouts?.length || 4
 
     // Fetch user's runs logged in this training week
-    // Assume each week corresponds to a 7-day window from plan creation
     const planStart = new Date(plan.createdAt)
     const weekStart = new Date(planStart.getTime() + (weekNumber - 1) * 7 * 24 * 3600 * 1000)
     const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 3600 * 1000)
@@ -73,15 +71,11 @@ export async function GET(req: Request) {
       ? Math.round(runs.filter((r: any) => r.avgHeartRate).reduce((sum: number, r: any) => sum + r.avgHeartRate, 0) / runs.filter((r: any) => r.avgHeartRate).length)
       : null
 
-    // Generate AI Summary or deterministic narrative
     let aiSummary = ''
     let nextWeekFocus = ''
 
-    const apiKey = process.env.OPENAI_API_KEY
-    if (apiKey && apiKey !== 'mock' && apiKey !== 'demo') {
-      try {
-        const openai = createOpenAI({ apiKey })
-        const prompt = `You are the RunClub Head Running Coach. Write a concise, motivational, highly specific Sunday Performance Review for a club runner.
+    try {
+      const prompt = `You are the RunClub Head Running Coach. Write a concise, motivational, highly specific Sunday Performance Review for a club runner.
 Runner Goal: ${plan.goalRace} in target time ${fmtTime(plan.goalTimeSec)}.
 Week ${weekNumber} Metrics:
 - Planned Mileage: ${kmPlanned} km across ${workoutsPlanned} workouts.
@@ -93,20 +87,16 @@ Provide two parts:
 1. SUMMARY: 2-3 sentences evaluating consistency, volume, and pacing discipline. Mention if they over-trained, hit the sweet spot, or fell short.
 2. NEXT_WEEK_FOCUS: 1-2 actionable directives on what to adjust next week.`
 
-        const { text } = await generateText({
-          model: openai('gpt-4o-mini'),
-          prompt,
-        })
-
+      const text = await generateGeminiText({ prompt })
+      if (text) {
         aiSummary = text
         nextWeekFocus = `Focus on maintaining 80% easy effort. Prioritize your long run and protect recovery days.`
-      } catch (aiErr) {
-        console.warn('AI review generation fallback:', aiErr)
       }
+    } catch (aiErr) {
+      console.warn('AI review generation fallback:', aiErr)
     }
 
     if (!aiSummary) {
-      // Deterministic evaluation fallback
       const completionPct = kmPlanned > 0 ? Math.round((kmCompleted / kmPlanned) * 100) : 0
       if (completionPct >= 90) {
         aiSummary = `Outstanding work this week! You completed ${kmCompleted.toFixed(1)} km (${completionPct}% of your ${kmPlanned} km target). Your consistency builds the aerobic foundation required to achieve your ${plan.goalRace} goal of ${fmtTime(plan.goalTimeSec)}.`

@@ -13,6 +13,7 @@
     "seed": "ts-node --esm prisma/seed.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.121",
     "@ai-sdk/openai": "^3.0.68",
     "@ai-sdk/react": "^3.0.200",
     "@prisma/client": "^5.14.0",
