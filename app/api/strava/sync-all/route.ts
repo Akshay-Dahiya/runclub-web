@@ -3,7 +3,6 @@ import { syncAllConnectedRunners } from '../../../../lib/strava-sync-service'
 import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
 
 // Allow max 10 sync-all requests per 10 minutes per IP
 const syncAllLimiter = createRateLimiter(10 * 60 * 1000, 10)
