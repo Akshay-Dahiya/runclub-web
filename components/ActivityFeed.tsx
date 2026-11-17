@@ -335,20 +335,53 @@ export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: bool
   const [runs, setRuns] = useState<Run[]>([])
   const [mostImproved, setMostImproved] = useState<MostImprovedRunner[]>([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<'today' | 'week' | 'all'>('week')
 
+  const fetchFeed = async () => {
+    try {
+      const res = await fetch('/api/feed')
+      const data = await res.json()
+      setRuns(data.runs || [])
+      setMostImproved(data.mostImproved || [])
+    } catch (e) {
+      console.warn('Failed to fetch feed:', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     setLoading(true)
-    fetch('/api/feed')
-      .then(r => r.json())
-      .then(data => {
-        setRuns(data.runs || [])
-        setMostImproved(data.mostImproved || [])
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    fetchFeed()
   }, [])
+
+  const handleSyncAll = async () => {
+    if (syncing) return
+    setSyncing(true)
+    setSyncMessage(null)
+    try {
+      const res = await fetch('/api/strava/sync-all', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        if (data.totalSynced > 0) {
+          setSyncMessage(`✓ Synced ${data.totalSynced} new run${data.totalSynced > 1 ? 's' : ''}!`)
+        } else {
+          setSyncMessage('✓ All runs up to date!')
+        }
+        await fetchFeed()
+      } else {
+        setSyncMessage(data.error || 'Sync check complete')
+      }
+    } catch (e) {
+      setSyncMessage('Could not sync right now. Please try again.')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncMessage(null), 5000)
+    }
+  }
 
   const now = new Date()
   const todayStart = new Date(now)
@@ -479,8 +512,8 @@ export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: bool
         </div>
       )}
 
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Filter tabs + Sync Button */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
         {(['week', 'today', 'all'] as const).map(f => (
           <button
             key={f}
@@ -500,10 +533,61 @@ export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: bool
             {f === 'week' ? 'This Week' : f === 'today' ? 'Today' : 'All Time'}
           </button>
         ))}
+
+        {/* Sync Latest Runs Button */}
+        <button
+          onClick={handleSyncAll}
+          disabled={syncing}
+          title="Fetch latest Strava runs for all club runners"
+          style={{
+            padding: '8px 16px',
+            borderRadius: '20px',
+            border: '1.5px solid #FED7AA',
+            background: syncing ? '#FFF7ED' : '#FFFFFF',
+            color: '#EA580C',
+            fontWeight: 700,
+            fontSize: '12px',
+            cursor: syncing ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.15s',
+            boxShadow: '0 1px 3px rgba(234, 88, 12, 0.08)',
+          }}
+        >
+          <span style={{ display: 'inline-block', animation: syncing ? 'spin 1s linear infinite' : 'none' }}>
+            🔄
+          </span>
+          <span>{syncing ? 'Syncing Strava...' : 'Sync Latest Runs'}</span>
+        </button>
+
+        {syncMessage && (
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              color: syncMessage.startsWith('✓') ? '#16A34A' : '#EA580C',
+              background: syncMessage.startsWith('✓') ? '#F0FDF4' : '#FFF7ED',
+              border: `1px solid ${syncMessage.startsWith('✓') ? '#BBF7D0' : '#FFEDD5'}`,
+              padding: '4px 12px',
+              borderRadius: '12px',
+            }}
+          >
+            {syncMessage}
+          </span>
+        )}
+
         <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
           {filteredRuns.length} run{filteredRuns.length !== 1 ? 's' : ''} logged
         </span>
       </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: '#64748B', fontFamily: 'monospace' }}>
