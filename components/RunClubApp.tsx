@@ -80,20 +80,24 @@ function WhoRanToday() {
       <span style={{ fontSize: '13px', fontWeight: 700, color: '#C2410C' }}>
         🔥 Active Today:
       </span>
-      {runners.map(r => (
-        <span key={r.id} style={{
-          background: '#FFFFFF',
-          border: '1px solid #FED7AA',
-          borderRadius: '20px',
-          padding: '3px 12px',
-          fontSize: '12px',
-          color: '#0F172A',
-          fontWeight: 600,
-          boxShadow: '0 1px 4px rgba(0,0,0,0.02)'
-        }}>
-          {r.name} ({r.distanceKm} km)
-        </span>
-      ))}
+      {runners.map((r, index) => {
+        const key = r.userId || r.id || `${r.name}-${index}`
+        const distance = r.km ?? r.distanceKm ?? 0
+        return (
+          <span key={key} style={{
+            background: '#FFFFFF',
+            border: '1px solid #FED7AA',
+            borderRadius: '20px',
+            padding: '3px 12px',
+            fontSize: '12px',
+            color: '#0F172A',
+            fontWeight: 600,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.02)'
+          }}>
+            {r.name} ({distance} km)
+          </span>
+        )
+      })}
     </div>
   )
 }
