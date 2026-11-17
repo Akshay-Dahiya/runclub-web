@@ -25,11 +25,9 @@ async function fetchStories(url: string): Promise<ClubStoriesResponse> {
 export default function ClubStories({ viewerRunnerId, variant = 'preview' }: ClubStoriesProps) {
   const isFullPage = variant === 'full'
   const storyLimit = isFullPage ? 50 : 3
-  const storiesKey = viewerRunnerId ? `/api/stories?limit=${storyLimit}` : null
+  const storiesKey = `/api/stories?limit=${storyLimit}`
   const { data, error, isLoading, mutate } = useSWR<ClubStoriesResponse>(storiesKey, fetchStories)
   const stories = data?.stories ?? []
-
-  if (!viewerRunnerId) return null
 
   return (
     <section

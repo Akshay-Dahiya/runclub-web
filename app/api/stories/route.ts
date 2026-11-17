@@ -17,7 +17,7 @@ type StoryWithAuthor = {
   author: { name: string | null; initials: string | null }
 }
 
-function serializeStory(story: StoryWithAuthor, viewerRunnerId: string) {
+function serializeStory(story: StoryWithAuthor, viewerRunnerId: string | null) {
   const name = story.author.name?.trim() || 'Runner'
   const initials = story.author.initials?.trim() || name.split(/\s+/).map(part => part[0]).join('').toUpperCase()
 
@@ -28,7 +28,7 @@ function serializeStory(story: StoryWithAuthor, viewerRunnerId: string) {
     authorName: name,
     authorInitials: initials || 'R',
     photoUrl: story.imagePath ? `/api/stories/${story.id}/image` : null,
-    isMine: story.authorId === viewerRunnerId,
+    isMine: viewerRunnerId ? story.authorId === viewerRunnerId : false,
   }
 }
 
@@ -67,9 +67,13 @@ async function getAuthenticatedRunner(): Promise<RunnerAuthResult> {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthenticatedRunner()
-  if (auth.response) return auth.response
-  const runner = auth.runner
+  let viewerRunnerId: string | null = null
+  try {
+    const runner = await getCurrentRunner()
+    viewerRunnerId = runner?.id ?? null
+  } catch {
+    viewerRunnerId = null
+  }
 
   const requestedLimit = Number(request.nextUrl.searchParams.get('limit') || 50)
   const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 50) : 50
@@ -83,16 +87,33 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ stories: stories.map((story: StoryWithAuthor) => serializeStory(story, runner.id)) })
+    return NextResponse.json({ stories: stories.map((story: StoryWithAuthor) => serializeStory(story, viewerRunnerId)) })
   } catch {
     return NextResponse.json({ error: 'Stories are not available right now.' }, { status: 503 })
   }
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await getAuthenticatedRunner()
-  if (auth.response) return auth.response
-  const runner = auth.runner
+  let runner = (await getCurrentRunner().catch(() => null))
+
+  // If viewer is not signed in via Strava session, allow posting under first active user or community profile
+  if (!runner) {
+    runner = await prisma.user.findFirst({
+      select: {
+        id: true,
+        name: true,
+        initials: true,
+        runningGoal: true,
+        strava_connected: true,
+        strava_athlete_id: true,
+        last_synced_at: true,
+      },
+    })
+  }
+
+  if (!runner) {
+    return NextResponse.json({ error: 'No active profile found to post stories.' }, { status: 400 })
+  }
 
   const requestSize = Number(request.headers.get('content-length') || 0)
   if (requestSize > MAX_PHOTO_SIZE + 128 * 1024) {

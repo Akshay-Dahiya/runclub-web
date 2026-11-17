@@ -25,8 +25,6 @@ export default async function StoriesPage() {
     }
   }
 
-  if (!viewerRunnerId) redirect('/login')
-
   return (
     <>
       <Navbar />
