@@ -165,7 +165,8 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (err: any) {
+    console.error('[Stories POST error]:', err)
     if (uploadedUrl) await del(uploadedUrl).catch(() => undefined)
-    return NextResponse.json({ error: 'Your story could not be shared right now.' }, { status: 503 })
+    return NextResponse.json({ error: err?.message || 'Your story could not be shared right now.' }, { status: 503 })
   }
 }
