@@ -30,7 +30,12 @@ export async function POST(
       return NextResponse.json({ error: 'Story not found' }, { status: 404 })
     }
 
-    console.warn(`[Content Moderation Report] Story ${storyId} reported. Reason: ${reason}. IP: ${ip}`)
+    // Persist moderation report into AdminNote for visibility in Admin panel
+    await prisma.adminNote.create({
+      data: {
+        content: `[FLAGGED STORY] StoryID: ${storyId} | Reporter IP: ${ip} | Reason: ${reason} | Timestamp: ${new Date().toISOString()}`
+      }
+    })
 
     return NextResponse.json({
       success: true,

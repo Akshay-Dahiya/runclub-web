@@ -6,6 +6,7 @@ export type ClubStory = {
   authorInitials: string
   photoUrl: string | null
   isMine: boolean
+  likesCount: number
 }
 
 export type ClubStoriesResponse = {

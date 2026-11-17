@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, hasDatabaseConfig } from '../../../../lib/prisma'
+import { prisma } from '../../../../lib/prisma'
 import { verifyStoryToken, sanitizeText } from '../../../../lib/security'
 import { del } from '@vercel/blob'
 
@@ -27,9 +27,10 @@ export async function GET(
         id: story.id,
         content: story.content,
         createdAt: story.createdAt.toISOString(),
-        authorName: story.author?.name || 'Runner',
-        authorInitials: story.author?.initials || 'R',
-        photoUrl: story.imagePath ? `/api/stories/${story.id}/image` : null,
+        authorName: story.author?.name || story.authorName || 'Runner',
+        authorInitials: story.author?.initials || (story.authorName ? story.authorName[0].toUpperCase() : 'R'),
+        photoUrl: story.imagePath ? (story.imagePath.startsWith('http') ? story.imagePath : `/api/stories/${story.id}/image`) : null,
+        likesCount: story.likesCount || 0,
       },
     })
   } catch (error: any) {
@@ -59,8 +60,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Story not found' }, { status: 404 })
     }
 
-    // Check authorization: check token against editTokenHash in raw query or matching admin
-    const isAuthorized = verifyStoryToken(token, (story as any).editTokenHash)
+    const isAuthorized = verifyStoryToken(token, story.editTokenHash)
     if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized to edit this story' }, { status: 401 })
     }
@@ -78,9 +78,10 @@ export async function PATCH(
         id: updated.id,
         content: updated.content,
         createdAt: updated.createdAt.toISOString(),
-        authorName: updated.author?.name || 'Runner',
+        authorName: updated.author?.name || updated.authorName || 'Runner',
         authorInitials: updated.author?.initials || 'R',
-        photoUrl: updated.imagePath ? `/api/stories/${updated.id}/image` : null,
+        photoUrl: updated.imagePath ? (updated.imagePath.startsWith('http') ? updated.imagePath : `/api/stories/${updated.id}/image`) : null,
+        likesCount: updated.likesCount || 0,
       },
     })
   } catch (error: any) {
@@ -104,7 +105,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Story not found' }, { status: 404 })
     }
 
-    const isAuthorized = verifyStoryToken(token, (story as any).editTokenHash)
+    const isAuthorized = verifyStoryToken(token, story.editTokenHash)
     if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized to delete this story' }, { status: 401 })
     }

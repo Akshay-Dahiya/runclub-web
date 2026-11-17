@@ -4,7 +4,7 @@ import Link from 'next/link'
 import useSWR from 'swr'
 import ClubStoryCard from './ClubStoryCard'
 import ClubStoryComposer from './ClubStoryComposer'
-import type { ClubStoriesResponse } from '../lib/club-stories'
+import type { ClubStoriesResponse, ClubStory } from '../lib/club-stories'
 
 type ClubStoriesProps = {
   viewerRunnerId: string | null
@@ -28,6 +28,32 @@ export default function ClubStories({ viewerRunnerId, variant = 'preview' }: Clu
   const storiesKey = `/api/stories?limit=${storyLimit}`
   const { data, error, isLoading, mutate } = useSWR<ClubStoriesResponse>(storiesKey, fetchStories)
   const stories = data?.stories ?? []
+
+  const handleDeleted = (deletedId: string) => {
+    mutate(
+      (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          stories: current.stories.filter((s) => s.id !== deletedId),
+        }
+      },
+      false
+    )
+  }
+
+  const handleUpdated = (updatedStory: ClubStory) => {
+    mutate(
+      (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          stories: current.stories.map((s) => (s.id === updatedStory.id ? updatedStory : s)),
+        }
+      },
+      false
+    )
+  }
 
   return (
     <section
@@ -59,8 +85,11 @@ export default function ClubStories({ viewerRunnerId, variant = 'preview' }: Clu
           </div>
         )}
 
-        {isFullPage && viewerRunnerId && (
-          <ClubStoryComposer onPosted={() => mutate()} />
+        {isFullPage && (
+          <ClubStoryComposer
+            viewerRunnerId={viewerRunnerId}
+            onPosted={() => mutate()}
+          />
         )}
 
         {isLoading && <p role="status" className="club-stories__status">Loading club stories…</p>}
@@ -77,7 +106,14 @@ export default function ClubStories({ viewerRunnerId, variant = 'preview' }: Clu
         )}
         {stories.length > 0 && (
           <div className="club-stories__grid">
-            {stories.map(story => <ClubStoryCard key={story.id} story={story} />)}
+            {stories.map(story => (
+              <ClubStoryCard
+                key={story.id}
+                story={story}
+                onDeleted={handleDeleted}
+                onUpdated={handleUpdated}
+              />
+            ))}
           </div>
         )}
         {isFullPage && stories.length >= storyLimit && (

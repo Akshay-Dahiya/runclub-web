@@ -3,23 +3,29 @@ import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentRunner } from '../../../lib/auth/runner'
 import { hasDatabaseConfig, prisma } from '../../../lib/prisma'
+import { generateStoryToken, sanitizeText } from '../../../lib/security'
+import { getIP, createRateLimiter } from '../../../lib/rateLimit'
 
 const MAX_CONTENT_LENGTH = 2000
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024
-const MAX_STORIES_PER_HOUR = 5
+const MAX_STORIES_PER_HOUR = 10
+
+const storyPostLimiter = createRateLimiter(60 * 60 * 1000, MAX_STORIES_PER_HOUR)
 
 type StoryWithAuthor = {
   id: string
-  authorId: string
+  authorId: string | null
+  authorName: string | null
   content: string
   imagePath: string | null
+  likesCount: number
   createdAt: Date
-  author: { name: string | null; initials: string | null }
+  author: { name: string | null; initials: string | null } | null
 }
 
 function serializeStory(story: StoryWithAuthor, viewerRunnerId: string | null) {
-  const name = story.author.name?.trim() || 'Runner'
-  const initials = story.author.initials?.trim() || name.split(/\s+/).map(part => part[0]).join('').toUpperCase()
+  const name = story.author?.name?.trim() || story.authorName?.trim() || 'Runner'
+  const initials = story.author?.initials?.trim() || name.split(/\s+/).map(part => part[0]).join('').toUpperCase()
 
   return {
     id: story.id,
@@ -28,14 +34,15 @@ function serializeStory(story: StoryWithAuthor, viewerRunnerId: string | null) {
     authorName: name,
     authorInitials: initials || 'R',
     photoUrl: story.imagePath ? `/api/stories/${story.id}/image` : null,
-    isMine: viewerRunnerId ? story.authorId === viewerRunnerId : false,
+    isMine: viewerRunnerId && story.authorId ? story.authorId === viewerRunnerId : false,
+    likesCount: story.likesCount || 0,
   }
 }
 
 function getImageExtension(type: string, bytes: Uint8Array) {
   const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
   const isPng = type === 'image/png' && pngSignature.every((byte, index) => bytes[index] === byte)
-  const isJpeg = type === 'image/jpeg' && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  const isJpeg = type === 'image/jpeg' && bytes[0] === 0xff && bytes[1] === 0xff
   const header = new TextDecoder().decode(bytes.slice(0, 12))
   const isWebp = type === 'image/webp' && header.startsWith('RIFF') && header.slice(8, 12) === 'WEBP'
 
@@ -43,27 +50,6 @@ function getImageExtension(type: string, bytes: Uint8Array) {
   if (isJpeg) return 'jpg'
   if (isWebp) return 'webp'
   return null
-}
-
-type AuthenticatedRunner = NonNullable<Awaited<ReturnType<typeof getCurrentRunner>>>
-type RunnerAuthResult =
-  | { runner: AuthenticatedRunner; response: null }
-  | { runner: null; response: NextResponse }
-
-async function getAuthenticatedRunner(): Promise<RunnerAuthResult> {
-  if (!hasDatabaseConfig()) {
-    return { runner: null, response: NextResponse.json({ error: 'Stories are not configured for this environment.' }, { status: 503 }) }
-  }
-
-  try {
-    const runner = await getCurrentRunner()
-    if (!runner) {
-      return { runner: null, response: NextResponse.json({ error: 'Connect with Strava to access club stories.' }, { status: 401 }) }
-    }
-    return { runner, response: null }
-  } catch {
-    return { runner: null, response: NextResponse.json({ error: 'Stories are not available right now.' }, { status: 503 }) }
-  }
 }
 
 export async function GET(request: NextRequest) {
@@ -87,33 +73,26 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ stories: stories.map((story: StoryWithAuthor) => serializeStory(story, viewerRunnerId)) })
+    return NextResponse.json({
+      stories: stories.map((story: any) => serializeStory(story, viewerRunnerId))
+    })
   } catch {
     return NextResponse.json({ error: 'Stories are not available right now.' }, { status: 503 })
   }
 }
 
 export async function POST(request: NextRequest) {
-  let runner = (await getCurrentRunner().catch(() => null))
-
-  // If viewer is not signed in via Strava session, allow posting under first active user or community profile
-  if (!runner) {
-    runner = await prisma.user.findFirst({
-      select: {
-        id: true,
-        name: true,
-        initials: true,
-        runningGoal: true,
-        strava_connected: true,
-        strava_athlete_id: true,
-        last_synced_at: true,
-      },
-    })
+  if (!hasDatabaseConfig()) {
+    return NextResponse.json({ error: 'Database is not configured.' }, { status: 503 })
   }
 
-  if (!runner) {
-    return NextResponse.json({ error: 'No active profile found to post stories.' }, { status: 400 })
+  const ip = getIP(request)
+  const rateCheck = storyPostLimiter.check(ip)
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'You have shared several stories recently. Try again later.' }, { status: 429 })
   }
+
+  const runner = await getCurrentRunner().catch(() => null)
 
   const requestSize = Number(request.headers.get('content-length') || 0)
   if (requestSize > MAX_PHOTO_SIZE + 128 * 1024) {
@@ -127,17 +106,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Could not read the story form.' }, { status: 400 })
   }
 
-  const content = String(formData.get('content') || '').trim()
+  const rawContent = String(formData.get('content') || '')
+  const content = sanitizeText(rawContent, MAX_CONTENT_LENGTH)
   if (!content) return NextResponse.json({ error: 'Add a few words before sharing.' }, { status: 400 })
-  if (content.length > MAX_CONTENT_LENGTH) {
-    return NextResponse.json({ error: `Stories can be up to ${MAX_CONTENT_LENGTH} characters.` }, { status: 400 })
-  }
+
+  // Author display name: from logged in runner, or typed name in form, or "Club Runner"
+  const typedName = sanitizeText(String(formData.get('authorName') || ''), 50)
+  const authorDisplayName = runner?.name || typedName || 'Runner'
 
   const photoEntry = formData.get('photo')
-  if (typeof photoEntry === 'string' && photoEntry) {
-    return NextResponse.json({ error: 'Choose an image file for the photo.' }, { status: 400 })
-  }
-
   const photo = photoEntry instanceof File && photoEntry.size > 0 ? photoEntry : null
   let imageExtension: string | null = null
 
@@ -153,37 +130,41 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try {
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
-    const recentPosts = await prisma.clubStory.count({
-      where: { authorId: runner.id, createdAt: { gte: hourAgo } },
-    })
-    if (recentPosts >= MAX_STORIES_PER_HOUR) {
-      return NextResponse.json({ error: 'You have shared several stories recently. Try again in an hour.' }, { status: 429 })
-    }
-  } catch {
-    return NextResponse.json({ error: 'Stories are not available right now.' }, { status: 503 })
-  }
-
   let uploadedUrl: string | null = null
   let imagePath: string | null = null
 
   try {
     if (photo && imageExtension) {
-      const blob = await put(`club-stories/${runner.id}/${randomUUID()}.${imageExtension}`, photo, {
-        access: 'private',
+      const blobId = runner?.id || 'community'
+      const blob = await put(`club-stories/${blobId}/${randomUUID()}.${imageExtension}`, photo, {
+        access: 'public',
       })
       uploadedUrl = blob.url
-      imagePath = blob.pathname
+      imagePath = blob.url
     }
 
+    // Generate secret edit token for this story
+    const { plainToken, hashedToken } = generateStoryToken()
+
     const story = await prisma.clubStory.create({
-      data: { authorId: runner.id, content, imagePath },
+      data: {
+        authorId: runner?.id ?? null,
+        authorName: authorDisplayName,
+        content,
+        imagePath,
+        editTokenHash: hashedToken,
+      },
       include: { author: { select: { name: true, initials: true } } },
     })
 
-    return NextResponse.json({ story: serializeStory(story, runner.id) }, { status: 201 })
-  } catch {
+    return NextResponse.json(
+      {
+        story: serializeStory(story as any, runner?.id ?? null),
+        editToken: plainToken,
+      },
+      { status: 201 }
+    )
+  } catch (err: any) {
     if (uploadedUrl) await del(uploadedUrl).catch(() => undefined)
     return NextResponse.json({ error: 'Your story could not be shared right now.' }, { status: 503 })
   }

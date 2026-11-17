@@ -253,12 +253,15 @@ model PlanOverride {
 }
 
 model ClubStory {
-  id        String   @id @default(cuid())
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  content   String   @db.VarChar(2000)
-  imagePath String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  authorId      String?
+  author        User?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorName    String?  // Custom display name for guest posters
+  content       String   @db.VarChar(2000)
+  imagePath     String?
+  editTokenHash String?  // SHA-256 hash of secret edit token
+  likesCount    Int      @default(0)
+  createdAt     DateTime @default(now())
 
   @@index([createdAt])
   @@index([authorId, createdAt])

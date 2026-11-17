@@ -5,6 +5,11 @@ import { Providers } from './providers'
 export const metadata = {
   title: 'Joyville Road Runners',
   description: 'Run together, follow club activities, and share stories with the Joyville Road Runners community.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
