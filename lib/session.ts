@@ -1,17 +1,20 @@
 import { SessionOptions } from 'iron-session'
 
-const FALLBACK_SESSION_SECRET = 'runclub_secret_key_needs_to_be_at_least_32_chars_long_2026'
-
 export function getSessionSecret(): string {
-  const configured = process.env.SESSION_SECRET
-  if (configured && configured.length >= 32) {
-    return configured
+  const configured = process.env.SESSION_SECRET?.trim()
+  if (!configured || configured.length < 32) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SESSION_SECRET must be set (>= 32 chars) in production')
+    }
+    throw new Error('SESSION_SECRET must be set (>= 32 chars)')
   }
-  return FALLBACK_SESSION_SECRET
+  return configured
 }
 
 export const sessionOptions: SessionOptions = {
-  password: getSessionSecret(),
+  get password() {
+    return getSessionSecret()
+  },
   cookieName: 'jrr-admin-session',
   cookieOptions: {
     httpOnly: true,
@@ -23,7 +26,9 @@ export const sessionOptions: SessionOptions = {
 }
 
 export const runnerSessionOptions: SessionOptions = {
-  password: getSessionSecret(),
+  get password() {
+    return getSessionSecret()
+  },
   cookieName: 'runclub-runner-session',
   cookieOptions: {
     httpOnly: true,

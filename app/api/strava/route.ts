@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { getCurrentRunner } from '../../../lib/auth/runner'
+import { getSessionSecret } from '../../../lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const clientId = process.env.STRAVA_CLIENT_ID
   const clientSecret = process.env.STRAVA_CLIENT_SECRET
-  const sessionSecret = process.env.SESSION_SECRET
+  let sessionSecret: string
+  try {
+    sessionSecret = getSessionSecret()
+  } catch {
+    return NextResponse.redirect(new URL('/login?error=strava_config', url))
+  }
 
   if (!clientId || !clientSecret || !sessionSecret || sessionSecret.length < 32) {
     return NextResponse.redirect(new URL('/login?error=strava_config', url))

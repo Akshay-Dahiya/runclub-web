@@ -13,6 +13,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { authorizeRunnerRequest } from '../../../lib/auth/runner'
 import { prisma } from '../../../lib/prisma'
 import {
   PARTICIPANTS,
@@ -22,12 +23,14 @@ import {
   plannedKmSoFar,
   getStatus,
   grandTotal,
-  WEEK_STARTS,
 } from '../../../lib/planData'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await authorizeRunnerRequest(req)
+  if (auth.response) return auth.response
+
   const cwi = currentWeekIdx()
 
   // Fetch all runs grouped by user

@@ -1,29 +1,26 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
-import { getCurrentRunner } from '../../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../../lib/auth/runner'
 
 export const dynamic = 'force-dynamic'
 
-const likeLimiter = createRateLimiter(15 * 60 * 1000, 60)
+const likeLimiter = createRateLimiter(15 * 60 * 1000, 60, 'feed-like')
 
 export async function POST(req: Request) {
   try {
     const ip = getIP(req)
-    const rateCheck = likeLimiter.check(ip)
+    const rateCheck = await likeLimiter.check(ip)
     if (!rateCheck.allowed) {
       return NextResponse.json({ error: 'Too many likes. Please wait.' }, { status: 429 })
     }
 
-    const runner = await getCurrentRunner()
-    if (!runner) {
-      return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-    }
+    const body = await req.json().catch(() => null)
+    const auth = await authorizeRunnerRequest(req, body?.userId)
+    if (auth.response) return auth.response
+    const userId = auth.runner.id
 
-    const { runId, userId: requestedUserId } = await req.json()
-    if (requestedUserId && requestedUserId !== runner.id) {
-      return NextResponse.json({ error: 'Run not found' }, { status: 404 })
-    }
+    const { runId } = body || {}
     if (typeof runId !== 'string') {
       return NextResponse.json({ error: 'Missing runId' }, { status: 400 })
     }
@@ -32,8 +29,6 @@ export async function POST(req: Request) {
     if (!run) {
       return NextResponse.json({ error: 'Run not found' }, { status: 404 })
     }
-
-    const userId = runner.id
 
     // Check if already liked
     const existing = await prisma.like.findFirst({

@@ -9,8 +9,8 @@ import { generateCoachChatReply, getGeminiApiKey } from '../../../lib/gemini'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const ipChatLimiter = createRateLimiter(10 * 60 * 1000, 30)
-const userChatLimiter = createRateLimiter(10 * 60 * 1000, 20)
+const ipChatLimiter = createRateLimiter(10 * 60 * 1000, 30, 'chat-ip')
+const userChatLimiter = createRateLimiter(10 * 60 * 1000, 20, 'chat-user')
 
 type SimpleMessage = {
   role: 'user' | 'assistant'
@@ -81,7 +81,7 @@ function streamSingleMessage(text: string, isFallback = false) {
 }
 
 export async function POST(request: Request) {
-  const ipRateCheck = ipChatLimiter.check(getIP(request))
+  const ipRateCheck = await ipChatLimiter.check(getIP(request))
   if (!ipRateCheck.allowed) {
     return NextResponse.json({ error: 'Too many chat requests from this network. Please try again later.' }, { status: 429 })
   }
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
   if (auth.response) return auth.response
   const runner = auth.runner
 
-  const userRateCheck = userChatLimiter.check(runner.id)
+  const userRateCheck = await userChatLimiter.check(runner.id)
   if (!userRateCheck.allowed) {
     return NextResponse.json({ error: 'Too many chat requests. Please wait a few minutes and try again.' }, { status: 429 })
   }

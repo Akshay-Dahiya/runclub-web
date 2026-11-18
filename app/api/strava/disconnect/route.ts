@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCurrentRunner } from '../../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { refreshStravaToken } from '../../../../lib/strava'
 
@@ -7,14 +7,9 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-
-    const requestedUserId = new URL(req.url).searchParams.get('userId')
-    if (requestedUserId && requestedUserId !== runner.id) {
-      return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
-    }
-    const userId = runner.id
+    const auth = await authorizeRunnerRequest(req)
+    if (auth.response) return auth.response
+    const userId = auth.runner.id
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

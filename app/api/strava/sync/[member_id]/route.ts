@@ -5,12 +5,12 @@ import { createRateLimiter, getIP } from '../../../../../lib/rateLimit'
 export const dynamic = 'force-dynamic'
 
 // Rate limit: max 10 sync requests per IP per 10 minutes
-const syncLimiter = createRateLimiter(10 * 60 * 1000, 10)
+const syncLimiter = createRateLimiter(10 * 60 * 1000, 10, 'strava-sync-member')
 
 export async function POST(req: Request, { params }: { params: Promise<{ member_id: string }> }) {
   try {
     const ip = getIP(req)
-    const rateCheck = syncLimiter.check(ip)
+    const rateCheck = await syncLimiter.check(ip)
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { error: 'Too many sync requests. Please try again in a moment.' },

@@ -10,7 +10,7 @@ const MAX_CONTENT_LENGTH = 2000
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024
 const MAX_STORIES_PER_HOUR = 10
 
-const storyPostLimiter = createRateLimiter(60 * 60 * 1000, MAX_STORIES_PER_HOUR)
+const storyPostLimiter = createRateLimiter(60 * 60 * 1000, MAX_STORIES_PER_HOUR, 'stories-post')
 
 type StoryWithAuthor = {
   id: string
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
   }
 
   const ip = getIP(request)
-  const rateCheck = storyPostLimiter.check(ip)
+  const rateCheck = await storyPostLimiter.check(ip)
   if (!rateCheck.allowed) {
     return NextResponse.json({ error: 'You have shared several stories recently. Try again later.' }, { status: 429 })
   }

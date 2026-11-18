@@ -5,12 +5,12 @@ import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
 export const dynamic = 'force-dynamic'
 
 // Allow max 10 sync-all requests per 10 minutes per IP
-const syncAllLimiter = createRateLimiter(10 * 60 * 1000, 10)
+const syncAllLimiter = createRateLimiter(10 * 60 * 1000, 10, 'strava-sync-all')
 
 export async function POST(req: Request) {
   try {
     const ip = getIP(req)
-    const rateCheck = syncAllLimiter.check(ip)
+    const rateCheck = await syncAllLimiter.check(ip)
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { error: 'Sync was requested recently. Please wait a minute before syncing again.' },

@@ -16,8 +16,6 @@ const runnerSelect = {
 
 export async function getCurrentRunner() {
   const secret = getSessionSecret()
-  if (!secret || secret.length < 32) return null
-
   const session = await getIronSession<RunnerSessionData>(await cookies(), {
     ...runnerSessionOptions,
     password: secret,
@@ -31,7 +29,7 @@ export async function getCurrentRunner() {
 }
 
 export async function authorizeRunnerRequest(req: Request, bodyUserId?: unknown) {
-  const runner = await getCurrentRunner().catch(() => null)
+  const runner = await getCurrentRunner()
   if (!runner) {
     return {
       runner: null,

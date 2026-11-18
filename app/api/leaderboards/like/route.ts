@@ -1,32 +1,27 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { createRateLimiter, getIP } from '../../../../lib/rateLimit'
-import { getCurrentRunner } from '../../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../../lib/auth/runner'
 
 export const dynamic = 'force-dynamic'
 
 // Rate limit: max 20 like toggles per IP per 15 minutes
-const likeLimiter = createRateLimiter(15 * 60 * 1000, 20)
+const likeLimiter = createRateLimiter(15 * 60 * 1000, 20, 'leaderboard-like')
 
 export async function POST(req: Request) {
   // Rate limiting
   const ip = getIP(req)
-  const rateCheck = likeLimiter.check(ip)
+  const rateCheck = await likeLimiter.check(ip)
   if (!rateCheck.allowed) {
     return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
-  const runner = await getCurrentRunner()
-  if (!runner) {
-    return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-  }
+  const body = await req.json().catch(() => null)
+  const auth = await authorizeRunnerRequest(req, body?.userId)
+  if (auth.response) return auth.response
+  const userId = auth.runner.id
 
-  const body = await req.json()
-  const { userId: requestedUserId, leaderboardType, targetUserId } = body
-  if (requestedUserId && requestedUserId !== runner.id) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
-  }
-  const userId = runner.id
+  const { leaderboardType, targetUserId } = body || {}
 
   if (typeof leaderboardType !== 'string' || typeof targetUserId !== 'string' || !targetUserId || targetUserId.length > 30) {
     return NextResponse.json({ error: 'Invalid fields' }, { status: 400 })

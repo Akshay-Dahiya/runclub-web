@@ -10,24 +10,23 @@ import { NextResponse } from 'next/server'
 import { getIronSession } from 'iron-session'
 import { sessionOptions, SessionData } from '../../../lib/session'
 import { cookies } from 'next/headers'
-import { getCurrentRunner } from '../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../lib/auth/runner'
 import { prisma, hasDatabaseConfig } from '../../../lib/prisma'
-import { getWeekIdx, WEEK_STARTS, PLAN_10K, PARTICIPANTS } from '../../../lib/planData'
+import { getWeekIdx, PARTICIPANTS } from '../../../lib/planData'
 import { createRateLimiter, getIP } from '../../../lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
 // Rate limit: max 20 run submissions per IP per 15 minutes
-const postLimiter = createRateLimiter(15 * 60 * 1000, 20)
+const postLimiter = createRateLimiter(15 * 60 * 1000, 20, 'runs-post')
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const userId = searchParams.get('userId')
-  if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
   if (!hasDatabaseConfig()) return NextResponse.json([])
 
-  const runner = await getCurrentRunner()
-  const isOwner = runner?.id === userId
+  const auth = await authorizeRunnerRequest(req)
+  if (auth.response) return auth.response
+  const userId = auth.runner.id
+
   const runs = await prisma.run.findMany({
     where: { userId },
     orderBy: { date: 'desc' },
@@ -39,8 +38,8 @@ export async function GET(req: Request) {
       distanceKm: true,
       durationSec: true,
       paceSecPerKm: true,
-      avgHeartRate: isOwner,
-      notes: isOwner,
+      avgHeartRate: true,
+      notes: true,
       source: true,
       createdAt: true,
     },
@@ -51,7 +50,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   // Rate limiting
   const ip = getIP(req)
-  const rateCheck = postLimiter.check(ip)
+  const rateCheck = await postLimiter.check(ip)
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
@@ -59,16 +58,12 @@ export async function POST(req: Request) {
     )
   }
 
-  const runner = await getCurrentRunner()
-  if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-
-  const body = await req.json()
-  if (body.userId && body.userId !== runner.id) {
-    return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
-  }
+  const body = await req.json().catch(() => null)
+  const auth = await authorizeRunnerRequest(req, body?.userId)
+  if (auth.response) return auth.response
 
   // The signed-in runner is always the owner; never trust a client-selected ID.
-  const userId = runner.id
+  const userId = auth.runner.id
   const { date, distanceKm, paceSecPerKm } = body
   if (!date || distanceKm === undefined || distanceKm === null) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -157,9 +152,9 @@ export async function DELETE(req: Request) {
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   if (!session.isAdmin) {
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-    const ownedRun = await prisma.run.findFirst({ where: { id, userId: runner.id }, select: { id: true } })
+    const auth = await authorizeRunnerRequest(req)
+    if (auth.response) return auth.response
+    const ownedRun = await prisma.run.findFirst({ where: { id, userId: auth.runner.id }, select: { id: true } })
     if (!ownedRun) return NextResponse.json({ error: 'Run not found' }, { status: 404 })
   }
 

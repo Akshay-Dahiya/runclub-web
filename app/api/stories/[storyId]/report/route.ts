@@ -5,7 +5,7 @@ import { createRateLimiter, getIP } from '../../../../../lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
-const reportLimiter = createRateLimiter(60 * 60 * 1000, 10)
+const reportLimiter = createRateLimiter(60 * 60 * 1000, 10, 'story-report')
 
 export async function POST(
   req: NextRequest,
@@ -13,7 +13,7 @@ export async function POST(
 ) {
   try {
     const ip = getIP(req)
-    const rateCheck = reportLimiter.check(ip)
+    const rateCheck = await reportLimiter.check(ip)
     if (!rateCheck.allowed) {
       return NextResponse.json({ error: 'Too many reports submitted. Please try again later.' }, { status: 429 })
     }

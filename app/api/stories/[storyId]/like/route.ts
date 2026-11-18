@@ -4,7 +4,7 @@ import { createRateLimiter, getIP } from '../../../../../lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
-const likeLimiter = createRateLimiter(60 * 1000, 30) // Max 30 likes per minute
+const likeLimiter = createRateLimiter(60 * 1000, 30, 'story-like') // Max 30 likes per minute
 
 export async function POST(
   req: NextRequest,
@@ -12,7 +12,7 @@ export async function POST(
 ) {
   try {
     const ip = getIP(req)
-    const rateCheck = likeLimiter.check(ip)
+    const rateCheck = await likeLimiter.check(ip)
     if (!rateCheck.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
