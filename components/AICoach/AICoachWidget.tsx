@@ -2,27 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { useChat } from '@ai-sdk/react'
 import ChatMessage from './ChatMessage'
 import SuggestedPrompts from './SuggestedPrompts'
+import { extractMessageText, useCoachChat } from './useCoachChat'
 
 export default function AICoachWidget({ userId }: { userId: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, sendMessage, status, error, clearError } = useChat()
-  const isLoading = status === 'submitted' || status === 'streaming'
+  const { messages, isLoading, errorMessage, canRetry, sendPrompt, retryLast, clearChat } = useCoachChat(userId)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isLoading, errorMessage])
 
   function submitMessage() {
-    const text = input.trim()
-    if (!text || isLoading) return
-    setInput('')
-    clearError()
-    void sendMessage({ text })
+    if (sendPrompt(input)) {
+      setInput('')
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -91,7 +88,18 @@ export default function AICoachWidget({ userId }: { userId: string }) {
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>AI Coach</h3>
               <p style={{ margin: 0, fontSize: '11px', opacity: 0.6, fontFamily: 'monospace' }}>PRIVATE TRAINING SUPPORT</p>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  aria-label="Clear chat history"
+                  disabled={isLoading}
+                  onClick={clearChat}
+                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: isLoading ? 'not-allowed' : 'pointer' }}
+                >
+                  Clear
+                </button>
+              )}
               <a href={`/dashboard/${userId}/coach`} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', textDecoration: 'none' }}>
                 Expand
               </a>
@@ -110,24 +118,56 @@ export default function AICoachWidget({ userId }: { userId: string }) {
             )}
             {messages.map((message) => {
               if (message.role !== 'user' && message.role !== 'assistant') return null
-              const content = message.parts.reduce((text, part) =>
-                part.type === 'text' ? text + part.text : text,
-              '')
+              const content = extractMessageText(message)
               return content ? (
                 <ChatMessage key={message.id} role={message.role} content={content} />
               ) : null
             })}
-            {error && (
-              <p role="alert" style={{ color: '#fb7185', fontSize: '13px' }}>
-                {error.message.includes('503')
-                  ? 'The coach is not configured for this environment. Confirm GEMINI_API_KEY is enabled for Development, then restart the preview.'
-                  : 'The coach could not respond. Please try again, or reconnect Strava if your session expired.'}
-              </p>
-            )}
             {isLoading && (
-              <p role="status" style={{ opacity: 0.65, padding: '12px', fontSize: '13px' }}>
-                Your coach is thinking…
-              </p>
+              <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.75, padding: '12px', fontSize: '13px' }}>
+                <span aria-hidden="true">🏃</span>
+                <span>Your coach is thinking…</span>
+              </div>
+            )}
+            {errorMessage && (
+              <div
+                role="alert"
+                style={{
+                  background: 'rgba(244, 63, 94, 0.1)',
+                  border: '1px solid rgba(244, 63, 94, 0.35)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: '#e11d48',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                  marginTop: '8px',
+                }}
+              >
+                <span>{errorMessage}</span>
+                {canRetry && (
+                  <button
+                    type="button"
+                    onClick={retryLast}
+                    aria-label="Retry last message"
+                    style={{
+                      background: 'var(--orange)',
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    ↻ Retry
+                  </button>
+                )}
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>

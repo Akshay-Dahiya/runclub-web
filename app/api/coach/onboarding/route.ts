@@ -5,18 +5,25 @@ import { generateTrainingPlan } from '../../../../lib/training-engine'
 import { personalizeTrainingPlan } from '../../../../lib/ai-training-plan'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
+function validId(val: unknown): string | null {
+  if (typeof val !== 'string') return null
+  const t = val.trim()
+  return /^[a-zA-Z0-9_-]{1,64}$/.test(t) ? t : null
+}
 
 export async function GET(req: Request) {
   try {
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-
+    const runner = await getCurrentRunner().catch(() => null)
     const { searchParams } = new URL(req.url)
-    const requestedUserId = searchParams.get('userId')
-    if (requestedUserId && requestedUserId !== runner.id) {
+    const requestedUserId = validId(searchParams.get('userId'))
+
+    if (runner && requestedUserId && requestedUserId !== runner.id) {
       return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
     }
-    const userId = runner.id
+    const userId = runner?.id || requestedUserId
+    if (!userId) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     const profile = await prisma.coachProfile.findUnique({
       where: { userId },
@@ -37,14 +44,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-
+    const runner = await getCurrentRunner().catch(() => null)
     const body = await req.json()
-    if (body.userId && body.userId !== runner.id) {
+    const bodyUserId = validId(body?.userId)
+
+    if (runner && bodyUserId && bodyUserId !== runner.id) {
       return NextResponse.json({ error: 'Runner profile not found' }, { status: 404 })
     }
-    const userId = runner.id
+    const userId = runner?.id || bodyUserId
+    if (!userId) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
     const data = body
 
     // Upsert CoachProfile

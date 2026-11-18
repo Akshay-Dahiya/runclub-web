@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import Link from 'next/link'
-import { useChat } from '@ai-sdk/react'
 import CoachDashboard from '../../../../components/Coach/CoachDashboard'
 import ChatMessage from '../../../../components/AICoach/ChatMessage'
 import SuggestedPrompts from '../../../../components/AICoach/SuggestedPrompts'
+import { extractMessageText, useCoachChat } from '../../../../components/AICoach/useCoachChat'
 
 type CoachRun = {
   id: string
@@ -25,8 +25,7 @@ type CoachPageClientProps = {
 export default function CoachPageClient({ userId, userName, runs }: CoachPageClientProps) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, sendMessage, status, error, clearError } = useChat()
-  const isLoading = status === 'submitted' || status === 'streaming'
+  const { messages, isLoading, errorMessage, canRetry, sendPrompt, retryLast, clearChat } = useCoachChat(userId)
 
   const summary = useMemo(() => {
     const now = new Date()
@@ -49,14 +48,12 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isLoading, errorMessage])
 
   function submitMessage() {
-    const text = input.trim()
-    if (!text || isLoading) return
-    setInput('')
-    clearError()
-    void sendMessage({ text })
+    if (sendPrompt(input)) {
+      setInput('')
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -105,12 +102,32 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
       </section>
 
       <section className="coach-chat" aria-labelledby="coach-chat-title">
-        <header className="coach-chat-header">
+        <header className="coach-chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div>
             <p className="coach-eyebrow">Private training support</p>
             <h2 id="coach-chat-title">Ask your coach</h2>
             <p>Get guidance grounded in your RunClub training data.</p>
           </div>
+          {messages.length > 0 && (
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={clearChat}
+              aria-label="Clear coach chat history"
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Clear history
+            </button>
+          )}
         </header>
 
         <div className="coach-chat-log" role="log" aria-live="polite" aria-relevant="additions text">
@@ -126,16 +143,26 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
 
           {messages.map((message) => {
             if (message.role !== 'user' && message.role !== 'assistant') return null
-            const content = message.parts.reduce((text, part) => part.type === 'text' ? text + part.text : text, '')
+            const content = extractMessageText(message)
             return content ? <ChatMessage key={message.id} role={message.role} content={content} /> : null
           })}
 
-          {isLoading && <p role="status" className="coach-chat-status">Your coach is thinking…</p>}
-          {error && <p role="alert" className="coach-chat-error">
-            {error.message.includes('503')
-              ? 'The coach is not configured for this environment. Confirm GEMINI_API_KEY is enabled for Development, then restart the preview.'
-              : 'The coach could not respond. Please try again, or reconnect Strava if your session expired.'}
-          </p>}
+          {isLoading && <p role="status" className="coach-chat-status">🏃 Your coach is thinking…</p>}
+          {errorMessage && (
+            <div role="alert" className="coach-chat-error" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.35)', borderRadius: '8px', marginTop: '8px' }}>
+              <span>{errorMessage}</span>
+              {canRetry && (
+                <button
+                  type="button"
+                  onClick={retryLast}
+                  aria-label="Retry last coach request"
+                  style={{ background: 'var(--coach-accent)', color: '#111', border: 0, borderRadius: '6px', padding: '6px 12px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  ↻ Retry
+                </button>
+              )}
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 

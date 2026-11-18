@@ -12,17 +12,27 @@ export default function WeeklyReviewCard({ userId, weekNumber }: WeeklyReviewCar
   const [review, setReview] = useState<any>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [refreshing, setRefreshing] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchReview = (force = false) => {
     if (force) setRefreshing(true)
     else setLoading(true)
+    setError(null)
 
     fetch(`/api/coach/review?userId=${userId}&weekNumber=${weekNumber}`)
-      .then(res => res.json())
+      .then(async res => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data?.error || `Failed to load weekly review (${res.status})`)
+        return data
+      })
       .then(data => {
         if (data.review) setReview(data.review)
+        else setError('No active training plan found yet for Sunday reviews.')
       })
-      .catch(err => console.error('Failed to load review:', err))
+      .catch(err => {
+        console.error('Failed to load review:', err)
+        setError(err?.message || 'Could not load Sunday Performance Review.')
+      })
       .finally(() => {
         setLoading(false)
         setRefreshing(false)
@@ -35,17 +45,56 @@ export default function WeeklyReviewCard({ userId, weekNumber }: WeeklyReviewCar
 
   if (loading) {
     return (
-      <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: '16px',
-        padding: '24px',
-        textAlign: 'center',
-        fontFamily: 'monospace',
-        color: 'var(--muted)',
-        fontSize: '11px'
-      }}>
+      <div
+        role="status"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          padding: '24px',
+          textAlign: 'center',
+          fontFamily: 'monospace',
+          color: 'var(--muted)',
+          fontSize: '11px'
+        }}
+      >
         Loading Sunday Performance Review...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div
+        role="alert"
+        style={{
+          background: 'rgba(244, 63, 94, 0.08)',
+          border: '1px solid rgba(244, 63, 94, 0.3)',
+          borderRadius: '16px',
+          padding: '24px',
+          textAlign: 'center',
+          color: '#e11d48',
+        }}
+      >
+        <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 600 }}>{error}</p>
+        <button
+          type="button"
+          onClick={() => fetchReview(false)}
+          aria-label="Retry loading Sunday review"
+          style={{
+            background: 'var(--orange, #fc4c02)',
+            color: '#000',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          ↻ Retry
+        </button>
       </div>
     )
   }

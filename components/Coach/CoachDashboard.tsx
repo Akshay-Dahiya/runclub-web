@@ -21,14 +21,20 @@ export default function CoachDashboard({ userId, userName, runs }: CoachDashboar
   const [profile, setProfile] = useState<any>(null)
   const [activePlan, setActivePlan] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('plan')
   const [isUpdatingTier, setIsUpdatingTier] = useState(false)
 
   const loadCoachData = () => {
     setLoading(true)
+    setLoadError(null)
     fetch(`/api/coach/onboarding?userId=${userId}`)
-      .then(res => res.json())
+      .then(async res => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`)
+        return data
+      })
       .then(data => {
         if (data.profile) {
           setProfile(data.profile)
@@ -42,7 +48,10 @@ export default function CoachDashboard({ userId, userName, runs }: CoachDashboar
           setActivePlan(data.activePlan)
         }
       })
-      .catch(err => console.error('Failed to load coach data:', err))
+      .catch(err => {
+        console.error('Failed to load coach data:', err)
+        setLoadError(err?.message || 'Failed to load coach data.')
+      })
       .finally(() => setLoading(false))
   }
 
@@ -110,8 +119,46 @@ export default function CoachDashboard({ userId, userName, runs }: CoachDashboar
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px', color: 'var(--muted)', fontFamily: 'monospace' }}>
+      <div role="status" style={{ textAlign: 'center', padding: '60px', color: 'var(--muted)', fontFamily: 'monospace' }}>
         Loading RunClub AI Coach...
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div
+        role="alert"
+        style={{
+          background: 'rgba(244, 63, 94, 0.08)',
+          border: '1px solid rgba(244, 63, 94, 0.3)',
+          borderRadius: '12px',
+          padding: '24px',
+          textAlign: 'center',
+          color: '#e11d48',
+        }}
+      >
+        <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600 }}>
+          Could not load your AI Coach plan: {loadError}
+        </p>
+        <button
+          type="button"
+          onClick={loadCoachData}
+          aria-label="Retry loading coach dashboard"
+          style={{
+            background: 'var(--orange, #fc4c02)',
+            color: '#000',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px 18px',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          ↻ Retry
+        </button>
       </div>
     )
   }

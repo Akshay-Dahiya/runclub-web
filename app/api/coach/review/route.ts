@@ -5,22 +5,30 @@ import { generateGeminiText } from '../../../../lib/gemini'
 import { fmtTime, fmtPace } from '../../../../lib/race-predictor'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
+function validId(val: unknown): string | null {
+  if (typeof val !== 'string') return null
+  const t = val.trim()
+  return /^[a-zA-Z0-9_-]{1,64}$/.test(t) ? t : null
+}
 
 export async function GET(req: Request) {
   try {
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-
+    const runner = await getCurrentRunner().catch(() => null)
     const { searchParams } = new URL(req.url)
-    const requestedUserId = searchParams.get('userId')
+    const requestedUserId = validId(searchParams.get('userId'))
     const weekNumber = parseInt(searchParams.get('weekNumber') || '1', 10)
-    if (requestedUserId && requestedUserId !== runner.id) {
+
+    if (runner && requestedUserId && requestedUserId !== runner.id) {
       return NextResponse.json({ error: 'Weekly review not found' }, { status: 404 })
     }
+    const userId = runner?.id || requestedUserId
+    if (!userId) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
+
     if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 60) {
       return NextResponse.json({ error: 'Invalid week number' }, { status: 400 })
     }
-    const userId = runner.id
 
     const plan = await prisma.trainingPlan.findFirst({
       where: { userId, status: 'active' },
@@ -62,20 +70,26 @@ export async function GET(req: Request) {
       orderBy: { date: 'asc' },
     })
 
-    const kmCompleted = runs.reduce((sum: number, r: any) => sum + r.distanceKm, 0)
+    const kmCompleted = runs.reduce((sum: number, r: any) => sum + (Number(r.distanceKm) || 0), 0)
     const workoutsDone = runs.length
-    const avgPaceSec = runs.length > 0
-      ? Math.round(runs.reduce((sum: number, r: any) => sum + r.paceSecPerKm, 0) / runs.length)
+    const pacedRuns = runs.filter((r: any) => Number(r.paceSecPerKm) > 0)
+    const avgPaceSec = pacedRuns.length > 0
+      ? Math.round(pacedRuns.reduce((sum: number, r: any) => sum + Number(r.paceSecPerKm), 0) / pacedRuns.length)
       : null
-    const avgHR = runs.filter((r: any) => r.avgHeartRate).length > 0
-      ? Math.round(runs.filter((r: any) => r.avgHeartRate).reduce((sum: number, r: any) => sum + r.avgHeartRate, 0) / runs.filter((r: any) => r.avgHeartRate).length)
+    const hrRuns = runs.filter((r: any) => Number(r.avgHeartRate) > 0)
+    const avgHR = hrRuns.length > 0
+      ? Math.round(hrRuns.reduce((sum: number, r: any) => sum + Number(r.avgHeartRate), 0) / hrRuns.length)
       : null
 
     let aiSummary = ''
     let nextWeekFocus = ''
 
-    try {
-      const prompt = `You are the RunClub Head Running Coach. Write a concise, motivational, highly specific Sunday Performance Review for a club runner.
+    if (workoutsDone === 0) {
+      aiSummary = `No runs logged for Week ${weekNumber} yet (${kmCompleted.toFixed(1)} / ${kmPlanned} km target). Connect Strava or log your first session to unlock personalized AI coaching feedback.`
+      nextWeekFocus = `Start small: log your first easy 3–5 km jog this week to build consistency.`
+    } else {
+      try {
+        const prompt = `You are the RunClub Head Running Coach. Write a concise, motivational, highly specific Sunday Performance Review for a club runner.
 Runner Goal: ${plan.goalRace} in target time ${fmtTime(plan.goalTimeSec)}.
 Week ${weekNumber} Metrics:
 - Planned Mileage: ${kmPlanned} km across ${workoutsPlanned} workouts.
@@ -87,13 +101,14 @@ Provide two parts:
 1. SUMMARY: 2-3 sentences evaluating consistency, volume, and pacing discipline. Mention if they over-trained, hit the sweet spot, or fell short.
 2. NEXT_WEEK_FOCUS: 1-2 actionable directives on what to adjust next week.`
 
-      const text = await generateGeminiText({ prompt })
-      if (text) {
-        aiSummary = text
-        nextWeekFocus = `Focus on maintaining 80% easy effort. Prioritize your long run and protect recovery days.`
+        const text = await generateGeminiText({ prompt })
+        if (text) {
+          aiSummary = text
+          nextWeekFocus = `Focus on maintaining 80% easy effort. Prioritize your long run and protect recovery days.`
+        }
+      } catch (aiErr: any) {
+        console.warn('AI review generation fallback:', { userId, weekNumber, message: aiErr?.message || String(aiErr) })
       }
-    } catch (aiErr) {
-      console.warn('AI review generation fallback:', aiErr)
     }
 
     if (!aiSummary) {
