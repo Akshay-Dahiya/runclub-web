@@ -8,6 +8,9 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   }

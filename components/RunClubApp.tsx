@@ -21,6 +21,7 @@ function DashboardPicker({ runners }: { runners: any[] }) {
       <select
         value={selected}
         onChange={e => setSelected(e.target.value)}
+        aria-label="Select runner profile to open dashboard"
         style={{
           flex: 1, minWidth: '220px',
           background: '#FFFFFF', color: '#0F172A',
@@ -35,8 +36,10 @@ function DashboardPicker({ runners }: { runners: any[] }) {
         ))}
       </select>
       <button
+        type="button"
         onClick={() => { if (selected) router.push(`/dashboard/${selected}`) }}
         disabled={!selected}
+        aria-label="Open selected runner dashboard"
         style={{
           background: selected ? '#FC4C02' : '#E2E8F0',
           color: selected ? '#FFFFFF' : '#94A3B8',
@@ -345,8 +348,11 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
             <h2 className="section-title" style={{ marginBottom: 0 }}>Community Leaderboard</h2>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', background: '#F1F5F9', padding: '4px', borderRadius: '12px' }}>
+          <div role="tablist" aria-label="Leaderboard timeframe" style={{ display: 'flex', gap: '8px', background: '#F1F5F9', padding: '4px', borderRadius: '12px' }}>
             <button
+              type="button"
+              role="tab"
+              aria-selected={leaderboardTab === 'weekly'}
               onClick={() => setLeaderboardTab('weekly')}
               style={{
                 background: leaderboardTab === 'weekly' ? '#FFFFFF' : 'transparent',
@@ -363,6 +369,9 @@ export default function RunClubApp({ users, viewerRunnerId = null }: { users: an
               This Week
             </button>
             <button
+              type="button"
+              role="tab"
+              aria-selected={leaderboardTab === 'overall'}
               onClick={() => setLeaderboardTab('overall')}
               style={{
                 background: leaderboardTab === 'overall' ? '#FFFFFF' : 'transparent',

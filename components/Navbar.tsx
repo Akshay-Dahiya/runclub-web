@@ -45,10 +45,11 @@ export default function Navbar() {
           textDecoration: 'none'
         }}>
           <Image
-            src="/logo.png?v=3"
-            alt="RunClub Logo"
+            src="/logo.png"
+            alt="Joyville Road Runners RunClub Logo"
             width={40}
             height={40}
+            priority
             style={{ height: '40px', width: 'auto', borderRadius: '8px' }}
           />
           <div>

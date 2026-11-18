@@ -513,10 +513,14 @@ export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: bool
       )}
 
       {/* Filter tabs + Sync Button */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div role="tablist" aria-label="Activity feed time filter" style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
         {(['week', 'today', 'all'] as const).map(f => (
           <button
             key={f}
+            type="button"
+            role="tab"
+            aria-selected={filter === f}
+            aria-label={`Filter runs by ${f === 'week' ? 'This Week' : f === 'today' ? 'Today' : 'All Time'}`}
             onClick={() => setFilter(f)}
             style={{
               padding: '8px 18px',
@@ -536,8 +540,10 @@ export default function ActivityFeed({ isSignedIn = false }: { isSignedIn?: bool
 
         {/* Sync Latest Runs Button */}
         <button
+          type="button"
           onClick={handleSyncAll}
           disabled={syncing}
+          aria-label="Sync latest runs from Strava for all club runners"
           title="Fetch latest Strava runs for all club runners"
           style={{
             padding: '8px 16px',
