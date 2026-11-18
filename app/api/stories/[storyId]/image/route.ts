@@ -1,6 +1,5 @@
 import { get } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentRunner } from '../../../../../lib/auth/runner'
 import { hasDatabaseConfig, prisma } from '../../../../../lib/prisma'
 
 export async function GET(
@@ -12,9 +11,6 @@ export async function GET(
   }
 
   try {
-    const runner = await getCurrentRunner()
-    if (!runner) return NextResponse.json({ error: 'Connect with Strava to view this photo.' }, { status: 401 })
-
     const { storyId } = await params
     const story = await prisma.clubStory.findUnique({
       where: { id: storyId },
@@ -29,10 +25,9 @@ export async function GET(
     if (!result) return NextResponse.json({ error: 'Photo not found.' }, { status: 404 })
 
     const headers = {
-      'Cache-Control': 'private, no-cache',
+      'Cache-Control': 'public, max-age=3600',
       ETag: result.blob.etag,
       'X-Content-Type-Options': 'nosniff',
-      Vary: 'Cookie',
     }
 
     if (result.statusCode === 304) return new NextResponse(null, { status: 304, headers })

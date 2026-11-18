@@ -20,7 +20,10 @@ export async function POST(
 
     const { storyId } = await params
     const body = await req.json().catch(() => ({}))
-    const reason = sanitizeText(body.reason || 'Flagged by community member', 500)
+    if (typeof body.reason === 'string' && body.reason.trim().length > 500) {
+      return NextResponse.json({ error: 'Report reason must be 500 characters or fewer.' }, { status: 400 })
+    }
+    const reason = sanitizeText(body.reason || 'Flagged by community member', 500) || 'Flagged by community member'
 
     const story = await prisma.clubStory.findUnique({
       where: { id: storyId },

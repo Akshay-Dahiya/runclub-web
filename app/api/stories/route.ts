@@ -33,7 +33,7 @@ function serializeStory(story: StoryWithAuthor, viewerRunnerId: string | null) {
     createdAt: story.createdAt.toISOString(),
     authorName: name,
     authorInitials: initials || 'R',
-    photoUrl: story.imagePath ? `/api/stories/${story.id}/image` : null,
+    photoUrl: story.imagePath ? (story.imagePath.startsWith('http') ? story.imagePath : `/api/stories/${story.id}/image`) : null,
     isMine: viewerRunnerId && story.authorId ? story.authorId === viewerRunnerId : false,
     likesCount: story.likesCount || 0,
   }
@@ -42,7 +42,7 @@ function serializeStory(story: StoryWithAuthor, viewerRunnerId: string | null) {
 function getImageExtension(type: string, bytes: Uint8Array) {
   const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
   const isPng = type === 'image/png' && pngSignature.every((byte, index) => bytes[index] === byte)
-  const isJpeg = type === 'image/jpeg' && bytes[0] === 0xff && bytes[1] === 0xff
+  const isJpeg = type === 'image/jpeg' && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
   const header = new TextDecoder().decode(bytes.slice(0, 12))
   const isWebp = type === 'image/webp' && header.startsWith('RIFF') && header.slice(8, 12) === 'WEBP'
 
@@ -106,12 +106,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Could not read the story form.' }, { status: 400 })
   }
 
-  const rawContent = String(formData.get('content') || '')
+  const rawContent = formData.get('content')
+  if (typeof rawContent !== 'string' || !rawContent.trim()) {
+    return NextResponse.json({ error: 'Add a few words before sharing.' }, { status: 400 })
+  }
+  if (rawContent.trim().length > MAX_CONTENT_LENGTH) {
+    return NextResponse.json({ error: `Stories can be up to ${MAX_CONTENT_LENGTH} characters.` }, { status: 400 })
+  }
   const content = sanitizeText(rawContent, MAX_CONTENT_LENGTH)
   if (!content) return NextResponse.json({ error: 'Add a few words before sharing.' }, { status: 400 })
 
-  // Author display name: from logged in runner, or typed name in form, or "Club Runner"
-  const typedName = sanitizeText(String(formData.get('authorName') || ''), 50)
+  const rawAuthorName = formData.get('authorName')
+  if (typeof rawAuthorName === 'string' && rawAuthorName.trim().length > 50) {
+    return NextResponse.json({ error: 'Author name must be 50 characters or fewer.' }, { status: 400 })
+  }
+
+  // Author display name: from logged in runner, or typed name in form, or "Runner"
+  const typedName = sanitizeText(typeof rawAuthorName === 'string' ? rawAuthorName : '', 50)
   const authorDisplayName = runner?.name || typedName || 'Runner'
 
   const photoEntry = formData.get('photo')

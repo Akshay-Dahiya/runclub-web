@@ -1,7 +1,7 @@
 /**
  * Distributed rate limiter backed by Upstash Redis / Vercel KV REST API.
  * Falls back to an in-memory fixed/sliding window store only when
- * UPSTASH_REDIS_REST_URL / KV_REST_API_URL is unset (e.g. local dev).
+ * UPSTASH_REDIS_REST_URL / KV_REST_API_URL is unset (or when failClosed is false).
  */
 
 interface RateLimitRecord {
@@ -13,7 +13,14 @@ export type RateLimitResult = {
   allowed: boolean
   retryAfterMs?: number
   backend: 'redis' | 'memory'
+  redisError?: boolean
 }
+
+export type RateLimiterOptions = {
+  failClosed?: boolean
+}
+
+let warnedMissingRedisInProd = false
 
 function getRedisConfig(): { url: string; token: string } | null {
   const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL)?.trim()
@@ -69,8 +76,14 @@ async function checkRedisWindow(
   return { allowed: true, backend: 'redis' }
 }
 
-export function createRateLimiter(windowMs: number, maxRequests: number, namespace = 'default') {
+export function createRateLimiter(
+  windowMs: number,
+  maxRequests: number,
+  namespace = 'default',
+  options: RateLimiterOptions = {},
+) {
   const store = new Map<string, RateLimitRecord>()
+  const failClosed = Boolean(options.failClosed)
 
   // Periodic cleanup to prevent memory leaks when running in local in-memory mode
   setInterval(() => {
@@ -103,19 +116,27 @@ export function createRateLimiter(windowMs: number, maxRequests: number, namespa
   return {
     async check(identifier: string): Promise<RateLimitResult> {
       const redis = getRedisConfig()
-      if (redis) {
-        const bucket = Math.floor(Date.now() / windowMs)
-        const redisKey = `runclub:rl:${namespace}:${windowMs}:${bucket}:${identifier}`
-        try {
-          return await checkRedisWindow(redis.url, redis.token, redisKey, windowMs, maxRequests)
-        } catch (err: any) {
-          console.warn('[RateLimit] Redis backend unavailable, falling back to memory:', {
-            namespace,
-            message: err?.message || String(err),
-          })
+      if (!redis) {
+        if (process.env.NODE_ENV === 'production' && !warnedMissingRedisInProd) {
+          warnedMissingRedisInProd = true
+          console.warn('[RateLimit] Redis environment variables are unset in production; using in-memory rate limiter.')
         }
+        return checkMemory(identifier)
       }
-      return checkMemory(identifier)
+
+      const bucket = Math.floor(Date.now() / windowMs)
+      const redisKey = `runclub:rl:${namespace}:${windowMs}:${bucket}:${identifier}`
+      try {
+        return await checkRedisWindow(redis.url, redis.token, redisKey, windowMs, maxRequests)
+      } catch (err: any) {
+        const message = err?.message || String(err)
+        if (failClosed) {
+          console.error('[RateLimit] Redis backend failed (failClosed=true):', { namespace, message })
+          return { allowed: false, backend: 'redis', redisError: true }
+        }
+        console.warn('[RateLimit] Redis backend unavailable, falling back to memory:', { namespace, message })
+        return checkMemory(identifier)
+      }
     },
   }
 }
