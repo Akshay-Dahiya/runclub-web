@@ -40,11 +40,21 @@ function serializeStory(story: StoryWithAuthor, viewerRunnerId: string | null) {
 }
 
 function getImageExtension(type: string, bytes: Uint8Array) {
+  // Reject SVG and non-image types immediately
+  if (!type || type.includes('svg') || type.includes('xml') || type.includes('html')) {
+    return null
+  }
+
+  // Reject SVG XML text signatures even if content-type was spoofed
+  const headerText = new TextDecoder().decode(bytes.slice(0, 100)).toLowerCase()
+  if (headerText.includes('<svg') || headerText.includes('<?xml')) {
+    return null
+  }
+
   const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
-  const isPng = type === 'image/png' && pngSignature.every((byte, index) => bytes[index] === byte)
-  const isJpeg = type === 'image/jpeg' && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
-  const header = new TextDecoder().decode(bytes.slice(0, 12))
-  const isWebp = type === 'image/webp' && header.startsWith('RIFF') && header.slice(8, 12) === 'WEBP'
+  const isPng = type === 'image/png' && bytes.length >= 8 && pngSignature.every((byte, index) => bytes[index] === byte)
+  const isJpeg = (type === 'image/jpeg' || type === 'image/jpg') && bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  const isWebp = type === 'image/webp' && bytes.length >= 12 && headerText.startsWith('riff') && headerText.slice(8, 12) === 'webp'
 
   if (isPng) return 'png'
   if (isJpeg) return 'jpg'
