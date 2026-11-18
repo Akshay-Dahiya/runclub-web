@@ -25,7 +25,7 @@ type CoachPageClientProps = {
 export default function CoachPageClient({ userId, userName, runs }: CoachPageClientProps) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, isLoading, errorMessage, canRetry, sendPrompt, retryLast, clearChat } = useCoachChat(userId)
+  const { messages, isLoading, isFallback, errorMessage, canRetry, sendPrompt, retryLast, clearChat } = useCoachChat(userId)
 
   const summary = useMemo(() => {
     const now = new Date()
@@ -105,7 +105,25 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
         <header className="coach-chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div>
             <p className="coach-eyebrow">Private training support</p>
-            <h2 id="coach-chat-title">Ask your coach</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h2 id="coach-chat-title">Ask your coach</h2>
+              {isFallback && (
+                <span
+                  role="status"
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.16)',
+                    color: '#b45309',
+                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                    borderRadius: '999px',
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                  }}
+                >
+                  Offline coach
+                </span>
+              )}
+            </div>
             <p>Get guidance grounded in your RunClub training data.</p>
           </div>
           {messages.length > 0 && (
@@ -144,7 +162,14 @@ export default function CoachPageClient({ userId, userName, runs }: CoachPageCli
           {messages.map((message) => {
             if (message.role !== 'user' && message.role !== 'assistant') return null
             const content = extractMessageText(message)
-            return content ? <ChatMessage key={message.id} role={message.role} content={content} /> : null
+            return content ? (
+              <ChatMessage
+                key={message.id}
+                role={message.role}
+                content={content}
+                isFallback={Boolean((message.metadata as any)?.isFallback)}
+              />
+            ) : null
           })}
 
           {isLoading && <p role="status" className="coach-chat-status">🏃 Your coach is thinking…</p>}

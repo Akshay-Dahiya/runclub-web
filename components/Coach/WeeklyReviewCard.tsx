@@ -19,7 +19,7 @@ export default function WeeklyReviewCard({ userId, weekNumber }: WeeklyReviewCar
     else setLoading(true)
     setError(null)
 
-    fetch(`/api/coach/review?userId=${userId}&weekNumber=${weekNumber}`)
+    fetch(`/api/coach/review?weekNumber=${weekNumber}`, { credentials: 'same-origin' })
       .then(async res => {
         const data = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(data?.error || `Failed to load weekly review (${res.status})`)

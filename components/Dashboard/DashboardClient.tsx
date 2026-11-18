@@ -641,20 +641,20 @@ export default function DashboardClient({
               <GarminHealthStatusCard />
             </div>
           </section>
+
+          {/* 05 — RUNCLUB AI COACH */}
+          <section style={{ marginBottom: '80px' }}>
+            <SectionHead label="05 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
+            <CoachDashboard
+              userId={dbUser.id}
+              userName={dbUser.name || participantDef?.name || 'Runner'}
+              runs={dbUser.runs || []}
+            />
+          </section>
+
+          <AICoachWidget userId={dbUser.id} />
         </>
       )}
-
-      {/* 05 — RUNCLUB AI COACH */}
-      <section style={{ marginBottom: '80px' }}>
-        <SectionHead label="05 / AI Coach & Planner" title="PERSONALIZED TRAINING & RACE INTELLIGENCE" />
-        <CoachDashboard
-          userId={dbUser.id}
-          userName={dbUser.name || participantDef?.name || 'Runner'}
-          runs={dbUser.runs || []}
-        />
-      </section>
-
-      <AICoachWidget userId={dbUser.id} />
 
     </div>
   )

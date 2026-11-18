@@ -1,6 +1,6 @@
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai'
 import { NextResponse } from 'next/server'
-import { getCurrentRunner } from '../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../lib/auth/runner'
 import { prisma } from '../../../lib/prisma'
 import { PARTICIPANTS, grandTotal } from '../../../lib/planData'
 import { createRateLimiter, getIP } from '../../../lib/rateLimit'
@@ -9,7 +9,8 @@ import { generateCoachChatReply, getGeminiApiKey } from '../../../lib/gemini'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const chatLimiter = createRateLimiter(15 * 60 * 1000, 20)
+const ipChatLimiter = createRateLimiter(10 * 60 * 1000, 30)
+const userChatLimiter = createRateLimiter(10 * 60 * 1000, 20)
 
 type SimpleMessage = {
   role: 'user' | 'assistant'
@@ -55,64 +56,60 @@ function readMessages(value: unknown): SimpleMessage[] | null {
   return messages.at(-1)?.role === 'user' ? messages : null
 }
 
-function validateUserId(value: unknown): string | null {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(trimmed)) return null
-  return trimmed
-}
-
-function streamSingleMessage(text: string) {
+function streamSingleMessage(text: string, isFallback = false) {
   const safeText = text.trim() || 'Your coach is ready whenever you are—try asking about your recent runs or weekly goal.'
   const msgId = `coach-${Date.now()}`
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      writer.write({ type: 'start' })
+      writer.write({ type: 'start', messageMetadata: { isFallback } })
       writer.write({ type: 'start-step' })
       writer.write({ type: 'text-start', id: msgId })
       writer.write({ type: 'text-delta', id: msgId, delta: safeText })
       writer.write({ type: 'text-end', id: msgId })
       writer.write({ type: 'finish-step' })
-      writer.write({ type: 'finish', finishReason: 'stop' })
+      writer.write({ type: 'finish', finishReason: 'stop', messageMetadata: { isFallback } })
     },
   })
 
-  return createUIMessageStreamResponse({ stream })
+  return createUIMessageStreamResponse({
+    stream,
+    headers: {
+      'X-Coach-Fallback': isFallback ? 'true' : 'false',
+    },
+  })
 }
 
 export async function POST(request: Request) {
-  const rateCheck = chatLimiter.check(getIP(request))
-  if (!rateCheck.allowed) {
-    return NextResponse.json({ error: 'Too many chat requests. Please try again later.' }, { status: 429 })
+  const ipRateCheck = ipChatLimiter.check(getIP(request))
+  if (!ipRateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many chat requests from this network. Please try again later.' }, { status: 429 })
   }
 
-  let body: any
-  try {
-    body = await request.json()
-  } catch {
+  const body = await request.json().catch(() => undefined)
+  const bodyUserId = body && typeof body === 'object' ? (body as any).userId : undefined
+
+  const auth = await authorizeRunnerRequest(request, bodyUserId)
+  if (auth.response) return auth.response
+  const runner = auth.runner
+
+  const userRateCheck = userChatLimiter.check(runner.id)
+  if (!userRateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many chat requests. Please wait a few minutes and try again.' }, { status: 429 })
+  }
+
+  if (body === undefined) {
     return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 })
   }
 
-  const messages = readMessages(body?.messages)
+  const messages = readMessages((body as any)?.messages)
   if (!messages) {
     return NextResponse.json({ error: 'Invalid chat messages' }, { status: 400 })
   }
 
-  const sessionRunner = await getCurrentRunner().catch(() => null)
-  const requestedUserId = validateUserId(body?.userId)
-  const targetUserId = sessionRunner?.id || requestedUserId
-
-  if (!targetUserId) {
-    return NextResponse.json(
-      { error: 'Connect Strava or open your runner dashboard to use the AI Coach.' },
-      { status: 401 },
-    )
-  }
-
   try {
     const user = await prisma.user.findUnique({
-      where: { id: targetUserId },
+      where: { id: runner.id },
       select: {
         id: true,
         email: true,
@@ -152,8 +149,8 @@ export async function POST(request: Request) {
     const participant = {
       id: user.id,
       email: user.email,
-      name: user.name?.trim() || sessionRunner?.name?.trim() || 'Runner',
-      initials: user.initials || sessionRunner?.initials || 'R',
+      name: user.name?.trim() || runner.name?.trim() || 'Runner',
+      initials: user.initials || runner.initials || 'R',
       cat: category,
     }
     const goalLabel = participant.cat.startsWith('HM') ? 'Half marathon (21.1 km)' : '10K'
@@ -162,7 +159,7 @@ export async function POST(request: Request) {
 
     if (runs.length === 0) {
       const noRunsMessage = `Welcome to RunClub, ${participant.name}! You don't have enough runs logged yet for personalized AI analysis. Connect your Strava account or log your first run on your dashboard, and I'll help you track your pace, weekly mileage, and ${goalLabel} race readiness!`
-      return streamSingleMessage(noRunsMessage)
+      return streamSingleMessage(noRunsMessage, false)
     }
 
     const totalKm = runs.reduce((sum: number, run: any) => sum + (Number(run.distanceKm) || 0), 0)
@@ -227,10 +224,10 @@ Keep answers concise, encouraging, and specific to these runs.`
       })
     }
 
-    return streamSingleMessage(reply.text)
+    return streamSingleMessage(reply.text, reply.isFallback)
   } catch (error: any) {
     console.error('[AI coach] request failed:', {
-      runnerId: targetUserId,
+      runnerId: runner.id,
       message: error?.message || String(error),
     })
     return NextResponse.json({ error: 'The coach is temporarily unavailable.' }, { status: 500 })

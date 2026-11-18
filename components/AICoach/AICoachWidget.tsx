@@ -10,7 +10,7 @@ export default function AICoachWidget({ userId }: { userId: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, isLoading, errorMessage, canRetry, sendPrompt, retryLast, clearChat } = useCoachChat(userId)
+  const { messages, isLoading, isFallback, errorMessage, canRetry, sendPrompt, retryLast, clearChat } = useCoachChat(userId)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -85,7 +85,25 @@ export default function AICoachWidget({ userId }: { userId: string }) {
         >
           <header style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>AI Coach</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>AI Coach</h3>
+                {isFallback && (
+                  <span
+                    role="status"
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.16)',
+                      color: '#b45309',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      borderRadius: '999px',
+                      padding: '2px 8px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Offline coach
+                  </span>
+                )}
+              </div>
               <p style={{ margin: 0, fontSize: '11px', opacity: 0.6, fontFamily: 'monospace' }}>PRIVATE TRAINING SUPPORT</p>
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -120,7 +138,12 @@ export default function AICoachWidget({ userId }: { userId: string }) {
               if (message.role !== 'user' && message.role !== 'assistant') return null
               const content = extractMessageText(message)
               return content ? (
-                <ChatMessage key={message.id} role={message.role} content={content} />
+                <ChatMessage
+                  key={message.id}
+                  role={message.role}
+                  content={content}
+                  isFallback={Boolean((message.metadata as any)?.isFallback)}
+                />
               ) : null
             })}
             {isLoading && (

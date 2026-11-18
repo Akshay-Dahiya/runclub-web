@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCurrentRunner } from '../../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { generateGeminiText } from '../../../../lib/gemini'
 import { fmtTime, fmtPace } from '../../../../lib/race-predictor'
@@ -7,24 +7,13 @@ import { fmtTime, fmtPace } from '../../../../lib/race-predictor'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-function validId(val: unknown): string | null {
-  if (typeof val !== 'string') return null
-  const t = val.trim()
-  return /^[a-zA-Z0-9_-]{1,64}$/.test(t) ? t : null
-}
-
 export async function GET(req: Request) {
   try {
-    const runner = await getCurrentRunner().catch(() => null)
+    const auth = await authorizeRunnerRequest(req)
+    if (auth.response) return auth.response
+    const userId = auth.runner.id
     const { searchParams } = new URL(req.url)
-    const requestedUserId = validId(searchParams.get('userId'))
     const weekNumber = parseInt(searchParams.get('weekNumber') || '1', 10)
-
-    if (runner && requestedUserId && requestedUserId !== runner.id) {
-      return NextResponse.json({ error: 'Weekly review not found' }, { status: 404 })
-    }
-    const userId = runner?.id || requestedUserId
-    if (!userId) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     if (!Number.isInteger(weekNumber) || weekNumber < 1 || weekNumber > 60) {
       return NextResponse.json({ error: 'Invalid week number' }, { status: 400 })

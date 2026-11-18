@@ -2,6 +2,14 @@ export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite'
 export const FALLBACK_GEMINI_MODEL = 'gemini-3.1-flash-lite'
 const DEFAULT_TIMEOUT_MS = 30_000
 
+export function getGeminiModel(): string {
+  return process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL
+}
+
+export function getGeminiFallbackModel(): string {
+  return process.env.GEMINI_FALLBACK_MODEL?.trim() || FALLBACK_GEMINI_MODEL
+}
+
 export function getGeminiApiKey(): string | undefined {
   if (typeof window !== 'undefined') return undefined
   return process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY
@@ -100,7 +108,7 @@ export async function generateGeminiText({
     body.systemInstruction = { parts: [{ text: systemInstruction }] }
   }
 
-  const models = [DEFAULT_GEMINI_MODEL, FALLBACK_GEMINI_MODEL]
+  const models = [getGeminiModel(), getGeminiFallbackModel()]
   let lastError: Error | null = null
 
   for (let i = 0; i < models.length; i++) {
@@ -171,7 +179,7 @@ export async function generateCoachChatReply({
     },
   }
 
-  const models = [DEFAULT_GEMINI_MODEL, FALLBACK_GEMINI_MODEL]
+  const models = [getGeminiModel(), getGeminiFallbackModel()]
 
   for (let i = 0; i < models.length; i++) {
     try {

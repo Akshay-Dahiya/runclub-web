@@ -29,7 +29,7 @@ export default function CoachDashboard({ userId, userName, runs }: CoachDashboar
   const loadCoachData = () => {
     setLoading(true)
     setLoadError(null)
-    fetch(`/api/coach/onboarding?userId=${userId}`)
+    fetch('/api/coach/onboarding', { credentials: 'same-origin' })
       .then(async res => {
         const data = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`)
@@ -96,9 +96,9 @@ export default function CoachDashboard({ userId, userName, runs }: CoachDashboar
     try {
       const res = await fetch('/api/coach/plan', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           goalRace: profile.goalRace || '10K',
           goalTimeSec: tier.timeSec,
           goalRaceDate: profile.goalRaceDate,

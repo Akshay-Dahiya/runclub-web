@@ -1,7 +1,8 @@
 import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 import { prisma } from '../prisma'
-import { runnerSessionOptions, type RunnerSessionData } from '../session'
+import { getSessionSecret, runnerSessionOptions, type RunnerSessionData } from '../session'
 
 const runnerSelect = {
   id: true,
@@ -14,14 +15,47 @@ const runnerSelect = {
 } as const
 
 export async function getCurrentRunner() {
-  const secret = process.env.SESSION_SECRET
+  const secret = getSessionSecret()
   if (!secret || secret.length < 32) return null
 
-  const session = await getIronSession<RunnerSessionData>(await cookies(), runnerSessionOptions)
+  const session = await getIronSession<RunnerSessionData>(await cookies(), {
+    ...runnerSessionOptions,
+    password: secret,
+  })
   if (!session.runnerId) return null
 
   return prisma.user.findUnique({
     where: { id: session.runnerId },
     select: runnerSelect,
   })
+}
+
+export async function authorizeRunnerRequest(req: Request, bodyUserId?: unknown) {
+  const runner = await getCurrentRunner().catch(() => null)
+  if (!runner) {
+    return {
+      runner: null,
+      response: NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 }),
+    }
+  }
+
+  const queryUserId = new URL(req.url).searchParams.get('userId')?.trim()
+  if (queryUserId && queryUserId !== runner.id) {
+    return {
+      runner: null,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    }
+  }
+
+  if (bodyUserId !== undefined && bodyUserId !== null) {
+    const trimmedBodyUserId = String(bodyUserId).trim()
+    if (trimmedBodyUserId && trimmedBodyUserId !== runner.id) {
+      return {
+        runner: null,
+        response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+      }
+    }
+  }
+
+  return { runner, response: null }
 }

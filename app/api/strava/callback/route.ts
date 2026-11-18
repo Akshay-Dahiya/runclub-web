@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { getCurrentRunner } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
-import { runnerSessionOptions, type RunnerSessionData } from '../../../../lib/session'
+import { runnerSessionOptions, getSessionSecret, type RunnerSessionData } from '../../../../lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
   const clientId = process.env.STRAVA_CLIENT_ID
   const clientSecret = process.env.STRAVA_CLIENT_SECRET
-  const sessionSecret = process.env.SESSION_SECRET
+  const sessionSecret = getSessionSecret()
   if (!clientId || !clientSecret || !sessionSecret || sessionSecret.length < 32) {
     return redirectForError('strava_config')
   }
@@ -155,10 +155,6 @@ export async function GET(req: Request) {
       }
     }
 
-    const session = await getIronSession<RunnerSessionData>(cookieStore, runnerSessionOptions)
-    session.runnerId = user.id
-    await session.save()
-
     try {
       const stravaResp = await fetch('https://www.strava.com/api/v3/athlete/activities?per_page=30', {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -204,7 +200,19 @@ export async function GET(req: Request) {
       console.warn('[Strava] Initial activity sync did not finish; the profile was created successfully.')
     }
 
-    return clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${user.id}?connected=true`, url)))
+    const redirectRes = clearStateCookie(NextResponse.redirect(new URL(`/dashboard/${user.id}?connected=true`, url)))
+    const session = await getIronSession<RunnerSessionData>(req, redirectRes, {
+      ...runnerSessionOptions,
+      password: sessionSecret,
+      cookieOptions: {
+        ...runnerSessionOptions.cookieOptions,
+        secure: url.protocol === 'https:',
+      },
+    })
+    session.runnerId = user.id
+    await session.save()
+
+    return redirectRes
   } catch {
     console.error('[Strava] OAuth callback could not finish profile setup.')
     return redirectForError('strava_failed')

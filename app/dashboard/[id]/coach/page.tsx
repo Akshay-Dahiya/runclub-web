@@ -11,23 +11,13 @@ export default async function CoachRoute({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const sessionRunner = await getCurrentRunner().catch(() => null)
+  const runner = await getCurrentRunner()
 
-  if (sessionRunner && sessionRunner.id !== id) {
-    redirect(`/dashboard/${sessionRunner.id}/coach`)
-  }
-
-  const targetUser = sessionRunner
-    ? sessionRunner
-    : await prisma.user.findUnique({
-        where: { id },
-        select: { id: true, name: true },
-      })
-
-  if (!targetUser) redirect('/')
+  if (!runner) redirect('/login')
+  if (runner.id !== id) redirect(`/dashboard/${runner.id}/coach`)
 
   const runs = await prisma.run.findMany({
-    where: { userId: targetUser.id },
+    where: { userId: runner.id },
     orderBy: { date: 'desc' },
     take: 100,
     select: {
@@ -41,8 +31,8 @@ export default async function CoachRoute({
 
   return (
     <CoachPageClient
-      userId={targetUser.id}
-      userName={targetUser.name || 'Runner'}
+      userId={runner.id}
+      userName={runner.name || 'Runner'}
       runs={runs.map((run: { id: string; date: Date; distanceKm: number; durationSec: number; paceSecPerKm: number }) => ({ ...run, date: run.date.toISOString() }))}
     />
   )

@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
-import type { UIMessage } from 'ai'
+import { DefaultChatTransport, type UIMessage } from 'ai'
 
 export function extractMessageText(message: UIMessage | undefined | null): string {
   if (!message || !Array.isArray(message.parts)) return ''
@@ -21,10 +21,13 @@ function formatCoachError(error: Error | undefined, hasEmptyReply: boolean): str
       return 'AI Coach needs GEMINI_API_KEY configured on the server.'
     }
     if (msg.includes('401')) {
-      return 'Open your own dashboard or connect Strava to chat with the coach.'
+      return 'Connect Strava to verify your session before chatting with the coach.'
+    }
+    if (msg.includes('403')) {
+      return 'You can only use the AI Coach on your own signed-in profile.'
     }
     if (msg.includes('429')) {
-      return 'You have sent several questions recently. Please wait a minute and retry.'
+      return 'You have sent several questions recently. Please wait a few minutes and retry.'
     }
     return 'The coach ran into a temporary issue. Tap Retry to try again.'
   }
@@ -38,17 +41,43 @@ function formatCoachError(error: Error | undefined, hasEmptyReply: boolean): str
 
 /**
  * Shared state hook for AI Coach chat interfaces.
- * Persists conversation history per runner in sessionStorage and surfaces explicit loading/error/retry states.
+ * Uses signed session cookie (same-origin credentials, no body userId fallback),
+ * persists chat history keyed by userId in sessionStorage, and exposes fallback & retry state.
  */
 export function useCoachChat(userId: string) {
   const storageKey = `runclub_coach_chat_${userId}`
   const hydratedRef = useRef(false)
   const [lastPrompt, setLastPrompt] = useState('')
+  const [headerFallback, setHeaderFallback] = useState(false)
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: '/api/chat',
+        credentials: 'same-origin',
+        fetch: async (input, init) => {
+          const res = await fetch(input, { ...init, credentials: 'same-origin' })
+          if (res.headers.get('x-coach-fallback') === 'true') {
+            setHeaderFallback(true)
+          } else if (res.ok) {
+            setHeaderFallback(false)
+          }
+          return res
+        },
+      }),
+    [],
+  )
+
   const { messages, setMessages, sendMessage, regenerate, status, error, clearError } = useChat({
     id: `coach-${userId}`,
+    transport,
   })
 
   const isLoading = status === 'submitted' || status === 'streaming'
+
+  useEffect(() => {
+    hydratedRef.current = false
+  }, [userId])
 
   useEffect(() => {
     if (hydratedRef.current || typeof window === 'undefined') return
@@ -85,6 +114,10 @@ export function useCoachChat(userId: string) {
   }, [messages, storageKey])
 
   const lastMessage = messages[messages.length - 1]
+  const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant')
+  const metadataFallback = Boolean((lastAssistantMessage?.metadata as any)?.isFallback)
+  const isFallback = headerFallback || metadataFallback
+
   const hasEmptyReply =
     !isLoading &&
     !error &&
@@ -99,7 +132,7 @@ export function useCoachChat(userId: string) {
     if (!text || isLoading) return false
     setLastPrompt(text)
     clearError()
-    void sendMessage({ text }, { body: { userId } })
+    void sendMessage({ text })
     return true
   }
 
@@ -107,11 +140,11 @@ export function useCoachChat(userId: string) {
     if (isLoading) return
     clearError()
     if (lastMessage?.role === 'user' || hasEmptyReply) {
-      void regenerate({ body: { userId } })
+      void regenerate()
       return
     }
     if (lastPrompt) {
-      void sendMessage({ text: lastPrompt }, { body: { userId } })
+      void sendMessage({ text: lastPrompt })
     }
   }
 
@@ -120,6 +153,7 @@ export function useCoachChat(userId: string) {
     clearError()
     setMessages([])
     setLastPrompt('')
+    setHeaderFallback(false)
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.removeItem(storageKey)
@@ -132,6 +166,7 @@ export function useCoachChat(userId: string) {
   return {
     messages,
     isLoading,
+    isFallback,
     errorMessage,
     canRetry: Boolean(errorMessage && (lastPrompt || lastMessage)),
     sendPrompt,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCurrentRunner } from '../../../../lib/auth/runner'
+import { authorizeRunnerRequest } from '../../../../lib/auth/runner'
 import { prisma } from '../../../../lib/prisma'
 import { generateTrainingPlan } from '../../../../lib/training-engine'
 import { personalizeTrainingPlan } from '../../../../lib/ai-training-plan'
@@ -15,16 +15,11 @@ function validId(val: unknown): string | null {
 
 export async function GET(req: Request) {
   try {
-    const runner = await getCurrentRunner().catch(() => null)
+    const auth = await authorizeRunnerRequest(req)
+    if (auth.response) return auth.response
+    const userId = auth.runner.id
     const { searchParams } = new URL(req.url)
-    const requestedUserId = validId(searchParams.get('userId'))
     const planId = validId(searchParams.get('planId'))
-
-    if (runner && requestedUserId && requestedUserId !== runner.id) {
-      return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
-    }
-    const userId = runner?.id || requestedUserId
-    if (!userId) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     let plan = null
     if (planId) {
@@ -49,15 +44,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const runner = await getCurrentRunner().catch(() => null)
-    const body = await req.json()
-    const bodyUserId = validId(body?.userId)
-
-    if (runner && bodyUserId && bodyUserId !== runner.id) {
-      return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+    const body = await req.json().catch(() => null)
+    const auth = await authorizeRunnerRequest(req, body?.userId)
+    if (auth.response) return auth.response
+    const userId = auth.runner.id
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
-    const userId = runner?.id || bodyUserId
-    if (!userId) return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
 
     const { goalRace, goalTimeSec, goalRaceDate, daysPerWeek } = body
 
@@ -131,18 +124,14 @@ export async function POST(req: Request) {
 // PATCH allows marking workouts done, adjusting RPE, or updating plan progress
 export async function PATCH(req: Request) {
   try {
-    const runner = await getCurrentRunner().catch(() => null)
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
+    const auth = await authorizeRunnerRequest(req, body?.userId)
+    if (auth.response) return auth.response
+    const targetUserId = auth.runner.id
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
     const { planId, weekNumber, dayOfWeek, status, perceivedEffort, runnerNotes } = body
-    const bodyUserId = validId(body?.userId)
-
-    if (runner && bodyUserId && bodyUserId !== runner.id) {
-      return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
-    }
-    const targetUserId = runner?.id || bodyUserId
-    if (!targetUserId) {
-      return NextResponse.json({ error: 'Connect Strava to continue' }, { status: 401 })
-    }
 
     if (!planId) {
       return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
